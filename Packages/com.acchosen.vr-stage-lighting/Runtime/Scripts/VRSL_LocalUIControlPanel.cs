@@ -92,7 +92,6 @@ namespace VRSL
         public bool lockLensFlareQualityMode;
         [Space(5.0f)]
         public DefaultQualityModes strobeQuality;
-        public bool strobeQualityMode;
         #endregion
         
         [Header("Video Sampling")] // Unoptimized?
@@ -373,6 +372,7 @@ namespace VRSL
             _SetDiscoBallQualityMode();
             _SetLensFlareQualtiyMode();
             _CheckButtonLockStatus();
+            _SetStrobeHigh();
 
 #if !UNITY_EDITOR
             ReduceInGameInterpolation();

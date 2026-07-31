@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: View
+  m_Name: View_16kBuffer
   m_Shader: {fileID: 4800000, guid: d50c9336cede5cc488843345b8140b5b, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
