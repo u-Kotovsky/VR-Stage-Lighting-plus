@@ -7732,9 +7732,9 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 5530545822544342666}
-  globalChannelCrt: {fileID: 0}
+  globalChannelCrt: {fileID: 8600000, guid: d6f005c57a9df674cb5cf1e160f92029, type: 2}
   sourceVideoTexture: {fileID: 0}
-  targetDeserializerMaterial: {fileID: 0}
+  targetDeserializerMaterial: {fileID: 2100000, guid: e9bb3031b1cbd334c867baed960fc6ce, type: 2}
   audioLinkLasers: []
   audiolinkLights: []
   dmxLights: []
