@@ -156,6 +156,7 @@ Material:
     - _ConeSync: 0.2
     - _ConeWidth: 4.13
     - _DMXChannel: 0
+    - _DMXTranslateChannel: 0
     - _DNEnabler: 0
     - _DecorativeEmissiveMapStrength: 0
     - _DistFade: 1.31
@@ -163,10 +164,12 @@ Material:
     - _DividePower: 0.079
     - _EnableCompatibilityMode: 0
     - _EnableDMX: 0
+    - _EnableDMXTranslateChannel: 0
     - _EnableOSC: 0
     - _EnableSpin: 1
     - _EnableStrobe: 0
     - _EnableVerticalMode: 0
+    - _ExtraDMXChannel: 0
     - _Fade: 1.5
     - _FadeAmt: 0
     - _FadeStrength: 3.72
@@ -228,7 +231,8 @@ Material:
     - _TiltInvert: 0
     - _TriplanarFalloff: 1
     - _UnityLightingContribution: 1
-    - _UniversalIntensity: 0.8
+    - _UniversalIntensity: 1
+    - _UseExtraDMXChannel: 0
     - _UseRawGrid: 1
     - _UseWorldNorm: 0
     - _XOffset: 0

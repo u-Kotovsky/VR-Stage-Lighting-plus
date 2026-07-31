@@ -27,9 +27,12 @@ namespace VRSL
 
 #if UDONSHARP
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class VRStageLighting_AudioLink_Static : UdonSharpBehaviour
+#endif
+    public class VRStageLighting_AudioLink_Static : 
+#if UDONSHARP 
+        UdonSharpBehaviour
 #else
-    public class VRStageLighting_AudioLink_Static : MonoBehaviour
+        MonoBehaviour
 #endif
     {
         //////////////////Public Variables////////////////////
@@ -45,92 +48,76 @@ namespace VRSL
         //public AudioLink audioLink;
 
         [SerializeField, FieldChangeCallback(nameof(Band)), //Range(0, 3)
-         Tooltip("The frequency band of the spectrum to react to.")
-        ]
+         Tooltip("The frequency band of the spectrum to react to.")]
         private AudioLinkBandState band;
 
 
         [SerializeField, FieldChangeCallback(nameof(Delay)), Range(0, 127),
-         Tooltip("The level of delay to add to the reaction.")
-        ]
+         Tooltip("The level of delay to add to the reaction.")]
         private int delay;
 
 
         [SerializeField, FieldChangeCallback(nameof(BandMultiplier)), Range(1.0f, 15.0f),
-         Tooltip("Multiplier for the sensativity of the reaction.")
-        ]
+         Tooltip("Multiplier for the sensativity of the reaction.")]
         private float bandMultiplier = 1.0f;
 
 
         [SerializeField, FieldChangeCallback(nameof(ColorChord)),
-         Tooltip("Enable Color Chord tinting of the light emission.")
-        ]
+         Tooltip("Enable Color Chord tinting of the light emission.")]
         private bool enableColorChord;
         
 
         [Header("General Settings")]
 
         [SerializeField, FieldChangeCallback(nameof(GlobalIntensity)), Range(0, 1),
-         Tooltip("Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity.")
-        ]
+         Tooltip("Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity.")]
         private float globalIntensity = 1; 
 
 
         [SerializeField, HideInInspector, FieldChangeCallback(nameof(FinalIntensity)), Range(0, 1),
-         Tooltip("Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI.")
-        ]
+         Tooltip("Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI.")]
         public float finalIntensity = 1;
 
         [HideInInspector, FieldChangeCallback(nameof(FinalIntensityComponentMode)),
-         Tooltip("Choose between setting the Final Intensity for all meshes, or individual meshes")
-        ]
+         Tooltip("Choose between setting the Final Intensity for all meshes, or individual meshes")]
         public bool finalIntensityComponentMode = false;
 
         [HideInInspector, FieldChangeCallback(nameof(FinalIntensityVolumetric)), Range(0, 1),
-         Tooltip("Sets the maximum brightness value of Global Intensity For Volumetric Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")
-        ]
+         Tooltip("Sets the maximum brightness value of Global Intensity For Volumetric Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")]
         public float finalIntensityVolumetric = 1;
 
         [HideInInspector, FieldChangeCallback(nameof(FinalIntensityProjection)), Range(0, 1),
-         Tooltip("Sets the maximum brightness value of Global Intensity For Projection Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")
-        ]
+         Tooltip("Sets the maximum brightness value of Global Intensity For Projection Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")]
         public float finalIntensityProjection = 1;
 
         [HideInInspector, FieldChangeCallback(nameof(FinalIntensityFixture)), Range(0, 1),
-         Tooltip("Sets the maximum brightness value of Global Intensity For Fixture Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")
-        ]
+         Tooltip("Sets the maximum brightness value of Global Intensity For Fixture Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")]
         public float finalIntensityFixture = 1;
 
         [SerializeField, FieldChangeCallback(nameof(LightColorTint)), ColorUsage(false, true),
-         Tooltip("The main color of the light.")
-        ]
+         Tooltip("The main color of the light.")]
         private Color lightColorTint = Color.white * 2.0f;
 
 
         [SerializeField, FieldChangeCallback(nameof(ColorTextureSampling)),
-         Tooltip("Check this box if you wish to sample seperate texture for the color. The color will be influenced by the intensity of the original emission color! The texture is set in the shader itself.")
-        ]
+         Tooltip("Check this box if you wish to sample seperate texture for the color. The color will be influenced by the intensity of the original emission color! The texture is set in the shader itself.")]
         private bool enableColorTextureSampling;
 
         [SerializeField, FieldChangeCallback(nameof(TraditionalColorTextureSampling)),
-         Tooltip("Check this box if you wish to use traditional color sampling instead of white to black conversion")
-        ]
+         Tooltip("Check this box if you wish to use traditional color sampling instead of white to black conversion")]
         private bool traditionalColorTextureSampling;
 
 
         [SerializeField, FieldChangeCallback(nameof(TextureSamplingCoordinates)),
-         Tooltip("The UV coordinates to sample the color from on the texture.")
-        ]
+         Tooltip("The UV coordinates to sample the color from on the texture.")]
         private Vector2 textureSamplingCoordinates = new Vector2(0.5f, 0.5f);
 
         [SerializeField, FieldChangeCallback(nameof(ThemeColorSampling)),
-         Tooltip("Check this box if you wish to enable AudioLink Theme colors.")
-        ]
+         Tooltip("Check this box if you wish to enable AudioLink Theme colors.")]
         private bool enableThemeColorSampling;
 
         [SerializeField, FieldChangeCallback(nameof(ThemeColorTarget)), Range(1, 4),
-         Tooltip("Theme Color to Sample from.")
-        ]
+         Tooltip("Theme Color to Sample from.")]
         private int themeColorTarget = 1;
 
 
@@ -174,16 +161,14 @@ namespace VRSL
         [Header("Fixture Settings")]
 
         [SerializeField, FieldChangeCallback(nameof(SpinSpeed)), Range(-10, 10),
-         Tooltip("Projection Spin Speed (Udon Override Only).")
-        ]
+         Tooltip("Projection Spin Speed (Udon Override Only).")]
         private float spinSpeed = 4.0f;
 
 
 
         /////////////////////////////////////////////////////////////////////
         [SerializeField, FieldChangeCallback(nameof(ProjectionSpin)),
-         Tooltip("Enable projection spinning (Udon Override Only).")
-        ]
+         Tooltip("Enable projection spinning (Udon Override Only).")]
         private bool enableAutoSpin;
 
 
@@ -209,8 +194,7 @@ namespace VRSL
 
 
         [SerializeField, FieldChangeCallback(nameof(SelectGOBO)), Range(1, 8),
-         Tooltip("Use this to change what projection is selected")
-        ]
+         Tooltip("Use this to change what projection is selected")]
         private int selectGOBO = 1;
 
 
@@ -221,20 +205,17 @@ namespace VRSL
 
 
         [SerializeField, FieldChangeCallback(nameof(ConeWidth)), Range(0, 5.5f),
-         Tooltip("Controls the radius of a mover/spot light.")
-        ]
+         Tooltip("Controls the radius of a mover/spot light.")]
         private float coneWidth = 2.5f;
 
 
         [SerializeField, FieldChangeCallback(nameof(ConeLength)), Range(0.001f, 10.0f),
-         Tooltip("Controls the length of the cone of a mover/spot light.")
-        ]
+         Tooltip("Controls the length of the cone of a mover/spot light.")]
         private float coneLength = 1.0f; 
         
 
         [SerializeField, FieldChangeCallback(nameof(MaxConeLength)), Range(0.275f, 10.0f),
-         Tooltip("Controls the mesh length of the cone of a mover/spot light")
-        ]
+         Tooltip("Controls the mesh length of the cone of a mover/spot light")]
         private float maxConeLength = 8.5f; 
         
 
@@ -676,53 +657,15 @@ namespace VRSL
             // {
             //     objRenderers[i].SetPropertyBlock(props);
             // }
-            switch(objRenderers.Length)
+            foreach (var meshRenderer in objRenderers)
             {
-                case 1:
-                    if(objRenderers[0])
-                        objRenderers[0].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[0]));
-                    break;
-                case 2:
-                    if(objRenderers[0])
-                        objRenderers[0].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[0]));
-                    if(objRenderers[0])
-                        objRenderers[1].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[1]));
-                    break;
-                case 3:
-                    if(objRenderers[0])
-                        objRenderers[0].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[0]));
-                    if(objRenderers[1])
-                        objRenderers[1].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[1]));
-                    if(objRenderers[2])
-                        objRenderers[2].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[2]));
-                    break;
-                case 4:
-                    if(objRenderers[0])
-                        objRenderers[0].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[0]));
-                    if(objRenderers[1])
-                        objRenderers[1].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[1]));
-                    if(objRenderers[2])
-                        objRenderers[2].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[2]));
-                    if(objRenderers[3])
-                        objRenderers[3].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[3]));
-                    break;
-                case 5:
-                    if(objRenderers[0])
-                        objRenderers[0].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[0]));
-                    if(objRenderers[1])
-                        objRenderers[1].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[1]));
-                    if(objRenderers[2])
-                        objRenderers[2].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[2]));
-                    if(objRenderers[3])
-                        objRenderers[3].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[3]));
-                    if(objRenderers[4])
-                        objRenderers[4].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[4]));
-                    break;
-                default:
-                    Debug.Log("Too many mesh renderers for this fixture!");
-                    break;        
+                if (meshRenderer != null)
+                {
+                    meshRenderer.SetPropertyBlock(_SetFinalIntensityComponents(props, meshRenderer));
+                }
             }
         }
+        
         public void _UpdateInstancedPropertiesSansAudioLink()
         {   
             if(props == null)
@@ -773,51 +716,13 @@ namespace VRSL
             // {
             //     objRenderers[i].SetPropertyBlock(props);
             // }
-            switch(objRenderers.Length)
+            
+            foreach (var meshRenderer in objRenderers)
             {
-                case 1:
-                    if(objRenderers[0])
-                        objRenderers[0].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[0]));
-                    break;
-                case 2:
-                    if(objRenderers[0])
-                        objRenderers[0].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[0]));
-                    if(objRenderers[1])
-                        objRenderers[1].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[1]));
-                    break;
-                case 3:
-                    if(objRenderers[0])
-                        objRenderers[0].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[0]));
-                    if(objRenderers[1])
-                        objRenderers[1].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[1]));
-                    if(objRenderers[2])
-                        objRenderers[2].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[2]));
-                    break;
-                case 4:
-                    if(objRenderers[0])
-                        objRenderers[0].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[0]));
-                    if(objRenderers[1])
-                        objRenderers[1].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[1]));
-                    if(objRenderers[2])
-                        objRenderers[2].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[2]));
-                    if(objRenderers[3])
-                        objRenderers[3].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[3]));
-                    break;
-                case 5:
-                    if(objRenderers[0])
-                        objRenderers[0].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[0]));
-                    if(objRenderers[1])
-                        objRenderers[1].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[1]));
-                    if(objRenderers[2])
-                        objRenderers[2].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[2]));
-                    if(objRenderers[3])
-                        objRenderers[3].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[3]));
-                    if(objRenderers[4])
-                        objRenderers[4].SetPropertyBlock(_SetFinalIntensityComponents(props, objRenderers[4]));
-                    break;
-                default:
-                    Debug.Log("Too many mesh renderers for this fixture!");
-                    break;           
+                if (meshRenderer != null)
+                {
+                    meshRenderer.SetPropertyBlock(_SetFinalIntensityComponents(props, meshRenderer));
+                }
             }
         }
         void Init(bool withAL)
@@ -854,12 +759,11 @@ namespace VRSL
                 //enableInstancing = false;
             }
         }
+        
         //EDITOR STUFF
-        #if !COMPILER_UDONSHARP && UNITY_EDITOR
-
+#if !COMPILER_UDONSHARP && UNITY_EDITOR
         void SetConstraints(VRStageLighting_AudioLink_Static fixture)
         {
-
             UnityEngine.Animations.ConstraintSource s = new UnityEngine.Animations.ConstraintSource();
             s.sourceTransform = fixture.targetToFollow;
             s.weight = 1.0f;
@@ -873,6 +777,7 @@ namespace VRSL
             }
             //Debug.Log(fixture.name + " is set to follow " + fixture.targetConstraint.GetSource(0).sourceTransform.name);
         }
+        
         public void _CheckConstraints(VRStageLighting_AudioLink_Static fixture)
         {
             if(fixture.targetToFollow != null)
@@ -920,36 +825,36 @@ namespace VRSL
                 }
             }
         }
-
-
-            private void OnDrawGizmos()
-            {
-#if UDONSHARP
-                #pragma warning disable 0618 //suppressing obsoletion warnings
-                this.UpdateProxy(ProxySerializationPolicy.RootOnly);
-                #pragma warning restore 0618 //suppressing obsoletion warnings
-#endif
-                Gizmos.color = lightColorTint;
-                if(targetToFollow != null)
-                {
-                    Gizmos.DrawWireSphere(targetToFollow.position, 0.25f);
-                }
-                Gizmos.DrawWireSphere(transform.position, 0.05f);
-            }
-            //Handle Duplication Events
-            void OnValidate()
-            {
-                Event e = Event.current;
         
-                if (e != null)
+        private void OnDrawGizmos()
+        {
+#if UDONSHARP
+            #pragma warning disable 0618 //suppressing obsoletion warnings
+            this.UpdateProxy(ProxySerializationPolicy.RootOnly);
+            #pragma warning restore 0618 //suppressing obsoletion warnings
+#endif
+            Gizmos.color = lightColorTint;
+            if(targetToFollow != null)
+            {
+                Gizmos.DrawWireSphere(targetToFollow.position, 0.25f);
+            }
+            Gizmos.DrawWireSphere(transform.position, 0.05f);
+        }
+        
+        //Handle Duplication Events
+        void OnValidate()
+        {
+            Event e = Event.current;
+    
+            if (e != null)
+            {
+                if (e.type == EventType.ExecuteCommand && e.commandName == "Duplicate")
                 {
-                    if (e.type == EventType.ExecuteCommand && e.commandName == "Duplicate")
-                    {
-                        Init(false);
-                        return;
-                    }
+                    Init(false);
+                    return;
                 }
             }
+        }
         #endif
     }
 }

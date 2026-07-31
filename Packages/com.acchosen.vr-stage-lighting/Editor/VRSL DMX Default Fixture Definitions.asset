@@ -152,4 +152,29 @@ MonoBehaviour:
   - name: Other
     channelNames:
     - Unknown
-    foldOut: 1
+    foldOut: 0
+  - name: Tube 13CH
+    channelNames:
+    - Dimmer
+    - Red
+    - Green
+    - Blue
+    - Position X
+    - Position Y
+    - Position Z
+    - Rotation X
+    - Rotation Y
+    - Rotation Z
+    - Scale X
+    - Scale Y
+    - Scale Z
+    - 
+    - 
+    - 
+    - 
+    - 
+    - 
+    - 
+    - 
+    - 
+    foldOut: 0

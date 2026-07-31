@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using System.Numerics;
+﻿using System;
+using UnityEngine;
 
 #if UDONSHARP
 using UdonSharp;
@@ -21,430 +21,82 @@ namespace VRSL
 {
 #if UDONSHARP
     [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
-    public class VRStageLighting_DMX_Static : UdonSharpBehaviour
+#endif
+    public class VRStageLighting_DMX_Static :
+#if UDONSHARP
+        UdonSharpBehaviour
 #else
-    public class VRStageLighting_DMX_Static : MonoBehaviour
+        MonoBehaviour
 #endif
     {
-        //////////////////Public Variables////////////////////
+        #region DMX Settings
         [Header("DMX Settings")]
         [Tooltip ("Enables DMX mode for this fixture.")]
         public bool enableDMXChannels = true;
-        public bool enableFineChannels = false;
+        public bool IsDMX
+        {
+            get
+            {
+                return enableDMXChannels;
+            }
+            set
+            {
+                enableDMXChannels = value;
+                _UpdateInstancedProperties();
+            }
+        }
+        
         [Tooltip ("The ID number for this fixture. This is mostly for organizational purposes and is entirely optional. Most DMX software have an ID attached to each fixture to run the fixtures through commands more easily, and it is recommended to have those IDs lined up here as well for the sake simplicity. This ID is public and can also be used for Udon scripting as well.")]
         public int fixtureID;
+        
         [Tooltip ("The industry standard DMX Channel this fixture begins on. Most standard VRSL fixtures are 13 channels")]
-
         public int dmxChannel = 1;
+        
         [Tooltip ("The industry standard Artnet Universe. Use this to choose which universe to read the DMX Channel from.")]
         public int dmxUniverse = 1;
-        [Tooltip ("Enables 9-Universe mode for this fixture. The grid will be split up by RGB channels with each section and color representing a universe. Only availble on the Vertical and Horizontal Grid nodes.")]
-        public bool nineUniverseMode;
 
-        [Tooltip ("Enables the legacy 'Sector' based method of assigning DMX Channels. Keep this unchecked to use industry standard DMX Channels.")]
+        private int calculatedDMXChannel;
+        public int _GetDMXChannel()
+        {
+            return calculatedDMXChannel;
+        }
+        private int calculatedDMXUniverse;
+        public int _GetUniverse()
+        {
+            return calculatedDMXUniverse;
+        }
 
-        public bool useLegacySectorMode = false;
-        [Tooltip ("Enables single channel DMX mode for this fixture. This is for single channeled fixtures instead of the standard 13-channeled ones. Currently, the 'Flasher' fixture is the only single-channeled fixture at the moment")]
-        public bool singleChannelMode = false;
-        [Tooltip ("Chooses the DMX Address to start this fixture at. A Sector in this context is every 13 Channels. I.E Sector 0 is channels 1-13, Sector 1 is channels 14-26, etc.")]
-        public int sector;
+        [HideInInspector]
+        public int globalChannelIndex;
+        public int GlobalChannelIndex
+        {
+            get
+            {
+                SetGlobalChannelFromLocal();
+                return globalChannelIndex;
+            }
+            set
+            {
+                globalChannelIndex = Math.Abs(value);
+                SetLocalChannelFromGlobal();
+            }
+        }
+        
+        public bool enableDmxTranslate;
+        public int dmxTranslateChannel;
+        
         [Tooltip ("Chooses the which of the 13 Channels of the current sector to sample from when single channel mode is enabled. Do not worry about this value if you are not using a single-channeled fixture.")]
         [Range(0.0f, 12.0f)]
-        public int Channel = 0;
+        public int Channel;
         public bool legacyGoboRange;
+        #endregion
+        
+        #region General Settings
         [Space(5)]
         [Header("General Settings")]
         [Range(0,1)]
         [Tooltip ("Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity.")]
-        public float globalIntensity = 1; 
-        [Range(0,1)]
-        [Tooltip ("Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI.")]
-        public float finalIntensity = 1;
-        [Tooltip ("Choose between setting the Final Intensity for all meshes, or individual meshes")]
-        public bool finalIntensityComponentMode = false;
-        [Range(0,1)]
-        [Tooltip ("Sets the maximum brightness value of Global Intensity For Volumetric Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")]
-        public float finalIntensityVolumetric = 1;
-        [Range(0,1)]
-        [Tooltip ("Sets the maximum brightness value of Global Intensity For Projection Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")]
-        public float finalIntensityProjection = 1;
-        [Range(0,1)]
-        [Tooltip ("Sets the maximum brightness value of Global Intensity For Fixture Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")]
-        public float finalIntensityFixture = 1;
-        [Tooltip ("The main color of the light. Leave it at default white for DMX mode.")]
-        [ColorUsage(false,true)]
-        public Color lightColorTint = Color.white * 2.0f;
-        [Space(5)]
-        [Header("Movement Settings")]
-        [Tooltip ("Invert the pan values (Left/Right Movement) for movers.")]
-        public bool invertPan;
-        [Tooltip ("Invert the tilt values (Up/Down Movement) for movers.")]
-        public bool invertTilt;
-        [Tooltip ("Enable this if the mover is hanging upside down.")]
-        public bool isUpsideDown;
-        [Space(5)]
-        [Header("Fixture Settings")]
-        [Tooltip ("Enable projection spinning (Udon Override Only).")]
-        public bool enableAutoSpin = true;
-        [Tooltip ("Enable strobe effects (via DMX Only).")]
-        public bool enableStrobe = true;
-        [Range(0,360.0f)]
-        [Tooltip ("Tilt (Up/Down) offset/movement. Directly controls tilt when in Udon Mode; is an offset when in DMX mode.")]
-        public float tiltOffsetBlue = 90.0f;
-        float startTiltOffset;
-
-        [Range(0,360.0f)]
-        [Tooltip ("Pan (Left/Right) offset/movement. Directly controls pan when in Udon Mode; is an offset when in DMX mode.")]
-        public float panOffsetBlueGreen = 0.0f;
-        float startPanOffset;
-        [Range(1,8)]
-        [Tooltip ("Use this to change what projection is selected. This is overridden in DMX mode.")]
-        public int selectGOBO = 1;
-        
-        //[Header("Mesh Settings")]
-        [Tooltip ("The meshes used to make up the light. You need atleast 1 mesh in this group for the script to work properly.")]
-        public MeshRenderer[] objRenderers;
-
-        [Range(0, 5.5f)]
-        [Tooltip ("Controls the radius of a mover/spot light.")]
-        public float coneWidth = 2.5f;
-
-        [Range(0.5f,10.0f)]
-        [Tooltip ("Controls the length of the cone of a mover/spot light.")]
-        public float coneLength = 8.5f;
-
-        [Range(0.275f,10.0f)]
-        [Tooltip ("Controls the mesh length of the cone of a mover/spot light")]
-        //[FieldChangeCallback(nameof(MaxConeLength))]
-    // [SerializeField]
-        public float maxConeLength = 1.0f;  
-        [ColorUsage(true, true)]
-        private int calculatedDMXChannel;
-        private int calculatedDMXUniverse;
-
-        public float maxMinPan = 180f;
-        public float maxMinTilt = -180f;
-
-        [HideInInspector]
-        public int fixtureDefintion;
-
-        
-
-        /////////////////Private Variables//////////////////
-        private bool wasChanged;
-        MaterialPropertyBlock props;
-        bool enableInstancing;
-        float targetPanAngle, targetTiltAngle;
-        private UnityEngine.Vector3 targetToFollowLast;
-        private Color previousColorTint;
-        private Transform previousTargetToFollowTransform;
-        
-        private float previousConeWidth, previousConeLength, previousGlobalIntensity, previousFinalIntensity, previousMaxConeLength;
-        private float previousFinalIntensityVolumetric, previousFinalIntensityProjection, previousFinalIntensityFixture;
-        private int previousGOBOSelection;
-        [HideInInspector]
-        public bool foldout;
-
-        void Start()
-        {
-            Init(true);
-        }
-
-        void Init(bool withDMX)
-        {
-            if(objRenderers.Length > 0 && objRenderers[0] != null)
-            {
-                _SetProps();
-                previousColorTint = lightColorTint;
-                previousConeWidth = coneWidth;
-                previousConeLength = coneLength;
-                previousMaxConeLength = maxConeLength;
-                previousGOBOSelection = selectGOBO;
-                previousGlobalIntensity = globalIntensity;
-                previousFinalIntensity = finalIntensity;
-                previousFinalIntensityFixture = finalIntensityFixture;
-                previousFinalIntensityProjection = finalIntensityProjection;
-                previousFinalIntensityVolumetric = finalIntensityVolumetric;
-                if(withDMX)
-                {
-                    _UpdateInstancedProperties();
-                }
-                else
-                {
-                    _UpdateInstancedPropertiesSansDMX();
-                }
-            }
-            else
-            {
-                //Debug.Log("Please add atleast one fixture renderer.");
-                //enableInstancing = false;
-            }
-        }
-        public void _SetProps()
-        {
-            props = new MaterialPropertyBlock();
-        }
-        #if !COMPILER_UDONSHARP && UNITY_EDITOR
-        public Vector2Int GetSectorConversion()
-        {
-            return new Vector2Int(calculatedDMXChannel, calculatedDMXUniverse);
-        }
-
-        #endif
-
-        int SectorConversion()
-        {
-            int x =  Mathf.Abs(Mathf.FloorToInt((int) sector * 13) + 1);
-        // = calculatedDMXChannel;//outgoing channel
-        // float z = calculatedDMXChannel/512.0f;
-            //Debug.Log(z);
-            #if UNITY_EDITOR //ALL BELOW IS FOR INSPECTOR ONLY
-            //TODO: FIND A BETTER WAY TO CALCULATE THIS
-            calculatedDMXChannel = x;
-            calculatedDMXUniverse = 1;
-        // int u = Mathf.FloorToInt(z); //universe
-        // int c = calculatedDMXChannel - ((u - 1) * 512);
-        if(calculatedDMXChannel > 512 && calculatedDMXChannel < (512 * 2) + 8 )
-        {
-            calculatedDMXChannel -= (512+8); //universe 2
-            calculatedDMXUniverse = 2;
-        }
-            else if (calculatedDMXChannel > (512 * 2) && calculatedDMXChannel < (512 * 3) + 13 )
-        {
-            calculatedDMXChannel -= ((512*2)+3) + (13 * 1); //universe 3
-            calculatedDMXUniverse = 3;
-        }
-            else if (calculatedDMXChannel > 512 * 3 + 13 && calculatedDMXChannel < (512 * 4) + 21)
-        {
-            calculatedDMXChannel -= ((512*3)+11) + (13 * 1); // universe 4
-            calculatedDMXUniverse = 4;
-        }
-            else if (calculatedDMXChannel > 512 * 4 + 21 && calculatedDMXChannel < (512 * 5) + 16 +13 )
-        {
-            calculatedDMXChannel -= ((512*4)+6) + (13 * 2); // universe 5
-            calculatedDMXUniverse = 5;
-        }
-            else if (calculatedDMXChannel > 512 * 5 && calculatedDMXChannel < (512 * 6) + 39)
-        {
-            calculatedDMXChannel -= ((512*5)+1) +(13 * 3); // universe 6
-            calculatedDMXUniverse = 6;
-        }
-            else if (calculatedDMXChannel > 512 * 6 && calculatedDMXChannel < 512 * 7 +  52)
-        {
-            calculatedDMXChannel -= ((512*6)+9) +(13 * 3); // universe 7
-            calculatedDMXUniverse = 7;
-        }
-            else if (calculatedDMXChannel > 512 * 7 && calculatedDMXChannel < 512 * 8  + 65)
-        {
-            calculatedDMXChannel -= ((512*7)+4) + 52; // universe 8
-            calculatedDMXUniverse = 8;
-        }
-            else if (calculatedDMXChannel > 512 * 8 && calculatedDMXChannel < 512 * 9 + 65 )
-        {
-            calculatedDMXChannel -= ((512*8)-1) + 65; // universe 9
-            calculatedDMXUniverse = 9;
-        }
-        #endif
-        //  Debug.Log("Current Channel: " + x);
-            return x;
-        }
-
-        int RawDMXConversion()
-        {
-                calculatedDMXChannel = dmxChannel;
-                calculatedDMXUniverse = dmxUniverse;
-                int chan = Mathf.Abs(dmxChannel + ((dmxUniverse-1) * 512) + ((dmxUniverse-1) * 8));
-            //  Debug.Log("Channel: " + chan);
-                return chan;
-        }
-
-        MaterialPropertyBlock _SetFinalIntensityComponents(MaterialPropertyBlock props, MeshRenderer renderer){
-            if(!finalIntensityComponentMode){return props;}
-                if(renderer.gameObject.name.Contains("Volume") || renderer.gameObject.name.Contains("volume") || renderer.gameObject.name.Contains("Flare") || renderer.gameObject.name.Contains("flare")){
-                    props.SetFloat("_FinalIntensity", finalIntensityVolumetric);
-                }
-                else if(renderer.gameObject.name.Contains("Project") || renderer.gameObject.name.Contains("project")){
-                    props.SetFloat("_FinalIntensity", finalIntensityProjection);
-                }
-                else{
-                    props.SetFloat("_FinalIntensity", finalIntensityFixture);
-                }
-            return props;
-        }
-        public void _UpdateInstancedProperties()
-        {
-            if(props == null)
-            {
-                if(objRenderers.Length > 0 && objRenderers[0] != null)
-                {
-                    _SetProps();
-                }
-                else
-                {
-                    Debug.Log("Please add atleast one fixture renderer.");
-                    return;
-                }
-            }
-            if(useLegacySectorMode)
-            {
-                if(singleChannelMode)
-                {
-                    // calculatedDMXChannel = Mathf.Abs(Mathf.FloorToInt((int) sector * 13) + 1) + Mathf.Abs(Channel);
-                    props.SetInt("_DMXChannel", SectorConversion() + Mathf.Abs(Channel));
-                }
-                else
-                {
-                    props.SetInt("_DMXChannel", SectorConversion());
-                }
-                // calculatedDMXUniverse = Mathf.FloorToInt(calculatedDMXChannel / 512) + 1;
-                // calculatedDMXChannel = calculatedDMXChannel - ((calculatedDMXUniverse - 1) * 512);
-            }
-            else
-            {
-                props.SetInt("_DMXChannel", RawDMXConversion());
-            }
-
-            props.SetInt("_NineUniverseMode", nineUniverseMode == true ? 1 : 0);
-            props.SetInt("_PanInvert", invertPan == true ? 1 : 0);
-            props.SetInt("_LegacyGoboRange", legacyGoboRange == true ? 1 : 0);
-            props.SetInt("_TiltInvert", invertTilt == true ? 1 : 0);
-            props.SetInt("_EnableStrobe", enableStrobe == true ? 1 : 0);
-            props.SetInt("_EnableSpin", enableAutoSpin == true ? 1 : 0);
-            props.SetInt("_EnableDMX", enableDMXChannels == true ? 1 : 0);
-            props.SetInt("_EnableFineChannels", enableFineChannels == true ? 1 : 0);
-            props.SetInt("_ProjectionSelection", selectGOBO);
-            props.SetFloat("_FixtureRotationX", tiltOffsetBlue);
-            props.SetFloat("_FixtureBaseRotationY", panOffsetBlueGreen);
-            props.SetColor("_Emission", lightColorTint);
-            props.SetColor("_EmissionDMX", lightColorTint);
-            props.SetFloat("_ConeWidth", coneWidth);
-            props.SetFloat("_GlobalIntensity", globalIntensity);
-            props.SetFloat("_FinalIntensity", finalIntensity);
-            props.SetFloat("_ConeLength", Mathf.Abs(coneLength - 10.5f));
-            props.SetFloat("_MaxConeLength", maxConeLength);
-            props.SetFloat("_MaxMinPanAngle", (maxMinPan/2.0f));
-            props.SetFloat("_MaxMinTiltAngle", (maxMinTilt/2.0f));
-            foreach(MeshRenderer r in objRenderers)
-            {
-                if(r != null)
-                {
-                    r.SetPropertyBlock(_SetFinalIntensityComponents(props, r));
-                }
-            }
-        }
-        public void _UpdateInstancedPropertiesSansDMX()
-        {
-            if(props == null)
-            {
-                if(objRenderers.Length > 0 && objRenderers[0] != null)
-                {
-                    _SetProps();
-                }
-                else
-                {
-                    Debug.Log("Please add atleast one fixture renderer.");
-                    return;
-                }
-            }
-            if(useLegacySectorMode)
-            {
-                if(singleChannelMode)
-                {
-                    // calculatedDMXChannel = Mathf.Abs(Mathf.FloorToInt((int) sector * 13) + 1) + Mathf.Abs(Channel);
-                    props.SetInt("_DMXChannel", SectorConversion() + Mathf.Abs(Channel));
-                }
-                else
-                {
-                    props.SetInt("_DMXChannel", SectorConversion());
-                }
-                // calculatedDMXUniverse = Mathf.FloorToInt(calculatedDMXChannel / 512) + 1;
-                // calculatedDMXChannel = calculatedDMXChannel - ((calculatedDMXUniverse - 1) * 512);
-            }
-            else
-            {
-                props.SetInt("_DMXChannel", RawDMXConversion());
-            }
-            props.SetInt("_NineUniverseMode", nineUniverseMode == true ? 1 : 0);
-            props.SetInt("_PanInvert", invertPan == true ? 1 : 0);
-            props.SetInt("_TiltInvert", invertTilt == true ? 1 : 0);
-            props.SetInt("_LegacyGoboRange", legacyGoboRange == true ? 1 : 0);
-            props.SetInt("_EnableStrobe", 0);
-            props.SetInt("_EnableSpin", enableAutoSpin == true ? 1 : 0);
-            props.SetInt("_EnableDMX", 0);
-            props.SetInt("_EnableFineChannels", 0);
-            props.SetInt("_ProjectionSelection", selectGOBO);
-            props.SetFloat("_FixtureRotationX", tiltOffsetBlue);
-            props.SetFloat("_FixtureBaseRotationY", panOffsetBlueGreen);
-            props.SetColor("_Emission", lightColorTint);
-            props.SetColor("_EmissionDMX", lightColorTint);
-            props.SetFloat("_ConeWidth", coneWidth);
-            props.SetFloat("_GlobalIntensity", globalIntensity);
-            props.SetFloat("_FinalIntensity", finalIntensity);
-            props.SetFloat("_ConeLength", Mathf.Abs(coneLength - 10.5f));
-            props.SetFloat("_MaxConeLength", maxConeLength);
-            props.SetFloat("_MaxMinPanAngle", (maxMinPan/2.0f));
-            props.SetFloat("_MaxMinTiltAngle", (maxMinTilt/2.0f));
-            foreach(MeshRenderer r in objRenderers)
-            {
-                if(r != null)
-                {
-                    r.SetPropertyBlock(_SetFinalIntensityComponents(props, r));
-                }
-            }
-        }
-        /////////////////////////////////////////////////////////////////////////PROPERTIES///////////////////////////////////////////////////////////////////////////////////////////////
-        public Color LightColorTint
-        {
-            get
-            {
-                return lightColorTint;
-            }
-            set
-            {
-                previousColorTint = lightColorTint;
-                lightColorTint = value;
-                _UpdateInstancedProperties();
-            }
-        }
-        public float ConeWidth
-        {
-            get
-            {
-                return coneWidth;
-            }
-            set
-            {
-                previousConeWidth = coneWidth;
-                coneWidth = value;
-                _UpdateInstancedProperties();
-            }
-        }
-        public float ConeLength
-        {
-            get
-            {
-                return ConeLength;
-            }
-            set
-            {
-                previousConeLength = coneLength;
-                coneLength = value;
-                _UpdateInstancedProperties();
-            }
-        }
-        public float MaxConeLength
-        {
-            get
-            {
-                return MaxConeLength;
-            }
-            set
-            {
-                previousMaxConeLength = maxConeLength;
-                maxConeLength = value;
-                _UpdateInstancedProperties();
-            }
-        }
+        public float globalIntensity = 1;
         public float GlobalIntensity
         {
             get
@@ -458,6 +110,10 @@ namespace VRSL
                 _UpdateInstancedProperties();
             }
         }
+        
+        [Range(0,1)]
+        [Tooltip ("Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI.")]
+        public float finalIntensity = 1;
         public float FinalIntensity
         {
             get
@@ -471,6 +127,9 @@ namespace VRSL
                 _UpdateInstancedProperties();
             }
         }
+        
+        [Tooltip ("Choose between setting the Final Intensity for all meshes, or individual meshes")]
+        public bool finalIntensityComponentMode;
         public bool FinalIntensityComponentMode
         {
             get
@@ -483,7 +142,10 @@ namespace VRSL
                 _UpdateInstancedProperties();
             }            
         }
-
+        
+        [Range(0,1)]
+        [Tooltip ("Sets the maximum brightness value of Global Intensity For Volumetric Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")]
+        public float finalIntensityVolumetric = 1;
         public float FinalIntensityVolumetric
         {
             get
@@ -497,7 +159,10 @@ namespace VRSL
                 _UpdateInstancedProperties();
             }
         }
-
+        
+        [Range(0,1)]
+        [Tooltip ("Sets the maximum brightness value of Global Intensity For Projection Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")]
+        public float finalIntensityProjection = 1;
         public float FinalIntensityProjection
         {
             get
@@ -511,6 +176,10 @@ namespace VRSL
                 _UpdateInstancedProperties();
             }
         }
+        
+        [Range(0,1)]
+        [Tooltip ("Sets the maximum brightness value of Global Intensity For Fixture Meshes Only. Good for personalized settings of the max brightness of the shader by other users via UI.")]
+        public float finalIntensityFixture = 1;
         public float FinalIntensityFixture
         {
             get
@@ -525,6 +194,119 @@ namespace VRSL
             }
         }
         
+        [Tooltip ("The main color of the light. Leave it at default white for DMX mode.")]
+        [ColorUsage(false,true)]
+        public Color lightColorTint = Color.white * 2.0f;
+        public Color LightColorTint
+        {
+            get
+            {
+                return lightColorTint;
+            }
+            set
+            {
+                previousColorTint = lightColorTint;
+                lightColorTint = value;
+                _UpdateInstancedProperties();
+            }
+        }
+        #endregion
+        
+        #region Movement Settings
+        [Space(5)]
+        [Header("Movement Settings")]
+        [Tooltip ("Invert the pan values (Left/Right Movement) for movers.")]
+        public bool invertPan;
+        public bool InvertPan
+        {
+            get
+            {
+                return invertPan;
+            }
+            set
+            {
+                invertPan = value;
+                _UpdateInstancedProperties();
+            }
+        }
+        
+        [Tooltip ("Invert the tilt values (Up/Down Movement) for movers.")]
+        public bool invertTilt;
+        public bool InvertTilt
+        {
+            get
+            {
+                return invertTilt;
+            }
+            set
+            {
+                invertTilt = value;
+                _UpdateInstancedProperties();
+            }
+        }
+        
+        [Tooltip ("Enable this if the mover is hanging upside down.")]
+        public bool isUpsideDown;
+        #endregion
+        
+        #region Fixture Settings
+        [Space(5)]
+        [Header("Fixture Settings")]
+        [Tooltip ("Enable projection spinning (Udon Override Only).")]
+        public bool enableAutoSpin = true;
+        public bool ProjectionSpin
+        {
+            get
+            {
+                return enableAutoSpin;
+            }
+            set
+            {
+                enableAutoSpin = value;
+                _UpdateInstancedProperties();
+            }
+        }
+        
+        [Tooltip ("Enable strobe effects (via DMX Only).")]
+        public bool enableStrobe = true;
+        
+        [Range(0,360.0f)]
+        [Tooltip ("Tilt (Up/Down) offset/movement. Directly controls tilt when in Udon Mode; is an offset when in DMX mode.")]
+        public float tiltOffsetBlue = 90.0f;
+        public float Tilt
+        {
+            get
+            {
+                return tiltOffsetBlue;
+            }
+            set
+            {
+                tiltOffsetBlue = value;
+                _UpdateInstancedProperties();
+            }
+        }
+        private float startTiltOffset;
+
+        [Range(0,360.0f)]
+        [Tooltip ("Pan (Left/Right) offset/movement. Directly controls pan when in Udon Mode; is an offset when in DMX mode.")]
+        public float panOffsetBlueGreen;
+        public float Pan
+        {
+            get
+            {
+                return panOffsetBlueGreen;
+            }
+            set
+            {
+                panOffsetBlueGreen = value;
+                _UpdateInstancedProperties();
+            }
+        }
+        private float startPanOffset;
+        
+        [Range(1,8)]
+        [Tooltip ("Use this to change what projection is selected. This is overridden in DMX mode.")]
+        public int selectGOBO = 1;
         public int SelectGOBO
         {
             get
@@ -538,132 +320,290 @@ namespace VRSL
                 _UpdateInstancedProperties();
             }
         }
-        public bool NineUniverseMode
+        
+        //[Header("Mesh Settings")]
+        [Tooltip ("The meshes used to make up the light. You need atleast 1 mesh in this group for the script to work properly.")]
+        public MeshRenderer[] objRenderers;
+
+        [Range(0, 5.5f)]
+        [Tooltip ("Controls the radius of a mover/spot light.")]
+        public float coneWidth = 2.5f;
+        public float ConeWidth
         {
             get
             {
-                return nineUniverseMode;
+                return coneWidth;
             }
             set
             {
-                nineUniverseMode = value;
-                _UpdateInstancedProperties();
-            }
-        }
-        public bool InvertPan
-        {
-            get
-            {
-                return invertPan;
-            }
-            set
-            {
-                invertPan = value;
-                _UpdateInstancedProperties();
-            }
-        }
-        public bool InvertTilt
-        {
-            get
-            {
-                return invertTilt;
-            }
-            set
-            {
-                invertTilt = value;
-                _UpdateInstancedProperties();
-            }
-        }
-        public bool IsDMX
-        {
-            get
-            {
-                return enableDMXChannels;
-            }
-            set
-            {
-                enableDMXChannels = value;
-                _UpdateInstancedProperties();
-            }
-        }
-        public bool allowFineChannels
-        {
-            get
-            {
-                return enableFineChannels;
-            }
-            set
-            {
-                enableFineChannels = value;
-                _UpdateInstancedProperties();
-            }
-        }
-        public bool ProjectionSpin
-        {
-            get
-            {
-                return enableAutoSpin;
-            }
-            set
-            {
-                enableAutoSpin = value;
-                _UpdateInstancedProperties();
-            }
-        }
-            public float Pan
-        {
-            get
-            {
-                return panOffsetBlueGreen;
-            }
-            set
-            {
-                panOffsetBlueGreen = value;
-                _UpdateInstancedProperties();
-            }
-        }
-        public float Tilt
-        {
-            get
-            {
-                return tiltOffsetBlue;
-            }
-            set
-            {
-                tiltOffsetBlue = value;
+                previousConeWidth = coneWidth;
+                coneWidth = value;
                 _UpdateInstancedProperties();
             }
         }
 
-        public string _DMXChannelToString()
+        [Range(0.5f,10.0f)]
+        [Tooltip ("Controls the length of the cone of a mover/spot light.")]
+        public float coneLength = 8.5f;
+        public float ConeLength
         {
-            return "DMX Channel: " + calculatedDMXChannel + "  Universe: " + calculatedDMXUniverse;
-        }
-
-        public int _GetUniverse()
-        {
-            return calculatedDMXUniverse;
-        }
-        public int _GetDMXChannel()
-        {
-            return calculatedDMXChannel;
-        }
-    /////////////////////////////////////////////////////////////////////////END PROPERTIES///////////////////////////////////////////////////////////////////////////////////////////////
-
-    #if UNITY_EDITOR && !COMPILER_UDONSHARP
-        void OnValidate()
-        {
-            Event e = Event.current;
-
-            if (e != null)
+            get
             {
-                if (e.type == EventType.ExecuteCommand && e.commandName == "Duplicate")
+                return ConeLength;
+            }
+            set
+            {
+                previousConeLength = coneLength;
+                coneLength = value;
+                _UpdateInstancedProperties();
+            }
+        }
+        
+        [Range(0.275f,10.0f)]
+        [Tooltip ("Controls the mesh length of the cone of a mover/spot light")]
+        public float maxConeLength = 1.0f;
+        public float MaxConeLength
+        {
+            get
+            {
+                return MaxConeLength;
+            }
+            set
+            {
+                previousMaxConeLength = maxConeLength;
+                maxConeLength = value;
+                _UpdateInstancedProperties();
+            }
+        }
+
+        public float maxMinPan = 180f;
+        public float maxMinTilt = -180f;
+
+        [HideInInspector]
+        public int fixtureDefintion;
+        #endregion
+        
+        private void SetGlobalChannelFromLocal()
+        {
+            //globalChannelIndex = dmxChannel - 1 + ((dmxUniverse - 1) * 512);
+            globalChannelIndex = GetGlobalChannel(dmxUniverse, dmxChannel);
+        }
+        
+        private void SetLocalChannelFromGlobal()
+        {
+            GetUniverseAndChannel(globalChannelIndex, out dmxUniverse, out dmxChannel);
+            
+            calculatedDMXChannel = dmxChannel;
+            calculatedDMXUniverse = dmxUniverse;
+        }
+
+        public int GetGlobalChannel(int universe, int channel)
+        {
+            return channel - 1 + ((universe - 1) * 512);
+        }
+
+        public void GetUniverseAndChannel(int globalChannelIndex, out int universe, out int channel)
+        {
+            var offset = globalChannelIndex + 1;
+            universe = (offset / 512) + 1;
+            channel = offset % 512;
+        }
+
+        private bool wasChanged;
+        private MaterialPropertyBlock props;
+        private bool enableInstancing;
+        private float targetPanAngle, targetTiltAngle;
+        private UnityEngine.Vector3 targetToFollowLast;
+        private Color previousColorTint;
+        private Transform previousTargetToFollowTransform;
+        
+        private float previousConeWidth, previousConeLength, previousGlobalIntensity, previousFinalIntensity, previousMaxConeLength;
+        private float previousFinalIntensityVolumetric, previousFinalIntensityProjection, previousFinalIntensityFixture;
+        private int previousGOBOSelection;
+        
+        [HideInInspector]
+        public bool foldout;
+
+        private void Start()
+        {
+            Init(true);
+        }
+
+        private void Init(bool withDmx)
+        {
+            if (objRenderers == null || objRenderers.Length == 0)
+            {
+                Debug.LogError($"There are no object renderers on {gameObject.name}.");
+                return;
+            }
+            
+            _SetProps();
+            
+            previousColorTint = lightColorTint;
+            previousConeWidth = coneWidth;
+            previousConeLength = coneLength;
+            previousMaxConeLength = maxConeLength;
+            previousGOBOSelection = selectGOBO;
+            previousGlobalIntensity = globalIntensity;
+            previousFinalIntensity = finalIntensity;
+            previousFinalIntensityFixture = finalIntensityFixture;
+            previousFinalIntensityProjection = finalIntensityProjection;
+            previousFinalIntensityVolumetric = finalIntensityVolumetric;
+            
+            if(withDmx)
+            {
+                _UpdateInstancedProperties();
+            }
+            else
+            {
+                _UpdateInstancedPropertiesSansDMX();
+            }
+        }
+        
+        public void _SetProps()
+        {
+            props = new MaterialPropertyBlock();
+        }
+
+        private int RawDmxConversion() // UNIVERSE.CHANNEL into GLOBAL_CHANNEL
+        {
+            calculatedDMXChannel = dmxChannel;
+            calculatedDMXUniverse = dmxUniverse;
+            return Mathf.Abs(dmxChannel + ((dmxUniverse - 1) * 512)) - 1;
+        }
+
+        private MaterialPropertyBlock _SetFinalIntensityComponents(MaterialPropertyBlock props, MeshRenderer renderer)
+        {
+            if (!finalIntensityComponentMode) return props;
+            
+            if (renderer.gameObject.name.Contains("Volume") || 
+               renderer.gameObject.name.Contains("volume") || 
+               renderer.gameObject.name.Contains("Flare") || 
+               renderer.gameObject.name.Contains("flare"))
+            {
+                props.SetFloat("_FinalIntensity", finalIntensityVolumetric);
+            }
+            else if(renderer.gameObject.name.Contains("Project") || 
+                    renderer.gameObject.name.Contains("project"))
+            {
+                props.SetFloat("_FinalIntensity", finalIntensityProjection);
+            }
+            else
+            {
+                props.SetFloat("_FinalIntensity", finalIntensityFixture);
+            }
+            
+            return props;
+        }
+        
+        public void _UpdateInstancedProperties()
+        {
+            if(props == null)
+            {
+                if (objRenderers == null || objRenderers.Length == 0)
                 {
-                    Init(false);
+                    Debug.LogError($"There are no object renderers on {gameObject.name}.");
                     return;
                 }
+                
+                _SetProps();
+            }
+
+            props.SetInt("_EnableDMX", enableDMXChannels ? 1 : 0);
+            props.SetInt("_DMXChannel", RawDmxConversion());
+            props.SetInt("_EnableDMXTranslateChannel", enableDmxTranslate ? 1 : 0);
+            props.SetInt("_DMXTranslateChannel", dmxTranslateChannel);
+            props.SetInt("_NineUniverseMode", 0);
+            props.SetInt("_PanInvert", invertPan ? 1 : 0);
+            props.SetInt("_TiltInvert", invertTilt ? 1 : 0);
+            props.SetInt("_LegacyGoboRange", legacyGoboRange ? 1 : 0);
+            props.SetInt("_EnableStrobe", enableStrobe ? 1 : 0);
+            props.SetInt("_EnableSpin", enableAutoSpin ? 1 : 0);
+            props.SetInt("_ProjectionSelection", selectGOBO);
+            props.SetFloat("_FixtureRotationX", tiltOffsetBlue);
+            props.SetFloat("_FixtureBaseRotationY", panOffsetBlueGreen);
+            props.SetColor("_Emission", lightColorTint);
+            props.SetColor("_EmissionDMX", lightColorTint);
+            props.SetFloat("_ConeWidth", coneWidth);
+            props.SetFloat("_GlobalIntensity", globalIntensity);
+            props.SetFloat("_FinalIntensity", finalIntensity);
+            props.SetFloat("_ConeLength", Mathf.Abs(coneLength - 10.5f));
+            props.SetFloat("_MaxConeLength", maxConeLength);
+            props.SetFloat("_MaxMinPanAngle", maxMinPan/2.0f);
+            props.SetFloat("_MaxMinTiltAngle", maxMinTilt/2.0f);
+            
+            foreach (var meshRenderer in objRenderers)
+            {
+                ApplyPropertyBlockWithFinalIntensity(meshRenderer, props);
             }
         }
-    #endif
+        
+        public void _UpdateInstancedPropertiesSansDMX()
+        {
+            if(props == null)
+            {
+                if (objRenderers == null || objRenderers.Length == 0)
+                {
+                    Debug.LogError($"There are no object renderers on {gameObject.name}.");
+                    return;
+                }
+                
+                _SetProps();
+            }
+            
+            props.SetInt("_EnableDMX", 0);
+            props.SetInt("_DMXChannel", RawDmxConversion());
+            props.SetInt("_EnableDMXTranslateChannel", enableDmxTranslate ? 1 : 0);
+            props.SetInt("_DMXTranslateChannel", dmxTranslateChannel);
+            props.SetInt("_NineUniverseMode", 0);
+            props.SetInt("_PanInvert", invertPan ? 1 : 0);
+            props.SetInt("_TiltInvert", invertTilt ? 1 : 0);
+            props.SetInt("_LegacyGoboRange", legacyGoboRange ? 1 : 0);
+            props.SetInt("_EnableStrobe", 0);
+            props.SetInt("_EnableSpin", enableAutoSpin ? 1 : 0);
+            props.SetInt("_ProjectionSelection", selectGOBO);
+            props.SetFloat("_FixtureRotationX", tiltOffsetBlue);
+            props.SetFloat("_FixtureBaseRotationY", panOffsetBlueGreen);
+            props.SetColor("_Emission", lightColorTint);
+            props.SetColor("_EmissionDMX", lightColorTint);
+            props.SetFloat("_ConeWidth", coneWidth);
+            props.SetFloat("_GlobalIntensity", globalIntensity);
+            props.SetFloat("_FinalIntensity", finalIntensity);
+            props.SetFloat("_ConeLength", Mathf.Abs(coneLength - 10.5f));
+            props.SetFloat("_MaxConeLength", maxConeLength);
+            props.SetFloat("_MaxMinPanAngle", maxMinPan/2.0f);
+            props.SetFloat("_MaxMinTiltAngle", maxMinTilt/2.0f);
+            
+            foreach (var meshRenderer in objRenderers)
+            {
+                ApplyPropertyBlockWithFinalIntensity(meshRenderer, props);
+            }
+        }
+
+        private void ApplyPropertyBlockWithFinalIntensity(MeshRenderer component, MaterialPropertyBlock propertyBlock)
+        {
+            if (component)
+            {
+                component.SetPropertyBlock(_SetFinalIntensityComponents(propertyBlock, component));
+            }
+        }
+        
+        public string _DMXChannelToString()
+        {
+            return "DMX Channel: " + calculatedDMXChannel + "  Universe: " + calculatedDMXUniverse + "  shader: " + RawDmxConversion();
+        }
+
+#if UNITY_EDITOR && !COMPILER_UDONSHARP
+        private void OnValidate()
+        {
+            var e = Event.current;
+
+            if (e == null) return;
+            if (e.type == EventType.ExecuteCommand && e.commandName == "Duplicate")
+            {
+                Init(false);
+            }
+        }
+#endif
     }
 }

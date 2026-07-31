@@ -31,51 +31,29 @@ uint checkTiltInvertZ()
 }
 #endif
 
-float2 LegacyRead(int channel, int sector)
+half getValueAtCoords(uint DMXChannel, TEXTURE2D_PARAM(tex, _DecodedTexture))
 {
-    // say we were on sector 6
-    // we need to move over 2 sectors
-    // and we need to move up 3 sectors
+    uint channelIndex = DMXChannel;// - 1;
 
-    //1 sector is every 13 channels
-        float x = 0.02000;
-        float y = 0.02000;
-        //TRAVERSING THE Y AXIS OF THE DMX GRID
-        float ymod = floor(sector / 2.0);       
+    if (channelIndex >= 16384) // 128*128 = 16384
+        return 0.0h;
 
-        //TRAVERSING THE X AXIS OF THE DMX GRID
-        float xmod = sector % 2.0;
+    uint x = channelIndex % 128;
+    uint y = channelIndex / 128;
 
-        x+= (xmod * 0.50);
-        y+= (ymod * 0.04);
-        y-= sector >= 23 ? 0.025 : 0.0;
-        x+= (channel * 0.04);
-        x-= sector >= 40 ? 0.01 : 0.0;
-        //we are now on the correct
-        return float2(x,y);
-}
-
-float2 IndustryRead(int x, int y)
-{
-    float resMultiplierX = (_Udon_DMXGridRenderTexture_TexelSize.z / 13);
-    float2 xyUV = float2(0.0,0.0);
+    float u = (x + 0.5) / 128.0; // center of pixel
+    float v = (y + 0.5) / 128.0;
     
-    xyUV.x = ((x * resMultiplierX) * _Udon_DMXGridRenderTexture_TexelSize.x);
-    xyUV.y = (y * resMultiplierX) * _Udon_DMXGridRenderTexture_TexelSize.y;
-    xyUV.y -= 0.001915;
-    xyUV.x -= 0.015;
-    return xyUV;
+    float4 decoded = SAMPLE_TEXTURE2D_LOD(tex, _DecodedTexture, float4(u, v, 0, 0), 0);
+    return decoded.r; // r is either fallback or new dmx data
 }
-
-int getTargetRGBValue(uint universe)
+half getValueAtCoordsRaw(uint DMXChannel, TEXTURE2D_PARAM(tex, _DecodedTexture))
 {
-    universe -=1;
-    return floor((int)(universe / 3));
-    //returns 0 for red, 1 for green, 2, for blue
+    return getValueAtCoords(DMXChannel, TEXTURE2D_PARAM(tex, _DecodedTexture))
 }
 
 //function for getting the value on the DMX Grid in the bottom right corner configuration
-half getValueAtCoords(uint DMXChannel, TEXTURE2D_PARAM(tex, samplerTex))
+/*half getValueAtCoords(uint DMXChannel, TEXTURE2D_PARAM(tex, samplerTex))
 {
     uint universe = ceil(((int) DMXChannel)/512.0);
     int targetColor = getTargetRGBValue(universe);
@@ -139,7 +117,7 @@ half getValueAtCoordsRaw(uint DMXChannel, TEXTURE2D_PARAM(tex, samplerTex))
     value = IF(targetColor > 0, c.g, value);
     value = IF(targetColor > 1, c.b, value);
     return value;
-}
+}*/
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

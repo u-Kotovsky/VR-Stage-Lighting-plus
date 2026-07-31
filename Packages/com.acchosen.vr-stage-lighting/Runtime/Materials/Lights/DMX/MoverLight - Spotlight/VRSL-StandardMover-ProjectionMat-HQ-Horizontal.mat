@@ -15,7 +15,6 @@ Material:
   - _MULTISAMPLEDEPTH
   m_InvalidKeywords:
   - _DNENABLER_NONE
-  - _ENABLEDMX_ON
   - _ENABLESPIN_ON
   - _ENABLESTROBE_ON
   - _LEGACYGOBORANGE_ON
@@ -130,18 +129,21 @@ Material:
     - _ConeSync: 0.2
     - _ConeWidth: 2.5
     - _DMXChannel: 0
+    - _DMXTranslateChannel: 0
     - _DNEnabler: 0
     - _DistFade: 1.31
     - _Divide: 11.6
     - _DividePower: 0.079
     - _EnableAudioReact: 0
     - _EnableCompatibilityMode: 0
-    - _EnableDMX: 1
+    - _EnableDMX: 0
+    - _EnableDMXTranslateChannel: 0
     - _EnableOSC: 0
     - _EnableSpin: 1
     - _EnableStaticEmissionColor: 0
     - _EnableStrobe: 1
     - _EnableVerticalMode: 0
+    - _ExtraDMXChannel: 0
     - _Fade: 1.5
     - _FadeAmt: 0
     - _FadeStrength: 3.72
@@ -206,7 +208,8 @@ Material:
     - _TextureSampleMode: 0
     - _TiltInvert: 0
     - _TriplanarFalloff: 1
-    - _UniversalIntensity: 0.8
+    - _UniversalIntensity: 1
+    - _UseExtraDMXChannel: 0
     - _UseRawGrid: 1
     - _UseWorldNorm: 0
     - _XOffset: 0

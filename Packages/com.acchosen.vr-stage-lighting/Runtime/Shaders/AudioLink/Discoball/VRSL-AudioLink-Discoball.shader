@@ -45,7 +45,7 @@
              "ForceNoShadowCasting"="True"
              "IgnoreProjector"="True"
              "RenderType" = "Transparent"
-             "RenderPipeline" = "UniversalPipeline"
+             "RenderingPipeline" = "UniversalPipeline"
          }
          Offset -1, -5
          Stencil

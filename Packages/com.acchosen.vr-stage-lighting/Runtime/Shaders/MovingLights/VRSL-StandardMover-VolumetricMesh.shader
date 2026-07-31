@@ -3,23 +3,24 @@
 	Properties
 	{
 		//[Header (INSTANCED PROPERITES)]
-		 [HideInInspector]_DMXChannel ("Starting DMX Channel", Int) = 0
-		 [HideInInspector][Toggle] _NineUniverseMode ("Extended Universe Mode", Int) = 0
-		 [HideInInspector][Toggle] _PanInvert ("Invert Mover Pan", Int) = 0
-		 [HideInInspector][Toggle] _TiltInvert ("Invert Mover Tilt", Int) = 0
-		 
-		 [Toggle] _EnableCompatibilityMode ("Enable Compatibility Mode", Int) = 0
-		 [Toggle] _EnableVerticalMode ("Enable Vertical Mode", Int) = 0
-		 [Toggle] _EnableStrobe ("Enable Strobe", Int) = 0
-		 [Toggle] _EnableDMX ("Enable Stream DMX/DMX Control", Int) = 0
-		 [Toggle] _EnableExtraChannels ("Enable Cone Length Via DMX", Int) = 0
-		 [HideInInspector]_FixtureBaseRotationY("Mover Pan Offset (Blue + Green)", Range(-540,540)) = 0
-		 [HideInInspector]_FixtureRotationX("Mover Tilt Offset (Blue)", Range(-180,180)) = 0
-		 [HideInInspector]_ProjectionSelection ("GOBO Selection", Range(0,6)) = 0
-		 [HideInInspector]_StrobeFreq("Strobe Frequency", Range(0,25)) = 1
-		 [HideInInspector][Toggle] _EnableSpin("Enable Auto Spinning", Float) = 0
-		 [Toggle] _LegacyGoboRange ("Enable Legacy GOBO Range", Int) = 0
-		 _BlindingStrength("Blinding Strength", Range(0,1)) = 1
+		[HideInInspector]_DMXChannel ("Starting DMX Channel", Int) = 0
+
+		[Toggle] _EnableDMXTranslateChannel("Use DMX translate channels", Int) = 0
+		_DMXTranslateChannel ("Starting DMX translate channel", Int) = 0
+
+		[HideInInspector][Toggle] _PanInvert ("Invert Mover Pan", Int) = 0
+		[HideInInspector][Toggle] _TiltInvert ("Invert Mover Tilt", Int) = 0
+
+		[Toggle] _EnableStrobe ("Enable Strobe", Int) = 0
+		[Toggle] _EnableDMX ("Enable Stream DMX/DMX Control", Int) = 0
+		[Toggle] _EnableExtraChannels ("Enable Cone Length Via DMX", Int) = 0
+		[HideInInspector]_FixtureBaseRotationY("Mover Pan Offset (Blue + Green)", Range(-540,540)) = 0
+		[HideInInspector]_FixtureRotationX("Mover Tilt Offset (Blue)", Range(-180,180)) = 0
+		[HideInInspector]_ProjectionSelection ("GOBO Selection", Range(0,6)) = 0
+		[HideInInspector]_StrobeFreq("Strobe Frequency", Range(0,25)) = 1
+		[HideInInspector][Toggle] _EnableSpin("Enable Auto Spinning", Float) = 0
+		[Toggle] _LegacyGoboRange ("Enable Legacy GOBO Range", Int) = 0
+		_BlindingStrength("Blinding Strength", Range(0,1)) = 1
 
 		//[Header (BASIC CONTROLS)]
 		_FinalIntensity("Final Intensity", Range(0,1)) = 1
@@ -44,10 +45,7 @@
 		[Enum(Off,0,On,1)] _AlphaToCoverage ("Alpha To Coverage", Int) = 0
 		//[Space(16)]
 
-
 		//[Header(MOVER CONTROLS)]
-
-
 		_FixtureRotationOrigin("Fixture Pivot Origin", Float) = (0, 0.014709, -1.02868, 0)
 		[Toggle] _UseRawGrid("Use Raw Grid For Light Intensity And Color", Int) = 0
 		// [NoScaleOffset] _Udon_DMXGridRenderTexture("DMX Grid Render Texture (RAW Unsmoothed)", 2D) = "white" {}
@@ -66,7 +64,6 @@
 		[Toggle]_MAGIC_NOISE_ON_HIGH ("Toggle Magic Noise", Int) = 1
 		[Toggle]_MAGIC_NOISE_ON_MED ("Toggle Magic Noise", Int) = 1
 		[Toggle]_2D_NOISE_ON ("Toggle 2D Noise", Int) = 1
-
 
 		_Noise2Stretch ("Outside Magic Noise Scale", Range(-10, 10)) = 1
 		_Noise2StretchInside ("Inside Magic Noise Scale", Range(-10, 10)) = 1
@@ -88,7 +85,6 @@
 		_Noise2YPotato ("Magic Noise Y Scroll", Range(-10, 10)) = 1
 		_Noise2ZPotato ("Magic Noise Y Scroll", Range(-10, 10)) = 1
 		_Noise2PowerPotato("Magic Noise Strength", Range(0, 1)) = 1
-
 
 		//[NoScaleOffset]_InsideConeNormalMap("Inside Cone Normal Map", 2D) = "bump" {}
 
@@ -118,7 +114,7 @@
 		_StripeSplitStrength7 ("Stripe Split Strength G0B08", Range(0, 1)) = 0
 
 
-		[Toggle] _EnableSpin("Enable Auto Spinning", Float) = 0
+		//[Toggle] _EnableSpin("Enable Auto Spinning", Float) = 0
 		_SpinSpeed ("Auto Spin Speed", Range(0, 10)) = 0
 		_GradientMod ("Gradient Modifier", Range(1, 4)) = 2.25
 		_GradientModGOBO ("Gradient Modifier GOBO", Range(1, 4)) = 2.25
@@ -129,22 +125,18 @@
 		[Toggle]_PotatoMode("Reduces the overhead on the fragment shader by removing both noise components to extra texture sampling", Int) = 0
 		[Toggle]_HQMode("A higher quality volumetric mode (Experimental)", Int) = 0
 
-
-
 		//[Space(16)]
-
-
-
 		//[Toggle] _UseWorldNorm("Use World Normal vs View Normal", Float) = 0
 		//[KeywordEnum(None, UseDNTexture)] _DNEnabler ("Enable Depth Normal Texture", Float) = 0
-
 	}
+	
+	// URP
     SubShader
     {
 
         Tags
         {
-            "Queue" = "Transparent+2" "IgnoreProjector"="True" "RenderType" = "Transparent""RenderPipeline" = "UniversalPipeline"
+            "Queue" = "Transparent+2" "IgnoreProjector"="True" "RenderType" = "Transparent""RenderingPipeline" = "UniversalPipeline"
         }
         //Volumetric Pass
 
@@ -229,27 +221,31 @@
         UsePass "Universal Render Pipeline/Lit/DepthNormals"
     }
 
-		SubShader
+	// BIRP
+	SubShader
 	{
-		
 		Tags{ "Queue" = "Transparent+2" "IgnoreProjector"="True" "RenderType" = "Transparent" }
 		//Volumetric Pass
 
-	Pass
+		Pass
 		{
 			AlphaToMask [_AlphaToCoverage]
 			Blend One [_BlendDst]
 			Cull Off
 			ZWrite Off
 			Lighting Off
-			Tags{ "LightMode" = "Always" }
+			
+			Tags { "LightMode" = "Always" }
+			
 			Stencil
 			{
 				Ref 142
 				Comp NotEqual
 				Pass Keep
 			}
+			
 			CGPROGRAM
+			
 			#pragma vertex vert
 			#pragma fragment frag
 			//#pragma multi_compile_fog
@@ -262,8 +258,10 @@
 			#pragma multi_compile_local _ _HQ_MODE
 			#pragma multi_compile_local _ _2D_NOISE_ON
 			#pragma multi_compile_local _ _ALPHATEST_ON
+			
 			#define VOLUMETRIC_YES //To identify the pass in the vert/frag
 			#define VRSL_DMX
+			#define DMXTranslate
 
 			#include "UnityCG.cginc"
 			#include "../Shared/VRSL-Defines.cginc" //Property Defines are here
@@ -303,14 +301,12 @@
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO 
 			};
+			
 			#include "VRSL-StandardMover-VolumetricFrag.cginc" //Fragment Shader is here
 			#include "VRSL-StandardMover-Vertex.cginc" //Vertex Shader is here
-
 			
 			ENDCG
 		}
-
 	}
 	CustomEditor "VRSLInspector"
-	//CustomEditor "MoverProjectionLightCustomGUI"
 }

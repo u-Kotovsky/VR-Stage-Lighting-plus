@@ -1,5 +1,4 @@
 #if !COMPILER_UDONSHARP && UNITY_EDITOR
-using System.Collections;
 using System.Collections.Generic;
 using System;
 using System.Diagnostics;
@@ -12,7 +11,6 @@ using System.Text;
 using System.Xml;
 using System.Drawing;
 using System.Data;
-using UnityEngine.UIElements;
 using System.Linq;
 
 #if UDONSHARP
@@ -26,191 +24,10 @@ using System.Drawing.Printing;
 
 namespace VRSL.EditorScripts
 {
-    public class StringWriterUtf8 : StringWriter
-    {
-        public StringWriterUtf8(StringBuilder sb) : base(sb)
-        {
-        }
- 
-        public override Encoding Encoding
-        {
-            get { return Encoding.UTF8; }
-        }
-    }
-
+    [CreateAssetMenu(menuName = "VRSL/DMX Fixture Patch File", fileName = "VRSL DMX Fixture Patch File")]
     [Serializable]
-    public struct JSONDMXFixtureData_Container
-    {
-        public JSONDMXFixtureData_Container(JSONDMXFixtureData[] d)
-        {
-            fixtures = d;
-        }
-        public JSONDMXFixtureData[] fixtures;
-    }
-    [Serializable]
-    public struct JSONDMXFixtureData
-    {
-        public JSONDMXFixtureData(DMXFixtureData fixture, string[] fixtureTypes, string[] cd)
-        {
-            name = fixture.name;
-            id = fixture.fixtureID;
-            channel = fixture.dmxChannel;
-            universe = fixture.dmxUniverse;
-            fixtureDefintion = fixtureTypes[fixture.fixtureDefintion];
-            channelNames = cd;
-            position = fixture.position;
-            rotation = fixture.rotation.eulerAngles;
-            invertPan = fixture.invertPan;
-            invertTilt = fixture.invertTilt;
-            panRange = Mathf.Abs(fixture.maxMinPan);
-            tiltRange = Mathf.Abs(fixture.maxMinTilt);
-        }
-        public int id;
-        public string name;
-        public int channel;
-        public int universe;
-        public string fixtureDefintion;
-        public string[] channelNames;  
-        public Vector3 position;
-        public Vector3 rotation;
-        public bool invertPan;
-        public bool invertTilt;
-        public float panRange;
-        public float tiltRange;
-    }
-
-    [Serializable]
-    public struct DMXFixtureData_ObjRenderers
-    {
-        public DMXFixtureData_ObjRenderers(MeshRenderer[] objRenderers)
-        {
-                objRenderers_name = new string[objRenderers.Length];
-                objRenderers_GlobalObjectId = new string[objRenderers.Length];
-                for(int i = 0; i < objRenderers.Length; i++)
-                {
-                    objRenderers_name[i] = objRenderers[i].name;
-                    GlobalObjectId objRenderers_id = GlobalObjectId.GetGlobalObjectIdSlow(objRenderers[i]);
-                    objRenderers_GlobalObjectId[i] = objRenderers_id.ToString();
-                }
-        }
-        public string[] objRenderers_name;
-        public string[] objRenderers_GlobalObjectId;
-        
-
-
-        public MeshRenderer[] GetRenderers()
-        {
-            List<MeshRenderer> renderers = new List<MeshRenderer>();
-            for(int i = 0; i < objRenderers_GlobalObjectId.Length; i++)
-            {
-                GlobalObjectId id;
-                if(GlobalObjectId.TryParse(objRenderers_GlobalObjectId[i], out id))
-                {
-                    MeshRenderer x = (MeshRenderer) GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id);
-                    //UnityEngine.Debug.Log("Found Renderer: " + x.name);
-                    renderers.Add(x);
-                }
-            }
-            return renderers.ToArray();
-        }
-    }
-
-
-
-    [Serializable]
-    public struct DMXFixtureData
-    {
-        public DMXFixtureData(VRStageLighting_DMX_Static fixture, GlobalObjectId id)
-        {
-                name = fixture.gameObject.name;
-                position = fixture.gameObject.transform.position;
-                rotation = fixture.gameObject.transform.rotation;
-                targetObjectId = id.targetObjectId;
-                targetPrefabId = id.targetPrefabId;
-                assetGUID = id.assetGUID.ToString();
-                enableDMXChannels = fixture.enableDMXChannels;
-                nineUniverseMode = fixture.nineUniverseMode;
-                fixtureID = fixture.fixtureID;
-                useLegacySectorMode = fixture.useLegacySectorMode;
-                singleChannelMode = fixture.singleChannelMode;
-                sector = fixture.sector;
-                Channel = fixture.Channel;
-                legacyGoboRange = fixture.legacyGoboRange;
-                globalIntensity = fixture.globalIntensity;
-                finalIntensity = fixture.finalIntensity;
-                lightColorTint = fixture.lightColorTint;
-                invertPan = fixture.invertPan;
-                invertTilt = fixture.invertTilt;
-                isUpsideDown = fixture.isUpsideDown;
-                enableAutoSpin = fixture.enableAutoSpin;
-                enableStrobe = fixture.enableStrobe;
-                tiltOffsetBlue = fixture.tiltOffsetBlue;
-                panOffsetBlueGreen = fixture.panOffsetBlueGreen;
-                selectGOBO = fixture.selectGOBO;
-                //objRenderers = fixture.objRenderers;
-                objRenderers = new DMXFixtureData_ObjRenderers(fixture.objRenderers);
-                coneWidth = fixture.coneWidth;
-                coneLength = fixture.coneLength;
-                maxConeLength = fixture.maxConeLength;
-                maxMinPan = fixture.maxMinPan;
-                maxMinTilt = fixture.maxMinTilt;
-                fixtureDefintion = fixture.fixtureDefintion;
-                if(useLegacySectorMode)
-                {
-                    Vector2Int chanUni = fixture.GetSectorConversion();
-                    dmxChannel = chanUni.x;
-                    dmxUniverse = chanUni.y;
-                }
-                else
-                {
-                    dmxChannel = fixture.dmxChannel;
-                    dmxUniverse = fixture.dmxUniverse;
-                }
-
-
-        }
-        public string name;
-        public Vector3 position;
-        public Quaternion rotation;
-        public ulong targetPrefabId;
-        public ulong targetObjectId;
-        public string assetGUID;
-        public bool enableDMXChannels;
-        public bool nineUniverseMode;
-        public int fixtureID;
-        public int dmxChannel;
-        public int dmxUniverse;
-        public int fixtureDefintion;
-        public bool useLegacySectorMode;
-        public bool singleChannelMode;
-        public int sector;
-        public int Channel;
-        public bool legacyGoboRange;
-        public float globalIntensity;
-        public float finalIntensity;
-        public UnityEngine.Color lightColorTint;
-        public bool invertPan;
-        public bool invertTilt;
-        public bool isUpsideDown;
-        public bool enableAutoSpin;
-        public bool enableStrobe;
-        public float tiltOffsetBlue;
-        public float panOffsetBlueGreen;
-        public int selectGOBO;
-        public DMXFixtureData_ObjRenderers objRenderers;
-        public float coneWidth;
-        public float coneLength;
-        public float maxConeLength;
-        public float maxMinPan;
-        public float maxMinTilt;
-
-        
-    }
-    [CreateAssetMenuAttribute(menuName = "VRSL/DMX Fixture Patch File", fileName = "VRSL DMX Fixture Patch File")]
-    [System.Serializable]
     public class VRSL_DMXPatchSettings : ScriptableObject
     {
-
         [HideInInspector]
         public Scene targetScene;
         [HideInInspector] 
@@ -225,8 +42,7 @@ namespace VRSL.EditorScripts
         private int pdfLineCount = 0;
         private int pdfPageCount = 1;
         private DataTable patchList;
-
-
+        
         public void CheckData()
         {
             if(data == null)
@@ -241,21 +57,24 @@ namespace VRSL.EditorScripts
                 }
             }
         }
+        
         public void ForceSave()
         {
             string assetPath =  AssetDatabase.GetAssetPath(this.GetInstanceID());
             if(targetScene != null)
                 AssetDatabase.RenameAsset(assetPath, "VRSL DMX Patch Data_" + targetScene.name);
-            UnityEditor.EditorUtility.SetDirty(this);
-            UnityEditor.AssetDatabase.SaveAssets();
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Selection.activeObject = AssetDatabase.LoadAssetAtPath<VRSL_DMXPatchSettings>(AssetDatabase.GetAssetPath(this.GetInstanceID())); 
         }
+        
         public void SetScene()
         {
             targetScene = SceneManager.GetActiveScene();
             scenePath = targetScene.path;
         }
+        
         public void SetDMXFixtureData()
         {
             UnityEngine.Debug.Log("Saving Fixture Data...");
@@ -290,15 +109,15 @@ namespace VRSL.EditorScripts
                 {
                     idStrings[i] = ids[i].ToString();
                     data[i] = new DMXFixtureData(fixtures[i], ids[i]);
-
                 }
             }
         }
-        static List<GameObject> GetAllObjectsOnlyInScene()
+        
+        private static List<GameObject> GetAllObjectsOnlyInScene()
         {
-            List<GameObject> objectsInScene = new List<GameObject>();
+            var objectsInScene = new List<GameObject>();
 
-            foreach (GameObject go in Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[])
+            foreach (var go in Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[])
             {
                 if (!EditorUtility.IsPersistent(go.transform.root.gameObject) && !(go.hideFlags == HideFlags.NotEditable || go.hideFlags == HideFlags.HideAndDontSave))
                     objectsInScene.Add(go);
@@ -338,7 +157,7 @@ namespace VRSL.EditorScripts
                 }
 
                 //GlobalObjectId[] ids  = GetAllFixtureIDs(sceneFixtures.ToArray());
-                foreach(VRStageLighting_DMX_Static fixture in sceneFixtures)
+                foreach(var fixture in sceneFixtures)
                 {
                     try
                     {
@@ -388,15 +207,11 @@ namespace VRSL.EditorScripts
                             so.FindProperty("fixtureID").intValue = data[dmxID].fixtureID;
                             so.FindProperty("dmxChannel").intValue = data[dmxID].dmxChannel;
                             so.FindProperty("dmxUniverse").intValue = data[dmxID].dmxUniverse;
-                            so.FindProperty("useLegacySectorMode").boolValue = data[dmxID].useLegacySectorMode;
-                            so.FindProperty("singleChannelMode").boolValue = data[dmxID].singleChannelMode;
-                            so.FindProperty("sector").intValue = data[dmxID].sector; 
                             so.FindProperty("Channel").intValue = data[dmxID].Channel;
                             so.FindProperty("legacyGoboRange").boolValue = data[dmxID].legacyGoboRange;
                             so.FindProperty("globalIntensity").floatValue = data[dmxID].globalIntensity;
                             so.FindProperty("finalIntensity").floatValue = data[dmxID].finalIntensity;
                             so.FindProperty("lightColorTint").colorValue = data[dmxID].lightColorTint;
-                            so.FindProperty("nineUniverseMode").boolValue = data[dmxID].nineUniverseMode;
                             so.FindProperty("invertPan").boolValue = data[dmxID].invertPan;
                             so.FindProperty("invertTilt").boolValue = data[dmxID].invertTilt;
                             so.FindProperty("isUpsideDown").boolValue = data[dmxID].isUpsideDown;
@@ -416,8 +231,8 @@ namespace VRSL.EditorScripts
                             so.ApplyModifiedProperties();
 
                             var sof = new SerializedObject(fixture);
-                            SerializedProperty rendsProperty = sof.FindProperty("objRenderers");
-                            MeshRenderer[] rends = data[dmxID].objRenderers.GetRenderers();
+                            var rendsProperty = sof.FindProperty("objRenderers");
+                            var rends = data[dmxID].objRenderers.GetRenderers();
                             rendsProperty.arraySize = rends.Length;
                             for(int i = 0; i < rends.Length; i++)
                             {
@@ -437,15 +252,11 @@ namespace VRSL.EditorScripts
                             fixture.fixtureID = data[dmxID].fixtureID;
                             fixture.dmxChannel = data[dmxID].dmxChannel;
                             fixture.dmxUniverse = data[dmxID].dmxUniverse;
-                            fixture.useLegacySectorMode = data[dmxID].useLegacySectorMode;
-                            fixture.singleChannelMode = data[dmxID].singleChannelMode;
-                            fixture.sector = data[dmxID].sector; 
                             fixture.Channel = data[dmxID].Channel;
                             fixture.legacyGoboRange = data[dmxID].legacyGoboRange;
                             fixture.globalIntensity = data[dmxID].globalIntensity;
                             fixture.finalIntensity = data[dmxID].finalIntensity;
                             fixture.lightColorTint = data[dmxID].lightColorTint;
-                            fixture.nineUniverseMode = data[dmxID].nineUniverseMode;
                             fixture.invertPan = data[dmxID].invertPan;
                             fixture.invertTilt = data[dmxID].invertTilt;
                             fixture.isUpsideDown = data[dmxID].isUpsideDown;
@@ -483,7 +294,7 @@ namespace VRSL.EditorScripts
                     }
                     catch(Exception ex)
                     {
-                            // Get stack trace for the exception with source file information
+                        // Get stack trace for the exception with source file information
                         var st = new StackTrace(ex, true);
                         // Get the top stack frame
                         var frame = st.GetFrame(0);
@@ -495,14 +306,15 @@ namespace VRSL.EditorScripts
                 }
             }
         }
+        
         private bool CheckForLocalPanel()
         {
             List<GameObject> sceneObjects = sceneObjects = GetAllObjectsOnlyInScene();
             bool hasLocalPanel = false;
             panel = null;
-         //   colorLabel = new GUIContent();
-         //  colorLabel.text = "Emission Color";
-            foreach (GameObject go in sceneObjects)
+            //colorLabel = new GUIContent();
+            //colorLabel.text = "Emission Color";
+            foreach (var go in sceneObjects)
             {
 #if UDONSHARP
                 #pragma warning disable 0618 //suppressing obsoletion warnings
@@ -519,17 +331,16 @@ namespace VRSL.EditorScripts
             }
             return hasLocalPanel;
         }
+        
 #if !UNITY_EDITOR_LINUX && !UNITY_ANDROID && !UNITY_IOS
         private void OnPrintPage(object sender, PrintPageEventArgs ev)
         {   
-                pdfPageCount++;
-                ev.HasMorePages = DrawTable(ev.Graphics);          
+            pdfPageCount++;
+            ev.HasMorePages = DrawTable(ev.Graphics);          
         }
 
-
-        bool DrawTable(System.Drawing.Graphics graph)
+        private bool DrawTable(System.Drawing.Graphics graph)
         {
-
             int rowHeight = 30;
             int rowCount = 33;
             int tableHeight = rowHeight * rowCount;
@@ -543,7 +354,7 @@ namespace VRSL.EditorScripts
             int yOFfset = 50;
             try 
             {
-                graph.DrawString(this.name, new System.Drawing.Font("Arial", 16), Brushes.Black,new Point(xOffset,15));
+                graph.DrawString(name, new System.Drawing.Font("Arial", 16), Brushes.Black,new Point(xOffset,15));
 
                 graph.FillRectangle(Brushes.White, new Rectangle(new Point(0 + xOffset, 0+ yOFfset), image.Size));
                 int col = 0 + xOffset;
@@ -557,23 +368,23 @@ namespace VRSL.EditorScripts
                     switch(i)
                     {
                         default:
-                            nextColumn +=50;
+                            nextColumn += 50;
                             columnName = "ID";
                             break;
                         case 1:
-                            nextColumn+=400;
+                            nextColumn += 400;
                             columnName = "Fixture Name";
                             break;
                         case 2:
-                            nextColumn+=200;
+                            nextColumn += 200;
                             columnName = "Fixture Type";
                             break;
                         case 3:
-                            nextColumn+=75;
+                            nextColumn += 75;
                             columnName = "Universe";
                             break;
                         case 4:
-                            nextColumn+=75;
+                            nextColumn += 75;
                             columnName = "Address";
                             break;
                     }
@@ -581,7 +392,6 @@ namespace VRSL.EditorScripts
                     
                     for (int row = 0 + yOFfset; row <= image.Height; row += rowHeight) 
                     {
-                        
                         if(row == 0 + yOFfset)
                         {
                             if(drewRectangle == false)
@@ -602,10 +412,8 @@ namespace VRSL.EditorScripts
                                 finalNumberofRows++;
                             }
                         }
-
                     }
                     col+= nextColumn;
-
 
                    // graph.DrawString(i.ToString(), new System.Drawing.Font("Arial", 16), Brushes.Black,new Point(col-25,5+yOFfset));
                 }
@@ -616,7 +424,6 @@ namespace VRSL.EditorScripts
                 // }
                 graph.DrawRectangle(Pens.Black, new Rectangle(0+ xOffset, 0 + yOFfset, image.Width - 1, image.Height - 1));
                 graph.DrawString(pdfPageCount.ToString(), new System.Drawing.Font("Arial", 12), Brushes.Black,new Point((image.Width / 2) + xOffset ,tableHeight + yOFfset + 20));
-            
             } 
             finally 
             {
@@ -624,19 +431,17 @@ namespace VRSL.EditorScripts
             }
             return pdfLineCount < data.ToArray().Length;
         }
-
-
-
-
+        
         public void ToPDF()
         {
-            if(CheckForLocalPanel() == false){return;}
+            if(CheckForLocalPanel() == false) return;
             pdfLineCount = 0;
             pdfPageCount = 0;
 
             patchList = new DataTable("Patch List");
             DataColumn column;
             DataRow row;
+            
             //ID Column
             column = new DataColumn();
             column.DataType = typeof(int);
@@ -645,8 +450,7 @@ namespace VRSL.EditorScripts
             column.ReadOnly = false;
             column.Unique = false;
             patchList.Columns.Add(column);
-
-
+            
             //Name Column
             column = new DataColumn();
             column.DataType = typeof(string);
@@ -655,8 +459,7 @@ namespace VRSL.EditorScripts
             column.ReadOnly = false;
             column.Unique = false;
             patchList.Columns.Add(column);
-
-
+            
             //Type Column
             column = new DataColumn();
             column.DataType = typeof(string);
@@ -665,7 +468,6 @@ namespace VRSL.EditorScripts
             column.ReadOnly = false;
             column.Unique = false;
             patchList.Columns.Add(column);
-
 
             //Universe Column
             column = new DataColumn();
@@ -685,21 +487,20 @@ namespace VRSL.EditorScripts
             column.Unique = false;
             patchList.Columns.Add(column);
 
-
             // DataColumn[] PrimaryKeyColumns = new DataColumn[1];
             // PrimaryKeyColumns[0] = patchList.Columns["id"];
             // patchList.PrimaryKey = PrimaryKeyColumns;
 
-            DataSet dtSet = new DataSet();
+            var dtSet = new DataSet();
 
             dtSet.Tables.Add(patchList);
             
-            VRSL_FixtureDefinitions fixDefAsset = (VRSL_FixtureDefinitions) AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(panel.fixtureDefGUID), typeof(VRSL_FixtureDefinitions));
-            string[] definitions = fixDefAsset.GetNames();
+            var fixDefAsset = (VRSL_FixtureDefinitions) AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(panel.fixtureDefGUID), typeof(VRSL_FixtureDefinitions));
+            var definitions = fixDefAsset.GetNames();
 
-            DMXFixtureData[] sortedData = data.OrderBy(c => c.fixtureID).ToArray();
+            var sortedData = data.OrderBy(c => c.fixtureID).ToArray();
             
-            foreach(DMXFixtureData f in sortedData)
+            foreach(var f in sortedData)
             {
                 row = patchList.NewRow();
                 row["ID"] = f.fixtureID;
@@ -711,32 +512,33 @@ namespace VRSL.EditorScripts
             }
 
             pdfLineCount = 0;
-            PrintDocument document = new PrintDocument();
+            var document = new PrintDocument();
             document.PrintPage += new PrintPageEventHandler(OnPrintPage);
             document.PrinterSettings.PrinterName = "Microsoft Print to PDF";
             document.Print();
             UnityEngine.Debug.Log("Sucessfully Exported PDF File"); 
         }
 #endif
+        
         public string ToJsonFile(bool refreshEditor)
         {
             if(CheckForLocalPanel())
             {
                 try
                 {
-                    VRSL_FixtureDefinitions fixDefAsset = (VRSL_FixtureDefinitions) AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(panel.fixtureDefGUID), typeof(VRSL_FixtureDefinitions));
-                    JSONDMXFixtureData[] jsonFixtureData = new JSONDMXFixtureData[data.Length];
-                    string[] definitions = fixDefAsset.GetNames();
+                    var fixDefAsset = (VRSL_FixtureDefinitions) AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(panel.fixtureDefGUID), typeof(VRSL_FixtureDefinitions));
+                    var jsonFixtureData = new JSONDMXFixtureData[data.Length];
+                    var definitions = fixDefAsset.GetNames();
                     for(int i = 0; i < jsonFixtureData.Length; i++)
                     {
                         jsonFixtureData[i] = new JSONDMXFixtureData(data[i], definitions, fixDefAsset.GetChannelDefinition(data[i].fixtureDefintion));
                     }
-                    JSONDMXFixtureData_Container jsonContainer = new JSONDMXFixtureData_Container(jsonFixtureData);
-                    string json = JsonUtility.ToJson(jsonContainer, true);
-                    string assetPath = AssetDatabase.GetAssetPath(this);
-                    string filePath = Path.Combine(Directory.GetCurrentDirectory(), assetPath);
-                    string targetString = this.name + ".asset";
-                    string newString = this.name + ".json";
+                    var jsonContainer = new JSONDMXFixtureData_Container(jsonFixtureData);
+                    var json = JsonUtility.ToJson(jsonContainer, true);
+                    var assetPath = AssetDatabase.GetAssetPath(this);
+                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), assetPath);
+                    var targetString = name + ".asset";
+                    var newString = name + ".json";
                     filePath = filePath.Replace("/", "\\");
                     filePath = filePath.Replace(targetString, newString);
                     File.WriteAllText(filePath, json);
@@ -745,7 +547,7 @@ namespace VRSL.EditorScripts
                     {
                         AssetDatabase.Refresh();
                     }
-                    UnityEngine.Debug.Log("Sucessfully Exported JSON File");
+                    UnityEngine.Debug.Log("Successfully Exported JSON File");
                     return filePath;
                 }
                 catch
@@ -754,62 +556,63 @@ namespace VRSL.EditorScripts
                     return "FAILED";
                 }
             }
-            return "FAILED";
             
+            return "FAILED";
         }
-
-
-        string ToXMLTransformMatrix(Vector3 Position, Vector3 Rotation)
+        
+        private string ToXMLTransformMatrix(Vector3 Position, Vector3 Rotation)
         {
-            UnityEngine.Matrix4x4 rotationMatrix = UnityEngine.Matrix4x4.Rotate(Quaternion.Euler(Rotation));
-            Vector4 u = rotationMatrix.GetRow(0);
-            Vector4 v = rotationMatrix.GetRow(1);
-            Vector4 w = rotationMatrix.GetRow(2);
+            var rotationMatrix = Matrix4x4.Rotate(Quaternion.Euler(Rotation));
+            var u = rotationMatrix.GetRow(0);
+            var v = rotationMatrix.GetRow(1);
+            var w = rotationMatrix.GetRow(2);
             //Vector4 o = matrix.GetRow(3);
-            Vector3 u1 = new Vector3(u.x, u.y, u.z);
-            Vector3 v1 = new Vector3(v.x, v.y, v.z);
-            Vector3 w1 = new Vector3(w.x, w.y, w.z);
+            var u1 = new Vector3(u.x, u.y, u.z);
+            var v1 = new Vector3(v.x, v.y, v.z);
+            var w1 = new Vector3(w.x, w.y, w.z);
             Position = new Vector3(Position.x * 1000f, Position.y * 1000f, Position.z * 1000f);
             //Vector3 o1 = new Vector3(o.x, o.y, o.z);
-            string output = u1.ToString("F6") + " " + v1.ToString("F6") + " " + w1.ToString("F6") + " " + Position.ToString("F6");
+            var output = u1.ToString("F6") + " " + v1.ToString("F6") + " " + w1.ToString("F6") + " " + Position.ToString("F6");
             output = output.Replace("(", "{");
             output = output.Replace(")", "}");
             output = output.Replace(" ", "");
             return output;
         }
 
-        int GetAbsoluteDMXAddress(int universe, int channel)
+        private int GetAbsoluteDMXAddress(int universe, int channel)
         {
             return ((universe-1) * 512) + channel;
         }
-        XmlElement GenerateFixtureElement(XmlDocument doc, JSONDMXFixtureData data)
+        
+        private XmlElement GenerateFixtureElement(XmlDocument doc, JSONDMXFixtureData data)
         {
-            XmlElement fixture = doc.CreateElement("Fixture");
-            fixture.SetAttribute("uuid", System.Guid.NewGuid().ToString());
+            var fixture = doc.CreateElement("Fixture");
+            fixture.SetAttribute("uuid", Guid.NewGuid().ToString());
             fixture.SetAttribute("name", data.name);
-            XmlElement matrix = doc.CreateElement("Matrix");
+            
+            var matrix = doc.CreateElement("Matrix");
             matrix.InnerText = ToXMLTransformMatrix(data.position, data.rotation);
-            XmlElement FixtureID = doc.CreateElement("FixtureID");
+            
+            var FixtureID = doc.CreateElement("FixtureID");
             FixtureID.InnerText = data.id.ToString();
 
-            XmlElement Addresses = doc.CreateElement("Addresses");
-            XmlElement Address = doc.CreateElement("Address");
+            var Addresses = doc.CreateElement("Addresses");
+            var Address = doc.CreateElement("Address");
             Address.InnerText = GetAbsoluteDMXAddress(data.universe, data.channel).ToString();
             Addresses.AppendChild(Address);
 
-            XmlElement DMXInvertPan = doc.CreateElement("DMXInvertPan");
+            var DMXInvertPan = doc.CreateElement("DMXInvertPan");
             DMXInvertPan.InnerText = data.invertPan.ToString();
-            XmlElement DMXInvertTilt = doc.CreateElement("DMXInvertTilt");
+            var DMXInvertTilt = doc.CreateElement("DMXInvertTilt");
             DMXInvertTilt.InnerText = data.invertTilt.ToString();
-
-
-            XmlElement UnitNumber = doc.CreateElement("UnitNumber");
+            
+            var UnitNumber = doc.CreateElement("UnitNumber");
             UnitNumber.InnerText = "0";
 
-            XmlElement GDTFSpec = doc.CreateElement("GDTFSpec");
+            var GDTFSpec = doc.CreateElement("GDTFSpec");
             GDTFSpec.InnerText = data.fixtureDefintion + ".gdtf";
 
-            XmlElement GDTFMode = doc.CreateElement("GDTFMode");
+            var GDTFMode = doc.CreateElement("GDTFMode");
             GDTFMode.InnerText = "Default";
 
             fixture.AppendChild(matrix);
@@ -821,81 +624,65 @@ namespace VRSL.EditorScripts
             fixture.AppendChild(DMXInvertPan);
             fixture.AppendChild(DMXInvertTilt);
             
-
-
             return fixture;
         }
-
-
-        string GeneralSceneDescriptionXML(JSONDMXFixtureData[] data)
+        
+        private string GeneralSceneDescriptionXML(JSONDMXFixtureData[] data)
         {
             string output = "";
             try
             {
-            // output += "\n" + @"<GeneralSceneDescription verMajor=""1"" verMinor=""6"" provider=""VR Stage Lighting"" providerVersion""1"">";
-            // output += "\n";
-            // output += "\n" + " <UserData/>";
-            XmlDocument xdoc = new XmlDocument();
-            XmlNode docNode = xdoc.CreateXmlDeclaration("1.0", null, "no");
-            xdoc.AppendChild(docNode);
+                // output += "\n" + @"<GeneralSceneDescription verMajor=""1"" verMinor=""6"" provider=""VR Stage Lighting"" providerVersion""1"">";
+                // output += "\n";
+                // output += "\n" + " <UserData/>";
+                XmlDocument xdoc = new XmlDocument();
+                XmlNode docNode = xdoc.CreateXmlDeclaration("1.0", null, "no");
+                xdoc.AppendChild(docNode);
 
 
-           // UnityEngine.Debug.Log("Creating XML Document");
-            //xdoc.LoadXml(@"<?xml version=""1.0"" encoding=""UTF-8""?>");
-           // UnityEngine.Debug.Log("Loading XML Document");
-            XmlElement GeneralSceneDescription = xdoc.CreateElement("GeneralSceneDescription");
-          //  UnityEngine.Debug.Log("Generating Scene Description Node");
-            GeneralSceneDescription.SetAttribute("verMajor", "1");
-            GeneralSceneDescription.SetAttribute("verMinor", "6");
-            GeneralSceneDescription.SetAttribute("provider", "VR Stage Lighting");
-            GeneralSceneDescription.SetAttribute("providerVersion", "1");
-           // UnityEngine.Debug.Log("Finished setting attributes for General Scene Description");
+                //UnityEngine.Debug.Log("Creating XML Document");
+                //xdoc.LoadXml(@"<?xml version=""1.0"" encoding=""UTF-8""?>");
+                //UnityEngine.Debug.Log("Loading XML Document");
+                XmlElement GeneralSceneDescription = xdoc.CreateElement("GeneralSceneDescription");
+                //UnityEngine.Debug.Log("Generating Scene Description Node");
+                GeneralSceneDescription.SetAttribute("verMajor", "1");
+                GeneralSceneDescription.SetAttribute("verMinor", "6");
+                GeneralSceneDescription.SetAttribute("provider", "VR Stage Lighting");
+                GeneralSceneDescription.SetAttribute("providerVersion", "1");
+                //UnityEngine.Debug.Log("Finished setting attributes for General Scene Description");
+               
+                var UserData = xdoc.CreateElement("UserData");
+                var Scene = xdoc.CreateElement("Scene");
+                var Layers = xdoc.CreateElement("Layers");
+                var Layer = xdoc.CreateElement("Layer");
 
-           
-           XmlElement UserData = xdoc.CreateElement("UserData");
-           XmlElement Scene = xdoc.CreateElement("Scene");
-           XmlElement Layers = xdoc.CreateElement("Layers");
-           XmlElement Layer = xdoc.CreateElement("Layer");
+                Layer.SetAttribute("name", "VRSL Main");
+                Layer.SetAttribute("uuid", Guid.NewGuid().ToString());
+                var ChildList = xdoc.CreateElement("ChildList");
+            
+                foreach(JSONDMXFixtureData fixture in data)
+                {
+                    XmlElement f = GenerateFixtureElement(xdoc, fixture);
+                    ChildList.AppendChild(f);
+                }
+                
+                Layer.AppendChild(ChildList);
+                Layers.AppendChild(Layer);
+                Scene.AppendChild(Layers);
+                
+                GeneralSceneDescription.AppendChild(UserData);
+                GeneralSceneDescription.AppendChild(Scene);
+               
+                xdoc.AppendChild(GeneralSceneDescription);
+                UnityEngine.Debug.Log("Appending Scene Description");
+                
+                // var buffer = new StringBuilder();
+                // var writer = XmlWriter.Create(buffer, new XmlWriterSettings { Indent = true, Encoding = Encoding.UTF8});
+                // xdoc.Save(writer);
+                // writer.Close();
 
-           Layer.SetAttribute("name", "VRSL Main");
-           Layer.SetAttribute("uuid", System.Guid.NewGuid().ToString());
-           XmlElement ChildList = xdoc.CreateElement("ChildList");
-        
-            foreach(JSONDMXFixtureData fixture in data)
-            {
-                XmlElement f = GenerateFixtureElement(xdoc, fixture);
-                ChildList.AppendChild(f);
-            }
-           Layer.AppendChild(ChildList);
-           Layers.AppendChild(Layer);
-           Scene.AppendChild(Layers);
-
-        
-           GeneralSceneDescription.AppendChild(UserData);
-           GeneralSceneDescription.AppendChild(Scene);
-           
-           
-           
-           
-           
-           
-           
-           
-           
-            xdoc.AppendChild(GeneralSceneDescription);
-            UnityEngine.Debug.Log("Appending Scene Description");
-
-
-
-
-
-            // var buffer = new StringBuilder();
-            // var writer = XmlWriter.Create(buffer, new XmlWriterSettings { Indent = true, Encoding = Encoding.UTF8});
-            // xdoc.Save(writer);
-            // writer.Close();
-
-            // output = buffer.ToString();
-            //output = ToEncoding(xdoc,Encoding.UTF8);
+                // output = buffer.ToString();
+                //output = ToEncoding(xdoc,Encoding.UTF8);
 
                 var sb = new StringBuilder();
                 var sw = new StringWriterUtf8(sb);
@@ -919,17 +706,17 @@ namespace VRSL.EditorScripts
             return output;
         }
 
-        bool CapContains(string source, string toCheck, StringComparison comp)
+        private bool CapContains(string source, string toCheck, StringComparison comp)
         {
             return source?.IndexOf(toCheck, comp) >= 0;
         }
 
-        string FixtureDefinitionXML(string name, string[] channels)
+        private string FixtureDefinitionXML(string name, string[] channels)
         {
             string output = "";
             try
             {
-                XmlDocument xdoc = new XmlDocument();
+                var xdoc = new XmlDocument();
                 XmlNode docNode = xdoc.CreateXmlDeclaration("1.0", null, "no");
                 xdoc.AppendChild(docNode);
 
@@ -954,6 +741,7 @@ namespace VRSL.EditorScripts
                 bool hasLaserBeam = false;
                 bool hasFog = false;
                 StringComparison comp = StringComparison.OrdinalIgnoreCase;
+                
                 for(int i = 0; i < channels.Length; i++)
                 {
                     string c = channels[i];
@@ -1147,12 +935,7 @@ namespace VRSL.EditorScripts
                 FeatureGroups.AppendChild(FeatureGroup_Other);   
 
                 int numOfGobos = 8;
-
-
-
-
-
-
+                
                 AttributeDefinitions.AppendChild(FeatureGroups);
 
 //////////////////////////////////////////////////////////////////////
@@ -1316,8 +1099,6 @@ namespace VRSL.EditorScripts
                 AttributeDefinitions.AppendChild(Attributes);
 //////////////////////////////////////////////////////////////////////
 
-
-
                 XmlElement DMXModes = xdoc.CreateElement("DMXModes");
 
                 XmlElement Models = xdoc.CreateElement("Models");
@@ -1358,24 +1139,14 @@ namespace VRSL.EditorScripts
 
                 FixtureType.AppendChild(Models);
                 FixtureType.AppendChild(Geometries);
-
-
-
-
-
-
+                
                 XmlElement DMXMode = xdoc.CreateElement("DMXMode");
                 DMXMode.SetAttribute("Description", "Default Channel Mode");
                 DMXMode.SetAttribute("Geometry", "Base");
                 DMXMode.SetAttribute("Name", "Default");
 
                 XmlElement DMXChannels = xdoc.CreateElement("DMXChannels");
-
-
-
-
-
-
+                
                 //int fineOffset = 0;
 
                 for(int i = 0; i < channels.Length; i++)
@@ -1492,11 +1263,6 @@ namespace VRSL.EditorScripts
                     DMXChannels.AppendChild(DMXChannel);
                 }
 
-
-
-
-
-
                 DMXMode.AppendChild(DMXChannels);
                 DMXModes.AppendChild(DMXMode);
                 FixtureType.AppendChild(DMXModes);
@@ -1507,9 +1273,7 @@ namespace VRSL.EditorScripts
                 // var writer = XmlWriter.Create(buffer, new XmlWriterSettings { Indent = true, Encoding = Encoding.UTF8});
                 // xdoc.Save(writer);
                 // writer.Close();
-
                 
-
                // output = ToEncoding(xdoc,Encoding.UTF8);
                 var sb = new StringBuilder();
                 var sw = new StringWriterUtf8(sb);
@@ -1542,8 +1306,7 @@ namespace VRSL.EditorScripts
                 {
                     jsonFixtureData[i] = new JSONDMXFixtureData(data[i], definitions, fixDefAsset.GetChannelDefinition(data[i].fixtureDefintion));
                 }
-
-
+                
                 string assetPath = AssetDatabase.GetAssetPath(this);
                 string filePath = Path.Combine(Directory.GetCurrentDirectory(), assetPath);
                 string targetString = this.name + ".asset";
@@ -1554,130 +1317,45 @@ namespace VRSL.EditorScripts
                 {
                     using (var archive = new ZipArchive(fileStream, ZipArchiveMode.Create, true))
                     {
-                            //CREATE SCENE DESCRIPTION ////////////////////////////////////////
-                            var sceneDescriptionBytes = Encoding.ASCII.GetBytes(GeneralSceneDescriptionXML(jsonFixtureData));
-                            var sceneDescriptionName = "GeneralSceneDescription.xml";
-                            var sceneDescriptionEntry = archive.CreateEntry(sceneDescriptionName, System.IO.Compression.CompressionLevel.NoCompression);
-                            using (var zipStream = sceneDescriptionEntry.Open())
-                            {
-                                zipStream.Write(sceneDescriptionBytes, 0, sceneDescriptionBytes.Length);
-                            }
-                            /////////////////////////////////////////////////////////////////
-                            for(int i = 0; i < fixDefAsset.definitions.Length; i++)
-                            {
-                                var defName = fixDefAsset.definitions[i].name + ".gdtf";
-                                var fixDefEntry = archive.CreateEntry(defName, System.IO.Compression.CompressionLevel.NoCompression);
-
-
-
-
-                                
-                                using (var memoryStream = new MemoryStream())
-                                {
-                                    using (var defArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
-                                    {
-                                        var descriptionBytes = Encoding.ASCII.GetBytes(FixtureDefinitionXML(fixDefAsset.definitions[i].name, fixDefAsset.definitions[i].channelNames));
-                                        var descriptionEntry = defArchive.CreateEntry("description.xml", System.IO.Compression.CompressionLevel.NoCompression);
-                                        using (var fixDefZipStream = descriptionEntry.Open())
-                                        {
-                                            fixDefZipStream.Write(descriptionBytes, 0, descriptionBytes.Length);
-                                        } 
-                                        using (var zipStream = fixDefEntry.Open())
-                                        {
-                                            defArchive.Dispose();
-                                            zipStream.Write(memoryStream.ToArray(), 0, memoryStream.ToArray().Length);
-                                        }
-                                    }
-
-                                    memoryStream.Dispose();
-                                }
-                            }
+                        //CREATE SCENE DESCRIPTION ////////////////////////////////////////
+                        var sceneDescriptionBytes = Encoding.ASCII.GetBytes(GeneralSceneDescriptionXML(jsonFixtureData));
+                        var sceneDescriptionName = "GeneralSceneDescription.xml";
+                        var sceneDescriptionEntry = archive.CreateEntry(sceneDescriptionName, System.IO.Compression.CompressionLevel.NoCompression);
+                        using (var zipStream = sceneDescriptionEntry.Open())
+                        {
+                            zipStream.Write(sceneDescriptionBytes, 0, sceneDescriptionBytes.Length);
+                        }
+                        /////////////////////////////////////////////////////////////////
+                        for(int i = 0; i < fixDefAsset.definitions.Length; i++)
+                        {
+                            var defName = fixDefAsset.definitions[i].name + ".gdtf";
+                            var fixDefEntry = archive.CreateEntry(defName, System.IO.Compression.CompressionLevel.NoCompression);
                             
+                            using (var memoryStream = new MemoryStream())
+                            {
+                                using (var defArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+                                {
+                                    var descriptionBytes = Encoding.ASCII.GetBytes(FixtureDefinitionXML(fixDefAsset.definitions[i].name, fixDefAsset.definitions[i].channelNames));
+                                    var descriptionEntry = defArchive.CreateEntry("description.xml", System.IO.Compression.CompressionLevel.NoCompression);
+                                    using (var fixDefZipStream = descriptionEntry.Open())
+                                    {
+                                        fixDefZipStream.Write(descriptionBytes, 0, descriptionBytes.Length);
+                                    } 
+                                    using (var zipStream = fixDefEntry.Open())
+                                    {
+                                        defArchive.Dispose();
+                                        zipStream.Write(memoryStream.ToArray(), 0, memoryStream.ToArray().Length);
+                                    }
+                                }
 
+                                memoryStream.Dispose();
+                            }
+                        }
                     }
                 }
                 AssetDatabase.Refresh();
                 UnityEngine.Debug.Log("Sucessfully Exported MVR File");         
             }
-        }
-    }
-
-    [CustomEditor(typeof(VRSL_DMXPatchSettings))]
-    public class VRSL_DMXPatchSettings_Editor: Editor 
-    {
-        private SerializedProperty data, idStrings, targetScene, scenePath;
-        SceneAsset sceneAsset;
-        VRSL_DMXPatchSettings settings = null;
-        private void OnEnable()
-        {
-            // // Link the properties
-            // data = serializedObject.FindProperty("data");
-            // idStrings = serializedObject.FindProperty("idStrings");
-            // targetScene = serializedObject.FindProperty("targetScene");
-            // scenePath = serializedObject.FindProperty("scenePath");
-            
-            settings = (VRSL_DMXPatchSettings) target;
-            sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(settings.scenePath);
-        }
-
-        public override void OnInspectorGUI() 
-        {
-            DrawDefaultInspector();
-            SerializedObject so = new SerializedObject(settings);
-            // Load the real class values into the serialized copy
-            so.Update();
-            if(settings != null)
-            {
-                EditorGUI.BeginDisabledGroup(true);
-                EditorGUILayout.ObjectField("Target Scene", sceneAsset, typeof(SceneAsset), false);
-                EditorGUI.EndDisabledGroup();
-                // if(GUILayout.Button("Check Data Status"))
-                // {
-                //     settings.CheckData();
-                // }
-                if(GUILayout.Button("Save Scene DMX Patch Data"))
-                {
-                    settings.SetDMXFixtureData();
-                    settings.ForceSave();
-                 //   EditorUtility.SetDirty(settings);
-                 //   Undo.RecordObject(settings, "Undo Save Scene DXM Patch Data");
-
-                }
-                if(GUILayout.Button("Load Scene DMX Patch Data"))
-                {
-                    settings.LoadDMXFixtureData();
-                }
-                if(GUILayout.Button("Export To JSON File"))
-                {
-                    settings.ToJsonFile(true);
-                }
-                if(GUILayout.Button("Export To MVR File"))
-                {
-                    settings.ToMVRFile();
-                }
-                if(GUILayout.Button("Export To PDF File (Windows)"))
-                {
-#if !UNITY_EDITOR_LINUX && !UNITY_ANDROID  && !UNITY_IOS
-                    settings.ToPDF();
-#else
-                    EditorUtility.DisplayDialog("PDF export error", "PDF export is currently a Windows only feature", "OK", "Cancel");
-#endif
-                }
-                if(settings.data != null)
-                {
-                    for(int i = 0; i < settings.data.Length; i++)
-                    {
-                        EditorGUILayout.BeginHorizontal("box");
-                        EditorGUILayout.LabelField(settings.data[i].name);
-                        EditorGUILayout.LabelField("DMX Universe: " + settings.data[i].dmxUniverse, GUILayout.Width(100f));
-                        EditorGUILayout.LabelField("DMX Channel: " + settings.data[i].dmxChannel);
-                        EditorGUILayout.EndHorizontal();
-                    }
-                }
-            }
-
-            // Write back changed values and evtl mark as dirty and handle undo/redo
-            so.ApplyModifiedProperties();
         }
     }
 }

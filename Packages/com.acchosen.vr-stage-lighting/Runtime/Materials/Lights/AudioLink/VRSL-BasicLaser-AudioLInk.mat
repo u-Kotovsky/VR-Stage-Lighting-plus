@@ -116,7 +116,7 @@ Material:
     - _TextureColorSampleY: 0.5
     - _ThemeColorTarget: 0
     - _UVSec: 0
-    - _UniversalIntensity: 0.8
+    - _UniversalIntensity: 1
     - _UseDepthLight: 1
     - _UseTraditionalSampling: 0
     - _VertexConeLength: 1.19

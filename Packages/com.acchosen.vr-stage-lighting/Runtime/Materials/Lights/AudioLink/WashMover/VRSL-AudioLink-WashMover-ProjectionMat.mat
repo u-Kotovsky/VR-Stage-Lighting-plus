@@ -207,7 +207,7 @@ Material:
     - _ThemeColorTarget: 0
     - _TiltInvert: 0
     - _TriplanarFalloff: 1
-    - _UniversalIntensity: 0.8
+    - _UniversalIntensity: 1
     - _UseRawGrid: 1
     - _UseTraditionalSampling: 0
     - _UseWorldNorm: 0

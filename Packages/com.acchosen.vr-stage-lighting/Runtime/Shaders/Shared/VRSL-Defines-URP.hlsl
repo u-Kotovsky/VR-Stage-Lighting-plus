@@ -15,14 +15,22 @@ half _BlindingAngleMod;
 #ifdef VRSL_DMX
     uint _UseRawGrid, _EnableExtraChannels;
     uniform half4 _Udon_DMXGridRenderTexture_TexelSize;
+
     TEXTURE2D(_Udon_DMXGridRenderTexture);
     SAMPLER(sampler_Udon_DMXGridRenderTexture);
+
     TEXTURE2D(_Udon_DMXGridRenderTextureMovement);
     SAMPLER(sampler_Udon_DMXGridRenderTextureMovement);
+
     TEXTURE2D(_Udon_DMXGridStrobeOutput);
     SAMPLER(sampler_Udon_DMXGridStrobeOutput);
+
     TEXTURE2D(_Udon_DMXGridSpinTimer);
     SAMPLER(sampler_Udon_DMXGridSpinTimer);
+
+    TEXTURE2D(_Udon_GlobalChannelCRT);
+    SAMPLER(sampler_Udon_GlobalChannelCRT);
+    
     half _SpinSpeed;
 
 #ifdef FIXTURE_EMIT

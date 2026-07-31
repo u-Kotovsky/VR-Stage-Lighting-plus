@@ -28,7 +28,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DMXTexture:
-        m_Texture: {fileID: 8400000, guid: 87c3021d20ea2004cad2ca0d2dd14d07, type: 2}
+        m_Texture: {fileID: 8600000, guid: d6f005c57a9df674cb5cf1e160f92029, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _OSCGridRenderTexture:

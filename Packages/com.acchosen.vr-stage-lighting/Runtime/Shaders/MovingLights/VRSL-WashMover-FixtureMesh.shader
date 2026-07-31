@@ -5,14 +5,10 @@
 		//[Header (INSTANCED PROPERITES)]
 		 [Enum(Legacy, 0, GGX, 1)]_LightingModel("Lighting Model", Int) = 0
 		 [HideInInspector]_DMXChannel ("Starting DMX Channel", Int) = 0
-		 [HideInInspector][Toggle] _NineUniverseMode ("Extended Universe Mode", Int) = 0
 		 [HideInInspector][Toggle] _PanInvert ("Invert Mover Pan", Int) = 0
 		 [HideInInspector][Toggle] _TiltInvert ("Invert Mover Tilt", Int) = 0
 		 [Toggle] _EnableStrobe ("Enable Strobe", Int) = 0
-		 [Toggle] _EnableVerticalMode ("Enable Vertical Mode", Int) = 0
 		 [Toggle] _EnableDMX ("Enable Stream DMX/DMX Control", Int) = 0
-         [Toggle] _EnableFineChannels ("Enable Fine Channels (For Pan/Tilt)", Int) = 0
-		 [Toggle] _EnableCompatibilityMode ("Enable Compatibility Mode", Int) = 0
 		 [HideInInspector]_FixtureBaseRotationY("Mover Pan Offset (Blue + Green)", Range(-540,540)) = 0
 		 [HideInInspector]_FixtureRotationX("Mover Tilt Offset (Blue)", Range(-180,180)) = 0
 		 [HideInInspector]_ProjectionSelection ("GOBO Selection", Range(0,6)) = 0
@@ -52,13 +48,12 @@
 		_OcclusionStrength("Occlusion Strength", Range(0,1)) = 0
 		_DecorativeEmissiveMap("Decorative Emissive Map", 2D) = "black" {}
 		_DecorativeEmissiveMapStrength("Decorative Emissive Map Strength", Range(0,1)) = 0
-
 	}
     SubShader
     {
         Tags
         {
-            "Queue" = "AlphaTest+1" "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline"
+            "Queue" = "AlphaTest+1" "RenderType" = "Opaque" "RenderingPipeline" = "UniversalPipeline"
         }
 
         Pass

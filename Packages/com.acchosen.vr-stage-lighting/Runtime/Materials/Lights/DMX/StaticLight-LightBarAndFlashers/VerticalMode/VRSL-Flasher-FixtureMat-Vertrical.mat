@@ -244,7 +244,7 @@ Material:
     - _UVScale: 1
     - _UVScroll: 0
     - _UVSec: 0
-    - _UniversalIntensity: 0.8
+    - _UniversalIntensity: 1
     - _UseDepthLight: 1
     - _UsePreMultiplyAlpha: 0
     - _UseRawGrid: 1

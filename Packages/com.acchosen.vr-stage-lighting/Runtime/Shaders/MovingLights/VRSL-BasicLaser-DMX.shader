@@ -3,11 +3,7 @@
     Properties
     {
         [Toggle] _EnableDMX ("Enable Stream DMX/DMX Control", Int) = 0
-        [Toggle] _EnableFineChannels ("Enable Fine Channels (For Pan/Tilt)", Int) = 0
-        [Toggle] _EnableCompatibilityMode ("Enable Compatibility Mode", Int) = 0
-        [Toggle] _EnableVerticalMode ("Enable Vertical Mode", Int) = 0
-        _DMXChannel ("DMX Channel Number)", Int) = 0
-        [HideInInspector][Toggle] _NineUniverseMode ("Extended Universe Mode", Int) = 0
+        _DMXChannel ("DMX Channel Number", Int) = 0
         _UniversalIntensity ("Universal Intensity", Range (0,1)) = 1
         _FinalIntensity("Final Intensity", Range(0,1)) = 1
         _GlobalIntensity ("Global Intensity", Range(0,1)) = 1
@@ -18,7 +14,7 @@
         _VertexConeWidth ("Cone Width", Range(-3.75,20)) = 0
         _VertexConeLength("Cone Length", Range(-0.5,5)) = 0
         _ZConeFlatness("Z Flatness", Range(0,1.999)) = 0
-     //  _XConeFlatness("X Flatness", Range(0,1.99)) = 0
+        //  _XConeFlatness("X Flatness", Range(0,1.99)) = 0
         _ZRotation ("Z Rotation", Range (-90, 90)) = 0
         _XRotation ("X Rotation", Range (-90, 90)) = 0
         _YRotation ("Y Rotation", Range (-180, 180)) = 0
@@ -28,19 +24,15 @@
         _FadeStrength ("Cone Edge Fade", Range(1,2)) = 0
         _LaserSoftening ("Laser Softness", Range(0.05,10)) = 0
         _InternalShine ("Internal Shine Strength", Range(0,5)) = 1
-         _InternalShineLength ("Internal Shine Length", Range(0.001,500)) = 12.1
+        _InternalShineLength ("Internal Shine Length", Range(0.001,500)) = 12.1
         _Scroll ("Scroll", Range(-1, 1)) = 1
         _ScrollOffset ("Scroll Offset", Range(0.00001, 0.00003)) = 0.00001
-        
-        
         // [NoScaleOffset] _Udon_DMXGridRenderTexture("DMX Grid Render Texture (RAW Unsmoothed)", 2D) = "white" {}
-		// [NoScaleOffset] _Udon_DMXGridRenderTextureMovement("DMX Grid Render Texture (To Control Lights)", 2D) = "white" {}
-
-
+        // [NoScaleOffset] _Udon_DMXGridRenderTextureMovement("DMX Grid Render Texture (To Control Lights)", 2D) = "white" {}
     }
     SubShader
     {
-		Tags { "RenderType"="Transparent" "Queue" = "Transparent+1" "RenderPipeline" = "UniversalPipeline" }
+		Tags { "RenderType"="Transparent" "Queue" = "Transparent+1" "RenderingPipeline" = "UniversalPipeline" }
 		Cull Off
 		Blend One One
 		Zwrite Off
@@ -106,7 +98,6 @@
                 UNITY_DEFINE_INSTANCED_PROP(uint, _EnableColorTextureSample)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _LaserCount)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _EnableDMX)
-                UNITY_DEFINE_INSTANCED_PROP(uint, _EnableFineChannels)
                 UNITY_DEFINE_INSTANCED_PROP(half, _Scroll)
                 UNITY_DEFINE_INSTANCED_PROP(half, _XRotation)
                 UNITY_DEFINE_INSTANCED_PROP(half, _YRotation)
@@ -443,7 +434,6 @@
                 UNITY_DEFINE_INSTANCED_PROP(uint, _EnableColorTextureSample)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _LaserCount)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _EnableDMX)
-                UNITY_DEFINE_INSTANCED_PROP(uint, _EnableFineChannels)
                 UNITY_DEFINE_INSTANCED_PROP(half, _Scroll)
                 UNITY_DEFINE_INSTANCED_PROP(half, _XRotation)
                 UNITY_DEFINE_INSTANCED_PROP(half, _YRotation)
@@ -580,9 +570,7 @@
                 o.panTiltLengthWidth.y = lerp(-90,90,clamp(getValueAtCoords(dmx + (uint) 1, _Udon_DMXGridRenderTextureMovement), 0.0,0.9999)); // ch 2
                 o.panTiltLengthWidth.z = lerp(-0.5,5,clamp(getValueAtCoords(dmx + (uint) 2, _Udon_DMXGridRenderTexture), 0.0,0.9999)); // ch 3
                 o.panTiltLengthWidth.w = lerp(-3.75,20,clamp(getValueAtCoords(dmx + (uint) 3, _Udon_DMXGridRenderTexture), 0.0,0.9999)); // ch 4
-
-
-    
+                
                 //replacement for _WorldSpaceCameraPos
                 float3 wpos;
                 wpos.x = unity_CameraToWorld[0][3];
@@ -591,7 +579,6 @@
 
                 o.uv = TRANSFORM_TEX(v.uv, _MainTex);
                 o.uv2 = TRANSFORM_TEX(v.uv2, _MainTex);
-                 
                 
                 //Cone Length
                 half length = IF(isDMX() > 0, o.panTiltLengthWidth.z, getConeLength());

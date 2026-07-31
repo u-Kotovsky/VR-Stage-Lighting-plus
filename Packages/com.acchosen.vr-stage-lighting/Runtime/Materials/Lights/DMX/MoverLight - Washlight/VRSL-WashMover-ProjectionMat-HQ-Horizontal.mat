@@ -202,7 +202,7 @@ Material:
     - _TextureSampleMode: 0
     - _TiltInvert: 0
     - _TriplanarFalloff: 1
-    - _UniversalIntensity: 0.8
+    - _UniversalIntensity: 1
     - _UseRawGrid: 1
     - _UseWorldNorm: 0
     - _XOffset: 0

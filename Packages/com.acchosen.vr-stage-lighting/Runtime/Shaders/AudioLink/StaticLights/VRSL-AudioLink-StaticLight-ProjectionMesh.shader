@@ -115,7 +115,7 @@
     {
         Tags
         {
-            "Queue" = "Transparent+1" "IgnoreProjector"="True" "RenderType" = "Transparent" "RenderPipeline" = "UniversalPipeline"
+            "Queue" = "Transparent+1" "IgnoreProjector"="True" "RenderType" = "Transparent" "RenderingPipeline" = "UniversalPipeline"
         }
         Pass
         {

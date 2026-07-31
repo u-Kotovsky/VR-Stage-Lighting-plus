@@ -13,6 +13,7 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _2D_NOISE_ON
+  - _HQ_MODE
   - _MAGIC_NOISE_ON_HIGH
   - _MAGIC_NOISE_ON_MED
   - _USE_DEPTH_LIGHT
@@ -175,7 +176,7 @@ Material:
     - _GradientMod: 2.248
     - _GradientModGOBO: 2.25
     - _GreenMultiplier: 1
-    - _HQMode: 0
+    - _HQMode: 1
     - _InnerFadeStrength: 7
     - _InnerIntensityCurve: 12
     - _IntensityCutoff: 0
@@ -235,7 +236,7 @@ Material:
     - _PulseSpeed: 0
     - _RTLMStrength: 1
     - _RedMultiplier: 1
-    - _RenderMode: 1
+    - _RenderMode: 0
     - _RenderTextureMultiplier: 2
     - _Saturation: 1
     - _SaturationLength: 14.91
@@ -267,7 +268,7 @@ Material:
     - _TiltInvert: 0
     - _ToggleMagicNoise: 1
     - _TriplanarFalloff: 1
-    - _UniversalIntensity: 0.8
+    - _UniversalIntensity: 1
     - _UseDepthLight: 1
     - _UseRawGrid: 1
     - _UseTraditionalSampling: 1

@@ -12,11 +12,23 @@ sampler2D _MainTex;
 #ifdef VRSL_DMX
     uint _UseRawGrid, _EnableExtraChannels;
     uniform half4 _Udon_DMXGridRenderTexture_TexelSize;
-    sampler2D _Udon_DMXGridRenderTexture, _Udon_DMXGridRenderTextureMovement, _Udon_DMXGridStrobeOutput, _Udon_DMXGridSpinTimer;
+    /**
+     * _Udon_DMXGridRenderTexture_TexelSize - data below
+     * x = 0.03846154   26      208 (y)
+     * y = 0.004166667  240     1920 (x)
+     * z =              26      208 (y)
+     * w =              240     1920 (x)
+     */
+    sampler2D
+        _Udon_DMXGridRenderTexture,
+        _Udon_DMXGridRenderTextureMovement,
+        _Udon_DMXGridStrobeOutput,
+        _Udon_DMXGridSpinTimer,
+        _Udon_GlobalChannelCRT;
     half _SpinSpeed;
 
     #ifdef FIXTURE_EMIT
-        Texture2D   _Udon_VRSL_GI_LightTexture;
+        Texture2D _Udon_VRSL_GI_LightTexture;
         uniform half4  _Udon_VRSL_GI_LightTexture_TexelSize;
         SamplerState    VRSL_PointClampSampler;
         int     _Udon_VRSL_GI_LightCount;
@@ -63,8 +75,8 @@ float4x4 _viewToWorld;
 half _MinimumBeamRadius;
 
 
-#if defined(VOLUMETRIC_YES)
 
+#if defined(VOLUMETRIC_YES)
     #ifdef _HQ_MODE
         sampler2D _NoiseTexHigh;
     #else
@@ -91,19 +103,16 @@ half _MinimumBeamRadius;
     half _Noise2YPotato;
     half _Noise2ZPotato;
     half _Noise2PowerPotato;
-    
-    
 #endif
 
-    #ifdef _HQ_MODE
-        half4 _NoiseTexHigh_ST;
-    #else
-        half4 _NoiseTex_ST;
-    #endif
+#ifdef _HQ_MODE
+    half4 _NoiseTexHigh_ST;
+#else
+    half4 _NoiseTex_ST;
+#endif
 
 half _NoisePower, _NoiseSeed;
 uint _ToggleMagicNoise;
-
 
 half _SpecularLMOcclusion;
 half _SpecLMOcclusionAdjust;
@@ -113,9 +122,7 @@ half _RTLMStrength;
 int _TextureSampleMode;
 int _LightProbeMethod;
 half _Saturation, _SaturationLength, _LensMaxBrightness, _UniversalIntensity;
-uint _EnableCompatibilityMode, _EnableVerticalMode;
 uint _GoboBeamSplitEnable;
-
 
 uniform const half compatSampleYAxis = 0.019231;
 uniform const half standardSampleYAxis = 0.00762;
@@ -160,10 +167,12 @@ half _ClippingThreshold, _RenderTextureMultiplier;
 
 UNITY_INSTANCING_BUFFER_START(Props)
     #ifdef VRSL_DMX
-        UNITY_DEFINE_INSTANCED_PROP(uint, _DMXChannel)
-        UNITY_DEFINE_INSTANCED_PROP(uint, _NineUniverseMode)
         UNITY_DEFINE_INSTANCED_PROP(uint, _EnableDMX)
-        UNITY_DEFINE_INSTANCED_PROP(uint, _EnableFineChannels)
+        UNITY_DEFINE_INSTANCED_PROP(uint, _DMXChannel)
+
+        UNITY_DEFINE_INSTANCED_PROP(uint, _EnableDMXTranslateChannel)
+        UNITY_DEFINE_INSTANCED_PROP(uint, _DMXTranslateChannel)
+
         UNITY_DEFINE_INSTANCED_PROP(uint, _LegacyGoboRange)
     #endif
     #ifdef VRSL_AUDIOLINK
@@ -199,4 +208,3 @@ UNITY_INSTANCING_BUFFER_START(Props)
     UNITY_DEFINE_INSTANCED_PROP(half, _MaxMinPanAngle)
     UNITY_DEFINE_INSTANCED_PROP(half, _MaxMinTiltAngle)
 UNITY_INSTANCING_BUFFER_END(Props)
-

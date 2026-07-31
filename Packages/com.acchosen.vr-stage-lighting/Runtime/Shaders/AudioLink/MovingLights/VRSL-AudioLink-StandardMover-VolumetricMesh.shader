@@ -151,7 +151,7 @@
     {
         Tags
         {
-            "Queue" = "Transparent+2" "IgnoreProjector"="True" "RenderType" = "Transparent" "RenderPipeline" = "UniversalPipeline"
+            "Queue" = "Transparent+2" "IgnoreProjector"="True" "RenderType" = "Transparent" "RenderingPipeline" = "UniversalPipeline"
         }
         //Volumetric Pass
         Pass

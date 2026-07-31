@@ -118,7 +118,6 @@
 	}
 #endif
 
-
 half4 CalculateProjectionScaleRange(appdata v, half4 input, half scalar)
 {
 	half4 oldinput = input;
@@ -129,8 +128,6 @@ half4 CalculateProjectionScaleRange(appdata v, half4 input, half scalar)
 	input.xyz = input.xyz + newOrigin;
 	input.xyz = (v.color.r == 1.0 && ceil(v.color.g) == 1) ? input.xyz : oldinput;
 	return input;
-
-
 }
 
 half4 ConeScale(appdata v, half4 input, half scalar)
@@ -165,23 +162,21 @@ half4 ConeScale(appdata v, half4 input, half scalar)
 		return input;
 	#endif
 }
+
 #ifdef VRSL_DMX
 	half4 CalculateConeWidth(appdata v, half4 input, half scalar, uint dmx)
 	{
 		#if defined(VOLUMETRIC_YES)
-
 			// if((ceil(v.color.r) > 0 && ceil(v.color.g) < 1 && ceil(v.color.b) > 0 ))
 			// {
-
 				//Set New Origin
 				half4 newOrigin = input.w * _FixtureRotationOrigin; 
 				input.xyz = input.xyz - newOrigin;
 				scalar = -scalar;
 
 				// Do Transformation
-				
 				//input.xy = input.xy + v.normal.xy * distanceFromFixture;
-			//	v.tangent.y *= 0.1235;
+				//v.tangent.y *= 0.1235;
 				#ifdef WASH
 					scalar *= 2.0;
 					scalar -= 2.50;
@@ -233,7 +228,6 @@ half4 ConeScale(appdata v, half4 input, half scalar)
 			}
 		#endif
 		return input;
-
 	}
 #endif
 #ifdef VRSL_AUDIOLINK
@@ -291,9 +285,6 @@ half4 ConeScale(appdata v, half4 input, half scalar)
 	}
 #endif
 
-
-
-
 inline float4 CalculateFrustumCorrection()
 {
 	float x1 = -UNITY_MATRIX_P._31/(UNITY_MATRIX_P._11*UNITY_MATRIX_P._34);
@@ -324,19 +315,57 @@ half2 GetStripeInfo(uint goboSelection)
 	}
 }
 
+#ifdef DMXTranslate
+	float3 getDMXTranslatePosition()
+	{
+		#define _Bounds float3(180, 180, 75)
 
+		if (isDMXTranslateChannel() == 0)
+			return float3(0, 0, 0);
+			
+		uint ch = getDMXTranslateChannel();
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// We offset value just by 0.5 (in DMX512 range, 0 - 255) so that we can put things in center.
+		half px = getValueAtCoords(ch + 0, _Udon_DMXGridRenderTextureMovement) + (.5 / 255);
+		//half pxfine = getValueAtCoords(ch + 1, _Udon_DMXGridRenderTextureMovement);
+		half py = getValueAtCoords(ch + 1, _Udon_DMXGridRenderTextureMovement) + (.5 / 255);
+		//half pyfine = getValueAtCoords(ch + 3, _Udon_DMXGridRenderTextureMovement);
+		half pz = getValueAtCoords(ch + 2, _Udon_DMXGridRenderTextureMovement) + (.5 / 255);
+		//half pzfine = getValueAtCoords(ch + 5, _Udon_DMXGridRenderTextureMovement);
+
+		return float3(px, pz, 1 - py);
+	}
+
+	float4 calculateTranslation(float4 vertex)
+	{
+		if (isDMXTranslateChannel() == 0)
+			return vertex;
+
+		float3 dmx_pos = getDMXTranslatePosition();
+		
+		float3 localPos = vertex.xyz;
+		//float3 localPos = o.pos.xyz;
+		float4 scaledVertex = float4(localPos, 1.0);
+		float4 worldPos = scaledVertex;// mul(unity_ObjectToWorld, scaledVertex);
+		
+		half3 offset1 = half3(0.5, 0.5, 0.5);
+		half3 pos = (dmx_pos - offset1) * _Bounds.xyz;
+		
+		worldPos.xyz += pos;
+		
+		//return mul(UNITY_MATRIX_VP, worldPos);
+		return worldPos;
+	}
+#endif
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////START VERTEX SHADERS///////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-//VERTEX SHADER
 v2f vert (appdata v)
 {
     v2f o;
+		
 	UNITY_SETUP_INSTANCE_ID(v);
 	UNITY_INITIALIZE_OUTPUT(v2f, o); //DON'T INITIALIZE OR IT WILL BREAK PROJECTION
 	UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
@@ -348,8 +377,7 @@ v2f vert (appdata v)
 		half oscConeWidth = getDMXConeWidth(dmx);
 		half oscPanValue = GetPanValue(dmx);
 		half oscTiltValue = GetTiltValue(dmx);
-
-
+		
 		v.vertex = CalculateConeWidth(v, v.vertex, oscConeWidth, dmx);
 		v.vertex = CalculateProjectionScaleRange(v, v.vertex, _ProjectionRange);
 
@@ -360,11 +388,18 @@ v2f vert (appdata v)
 				v.vertex = ConeScale(v, v.vertex, _MinimumBeamRadius);
 			#endif
 		#endif
+
+		
+		
 		//calculate rotations for verts
 		v.vertex = calculateRotations(v, v.vertex, 0, oscPanValue, oscTiltValue);
+		#ifdef DMXTranslate // Translate object in 3d space based on it's local position
+		v.vertex = calculateTranslation(v.vertex);
+		#endif
 		#if defined(PROJECTION_YES)
 			o.projectionorigin = calculateRotations(v, _ProjectionRangeOrigin, 0, oscPanValue, oscTiltValue);
 		#endif
+		
 		#if defined(VOLUMETRIC_YES)
 			o.coneWidth = oscConeWidth + 1.5;
 			float3 worldCam;
@@ -381,14 +416,15 @@ v2f vert (appdata v)
 				half len = length(objCamPos.xy);
 				len *= (len * _BlindingAngleMod);
 			#endif
+
+		
 			float4 originScreenPos = ComputeScreenPos(UnityObjectToClipPos(_FixtureRotationOrigin));
 			float2 originScreenUV = originScreenPos.xy / originScreenPos.w;
 			o.camAngleCamfade.x = saturate((1-distance(half2(0.5, 0.5), originScreenUV))-0.5);
 			
 			//camAngle = lerp(1, camAngle, len);
 			//o.blindingEffect = lerp(1, o.blindingEffect * 2.5, o.camAngleCamfade.x);
-		//	 #ifndef WASH
-				
+			//#ifndef WASH
 				#if defined(_ALPHATEST_ON) && !SHADER_API_GLES3
 					o.blindingEffect = clamp(0.6/len,1.0,20.0);
 					half endBlind = 1.0;
@@ -438,7 +474,6 @@ v2f vert (appdata v)
 		#endif
 
 		#if defined(PROJECTION_YES) 
-			
 			//UNITY_SETUP_INSTANCE_ID(v);
 			UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 			//move verts to clip space
@@ -494,7 +529,7 @@ v2f vert (appdata v)
 			o.pos = UnityObjectToClipPos(v.vertex);
 			//UNITY_INITIALIZE_OUTPUT(v2f, o);
 			//UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-		//	o.viewDir = ObjSpaceViewDir(v.vertex);
+			//o.viewDir = ObjSpaceViewDir(v.vertex);
 			o.screenPos = ComputeScreenPos (o.pos);
 			//o.uvClone = v.uv2;
 			#ifdef _HQ_MODE
@@ -537,15 +572,11 @@ v2f vert (appdata v)
 
 		//Projection Part - Vertex Shader
 		// #if defined(PROJECTION_YES)
-
-
 		// #endif
 		
 		#if !defined(UNITY_PASS_SHADOWCASTER) && !defined(PROJECTION_YES) && !defined(VOLUMETRIC_YES)
-		
 		o.color = v.color;
 		o.worldPos = mul(unity_ObjectToWorld, v.vertex);
-
 
 		o.intensityStrobe = half2(GetDMXIntensity(dmx, 1.0),GetStrobeOutput(dmx));
 		o.rgbColor = GetDMXColor(dmx);
@@ -569,14 +600,9 @@ v2f vert (appdata v)
 			#endif
 		#endif
 	#endif
+		
 	////////////////////////////////////////END DMX VERTEX//////////////////////////////////////////////////////////////////////
-	
-
-
-
-
-	
-
+		
 	////////////////////////////////////////START AUDIOLINK VERTEX//////////////////////////////////////////////////////////////////////
 
 	#ifdef VRSL_AUDIOLINK
@@ -787,21 +813,14 @@ v2f vert (appdata v)
 		#endif
 	#endif
 
-	////////////////////////////////////////END AUDIOLINK VERTEX//////////////////////////////////////////////////////////////////////
-
     return o;
 }
 
+////////////////////////////////////////END AUDIOLINK VERTEX//////////////////////////////////////////////////////////////////////
 
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////START FRAG SHADERS//////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////START FRAG SHADERS////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if defined(VOLUMETRIC_YES)
 fixed4 frag (v2f i, fixed facePos : VFACE) : SV_Target
@@ -812,7 +831,6 @@ fixed4 frag (v2f i, fixed facePos : VFACE) : SV_Target
 #if !defined(VOLUMETRIC_YES)				
 fixed4 frag (v2f i) : SV_Target
 {
-	
     //Return only this if in the shadowcaster
     #if defined(UNITY_PASS_SHADOWCASTER) && !defined(FIXTURE_SHADOWCAST)
 	if(i.color.r > 0 && i.color.b > 0)
@@ -825,8 +843,8 @@ fixed4 frag (v2f i) : SV_Target
 		SHADOW_CASTER_FRAGMENT(i);
 	}
 
-	// #elif defined (VOLUMETRIC_YES)
-	// 	return VolumetricLightingBRDF(i);
+	//#elif defined (VOLUMETRIC_YES)
+	//return VolumetricLightingBRDF(i);
 	#elif defined (PROJECTION_YES)
 		return ProjectionFrag(i);
 
@@ -838,6 +856,3 @@ fixed4 frag (v2f i) : SV_Target
     #endif
 }
 #endif
-
-
-

@@ -120,7 +120,7 @@ Material:
     - _UVSec: 0
     - _UVx: 0
     - _UVy: 0
-    - _UniversalIntensity: 0.8
+    - _UniversalIntensity: 1
     - _VertexConeFlatness: 1
     - _VertexConeLength: 1
     - _VertexConeWidth: -3.62

@@ -55,7 +55,7 @@
     {
         Tags
         {
-            "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline"
+            "RenderType" = "Opaque" "RenderingPipeline" = "UniversalPipeline"
         }
         LOD 200
 

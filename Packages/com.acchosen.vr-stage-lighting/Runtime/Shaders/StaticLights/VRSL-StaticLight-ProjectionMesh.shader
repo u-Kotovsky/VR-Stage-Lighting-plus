@@ -1,17 +1,10 @@
 ﻿Shader "VRSL/Standard Static/Projection"
 {
-	
 	Properties
 	{
-		
 		//[Header (INSTANCED PROPERITES)]
 		 [HideInInspector]_DMXChannel ("DMX Fixture Number/Sector (Per 13 Channels)", Int) = 0
-		  [Toggle] _NineUniverseMode ("Extended Universe Mode", Int) = 0
-
 		 [HideInInspector][Toggle] _EnableStrobe ("Enable Strobe", Int) = 0
-
-		 [Toggle] _EnableCompatibilityMode ("Enable Compatibility Mode", Int) = 0
-		 [Toggle] _EnableVerticalMode ("Enable Vertical Mode", Int) = 0
 		 [Toggle] _EnableDMX ("Enable Stream DMX/DMX Control", Int) = 0
 		 [Enum(UnityEngine.Rendering.BlendMode)] _BlendSrc ("Source Blend mode", Float) = 2
 		 //[Enum(UnityEngine.Rendering.BlendMode)] _BlendDst ("Destination Blend mode", Float) = 1
@@ -79,15 +72,13 @@
 		[Enum(13CH,0,5CH,1)] _ChannelMode ("Channel Mode", Int) = 0
 
 		[Enum(Off,0,On,1)] _MultiSampleDepth ("Multi Sample Depth", Int) = 1
-
-
 	}
 
     SubShader
     {
         Tags
         {
-            "Queue" = "Transparent+1" "IgnoreProjector"="True" "RenderType" = "Transparent" "RenderPipeline" = "UniversalPipeline"
+            "Queue" = "Transparent+1" "IgnoreProjector"="True" "RenderType" = "Transparent" "RenderingPipeline" = "UniversalPipeline"
         }
         Pass
         {
