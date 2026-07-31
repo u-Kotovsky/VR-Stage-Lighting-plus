@@ -12,8 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: VRSL-AudioLink-SmoothingPanel Udon C# Program Asset
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: aa1529ea430e39c4abcc114f5a76bdff,
-    type: 2}
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 96c7bb7d09582b942a822b768e3a98b6, type: 2}
   udonAssembly: 
   assemblyError: 
   sourceCsScript: {fileID: 11500000, guid: 4e26ee2ba6b787e4c8d4f89f65742328, type: 3}

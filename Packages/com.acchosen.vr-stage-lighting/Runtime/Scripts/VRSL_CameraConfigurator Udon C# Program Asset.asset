@@ -12,8 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: VRSL_CameraConfigurator Udon C# Program Asset
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 84db6aea453d31f4d8a45f538ad5c1b3,
-    type: 2}
+  serializedUdonProgramAsset: {fileID: 11400000, guid: e752856a5e5fc0244a731f895f098e9d, type: 2}
   udonAssembly: 
   assemblyError: 
   sourceCsScript: {fileID: 11500000, guid: ffdb06517a284b14bb28ced573c9e07e, type: 3}
