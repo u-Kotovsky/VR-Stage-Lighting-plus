@@ -12,6 +12,18 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.texelsaur.common": {
+      "version": "file:com.texelsaur.common",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "com.texelsaur.video": {
+      "version": "file:com.texelsaur.video",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.unity.ai.navigation": {
       "version": "1.1.5",
       "depth": 1,
