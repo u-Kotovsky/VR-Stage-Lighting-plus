@@ -1,4 +1,4 @@
-Shader "LUTBeam/VRSL"
+Shader "LUTBeam/VRSL AudioLink"
 {
     Properties
     {
@@ -15,26 +15,21 @@ Shader "LUTBeam/VRSL"
         _GoboSpin ("Gobo Spin", Range(0, 1)) = 0
             
         [Header(Color)]
-        _Color ("Color", Color) = (1, 1, 1, 1)
+        _Emission ("Emission Color", Color) = (1, 1, 1, 1)
         _BeamIntensity ("_BeamIntensity", Range(0, 8.0)) = 1
         _BeamFalloff ("_BeamFalloff", Range(0, 3.0)) = 1
         _GoboIntensity ("_GoboIntensity", Range(0, 8.0)) = 1
 
-        // VRSL stuff
-        [Header(VRSL)]
-		[Toggle] _EnableStrobe ("Enable Strobe", Int) = 0
-		[Toggle] _EnableDMX ("Enable Stream DMX/DMX Control", Int) = 0
-		_DMXChannel ("Starting DMX Channel", Int) = 0
-		_MaxMinPanAngle("Max/Min Pan Angle (-x, x)", Float) = 180
-		_MaxMinTiltAngle("Max/Min Tilt Angle (-y, y)", Float) = 180
-		[HideInInspector][Toggle] _PanInvert ("Invert Mover Pan", Int) = 0
-		[HideInInspector][Toggle] _TiltInvert ("Invert Mover Tilt", Int) = 0
-        
-		_ConeWidth("Cone Width", Range(0,5.5)) = 0
-		_FixtureMaxIntensity ("Maximum Cone Intensity",Range (0,1)) = 1
-		_RedMultiplier ("Red Channel Multiplier", Range(0, 5)) = 1
-		_GreenMultiplier ("Green Channel Multiplier", Range(0, 5)) = 1
-		_BlueMultiplier ("Blue Channel Multiplier", Range(0,5)) = 1
+		[Header(Audio Section)]
+        [Toggle]_EnableAudioLink("Enable Audio Link", Float) = 0
+        [Toggle] _EnableColorChord ("Enable Color Chord Tinting", Int) = 0
+        _Band("Band", Float) = 0
+        _BandMultiplier("Band Multiplier", Range(1, 15)) = 1
+        _Delay("Delay", Float) = 0
+        _NumBands("Num Bands", Float) = 4
+        _AudioSpectrum("AudioSpectrum", 2D) = "black" {}
+		[Toggle] _EnableThemeColorSampling ("Enable Theme Color Sampling", Int) = 0
+		 _ThemeColorTarget ("Choose Theme Color", Int) = 0
     }
     SubShader
     {
@@ -52,24 +47,24 @@ Shader "LUTBeam/VRSL"
             Blend One One
             CGPROGRAM
             
-            #pragma multi_compile_instancing 
+            #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
 
-            #ifndef UNITY_PASS_FORWARDBASE
-            #define UNITY_PASS_FORWARDBASE
-            #endif
-
-            #define FIXTURE_EMIT
-            #define VRSL_DMX
-            #define PROJECTION_YES
-
             // we use camera depth texture defined by LUTBeam.cginc
             #define CAMERA_DEPTH_TEXTURE
-            
-            #include "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/Shared/VRSL-Defines.cginc"
-            #include "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/Shared/VRSL-DMXFunctions.cginc"
-            
+        
+			#define GEOMETRY
+			#define FIXTURE_EMIT
+			#define VRSL_AUDIOLINK
+			#ifndef UNITY_PASS_FORWARDBASE
+			#define UNITY_PASS_FORWARDBASE
+			#endif
+
+            #include "Packages/com.llealloo.audiolink/Runtime/Shaders/AudioLink.cginc"
+		    #include "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/Shared/VRSL-Defines.cginc"
+		    #include "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/AudioLink/Shared/VRSL-AudioLink-Functions.cginc"
+
             Texture2DArray _GoboTex;
             Texture2DArray _GoboLUT;
             float _Offset;
@@ -79,13 +74,15 @@ Shader "LUTBeam/VRSL"
             float _Zoom;
             float _Gobo;
 
+            float _GoboSpin;
+                
             float _GoboIntensity;
             float _BeamIntensity;
             float _BeamFalloff;
 
             inline half getGobo()
             {
-                return getDMXGoboSelection(getDMXChannel()) - 1;
+                return _Gobo;
             }
 
             #define LUTBEAM_CALLBACK_PROJECTION 1
@@ -104,11 +101,10 @@ Shader "LUTBeam/VRSL"
             #define LUTBEAM_CALLBACK_TRANSFORM 1
             float3x3 LUTBeamCallbackTransform(float3 vertex, inout float3 offset)
             {
-                uint dmx = getDMXChannel();
-                float goboSpin = getGoboSpinSpeed(dmx);
-                float tilt = radians(GetTiltValue(dmx));
-                float pan = radians(GetPanValue(dmx));
-
+                float goboSpin = _GoboSpin * _Time.g; // TODO: gobo spin timer instead
+                float tilt = .0;
+                float pan = .0;
+                    
                 float3x3 spinMatrix3 = float3x3(
                     cos(goboSpin), -sin(goboSpin), 0,
                     sin(goboSpin),  cos(goboSpin), 0,
@@ -144,12 +140,14 @@ Shader "LUTBeam/VRSL"
             {
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
+
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct v2f
             {
                 BeamData beam;
+                float4 audioGlobalFinalConeIntensity : TEXCOORD1;
 
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
@@ -163,11 +161,15 @@ Shader "LUTBeam/VRSL"
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-                uint dmx = getDMXChannel();
-                half zoom = isDMX() ? getValueAtCoords(dmx + 4, _Udon_DMXGridRenderTexture) : .3;
-                half dimmer = getValueAtCoords(dmx + 5, _Udon_DMXGridRenderTexture);
-                float4 color = isDMX() ? GetDMXColor(dmx) * dimmer : 1.;
-                
+
+                float gi = getGlobalIntensity();
+                float fi = getFinalIntensity();
+                float amp = GetAudioReactAmplitude();
+                //float coneWidth = getConeWidth();
+
+                float4 color = getEmissionColor() * gi * fi * amp;
+                half zoom = _Zoom;
+
                 // simulate dimming that happens when the gobo is zoomed out
                 float zoomFade = lerp(1, 0.1, 1-pow(1-saturate(zoom*0.5), 5));
                 

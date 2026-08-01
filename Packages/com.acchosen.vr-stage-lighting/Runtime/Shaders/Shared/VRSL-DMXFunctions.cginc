@@ -259,18 +259,20 @@ half getFinalIntensity()
     //Function for getting the RGB Color Value (Channels 4, 5, and 6)
     half4 GetDMXColor(uint DMXChannel)
     {
-        half redchannel = getValueAtCoords(DMXChannel + 7, _Udon_DMXGridRenderTexture);
-        half greenchannel = getValueAtCoords(DMXChannel + 8, _Udon_DMXGridRenderTexture);
-        half bluechannel = getValueAtCoords(DMXChannel + 9, _Udon_DMXGridRenderTexture);
+        half3 color = 1.;
+
+        color.r = getValueAtCoords(DMXChannel + 7, _Udon_DMXGridRenderTexture);
+        color.g = getValueAtCoords(DMXChannel + 8, _Udon_DMXGridRenderTexture);
+        color.b = getValueAtCoords(DMXChannel + 9, _Udon_DMXGridRenderTexture);
 
         #if defined(PROJECTION_YES)
-            redchannel = redchannel * _RedMultiplier;
-            bluechannel = bluechannel * _BlueMultiplier;
-            greenchannel = greenchannel * _GreenMultiplier;
+            color.r *= _RedMultiplier;
+            color.g *= _BlueMultiplier;
+            color.b *= _GreenMultiplier;
         #endif
 
-        //return IF(isDMX() == 1,lerp(fixed4(0,0,0,1), half4(redchannel,greenchannel,bluechannel,1), GetDMXIntensity(DMXChannel, _FixtureMaxIntensity)), half4(redchannel,greenchannel,bluechannel,1) * GetDMXIntensity(DMXChannel, _FixtureMaxIntensity));
-        return lerp(fixed4(0,0,0,1), half4(redchannel,greenchannel,bluechannel,1), GetDMXIntensity(DMXChannel, _FixtureMaxIntensity));
+        //return IF(isDMX() == 1,lerp(fixed4(0,0,0,1), half4(color,1), GetDMXIntensity(DMXChannel, _FixtureMaxIntensity)), half4(color,1) * GetDMXIntensity(DMXChannel, _FixtureMaxIntensity));
+        return lerp(fixed4(0,0,0,1), half4(color,1), GetDMXIntensity(DMXChannel, _FixtureMaxIntensity));
     }
 
     half getDMXConeWidth(uint DMXChannel) //Motor Speed Channel// CHANNEL 5
