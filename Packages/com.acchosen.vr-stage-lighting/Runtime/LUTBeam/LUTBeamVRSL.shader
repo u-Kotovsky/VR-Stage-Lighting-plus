@@ -8,7 +8,8 @@ Shader "LUTBeam/VRSL"
         [Header(Shape)]
         _Zoom ("_Zoom", Range(0, 2.0)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
-        _NearRadius ("_NearRadius", Range(0,1)) = 0.1
+        _NearRadiusX ("_NearRadiusX", Range(0,1)) = 0.1
+        _NearRadiusY ("_NearRadiusY", Range(0,1)) = 0.1
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
             
@@ -19,6 +20,7 @@ Shader "LUTBeam/VRSL"
         _GoboIntensity ("_GoboIntensity", Range(0, 8.0)) = 1
 
         // VRSL stuff
+        [Header(VRSL)]
 		[Toggle] _EnableStrobe ("Enable Strobe", Int) = 0
 		[Toggle] _EnableDMX ("Enable Stream DMX/DMX Control", Int) = 0
 		[HideInInspector]_DMXChannel ("Starting DMX Channel", Int) = 0
@@ -58,6 +60,9 @@ Shader "LUTBeam/VRSL"
             #define FIXTURE_EMIT
             #define VRSL_DMX
             #define PROJECTION_YES
+
+            // we use camera depth texture defined by LUTBeam.cginc
+            #define CAMERA_DEPTH_TEXTURE
             
 	        #include "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/Shared/VRSL-Defines.cginc"
 	        #include "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/Shared/VRSL-DMXFunctions.cginc"
@@ -65,7 +70,8 @@ Shader "LUTBeam/VRSL"
             Texture2DArray _GoboTex;
             Texture2DArray _GoboLUT;
             float _Offset;
-            float _NearRadius;
+            float _NearRadiusX;
+            float _NearRadiusY;
             float _FarZ;
             float _Zoom;
             float _Gobo;
@@ -171,7 +177,7 @@ Shader "LUTBeam/VRSL"
                 
                 // make sure you feed in v.vertex from the unity default cube here directly without modifying it
                 // otherwise things may go wroooonngggg :)
-                o.beam = LUTBeamVert(v.vertex, zoom, zoom, _FarZ, _NearRadius, _Offset, color * zoomFade, beamIntenisty, goboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, zoom, zoom, _FarZ, _NearRadiusX, _NearRadiusY, _Offset, color * zoomFade, beamIntenisty, goboIntensity, _BeamFalloff);
 
                 return o;
             }

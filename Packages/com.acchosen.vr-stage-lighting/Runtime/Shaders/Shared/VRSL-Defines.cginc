@@ -142,8 +142,11 @@ half _AlphaProjectionIntensity;
 
 // int _EnableDMX;
 // int _EnableStrobe;
-UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
-uniform half4 _CameraDepthTexture_TexelSize;
+#ifndef CAMERA_DEPTH_TEXTURE
+    UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
+    uniform half4 _CameraDepthTexture_TexelSize;
+#endif
+
 sampler2D _LightMainTex, _ProjectionMainTex;
 float4 _LightMainTex_ST;
 half _ProjectionUVMod, _UseWorldNorm, _ProjectionRotation, _ProjectionUVMod2, _ProjectionUVMod3, _ProjectionUVMod4, _ProjectionUVMod5, _ProjectionUVMod6, _ProjectionUVMod7, _ProjectionUVMod8;
