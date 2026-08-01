@@ -16,6 +16,7 @@ Material:
   - USE_AUDIOLINK
   - _ENABLEAUDIOLINK_ON
   - _ENABLECOLORCHORD_ON
+  - _ENABLETHEMECOLORSAMPLING_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
@@ -49,7 +50,7 @@ Material:
     - _Angle: 0.441
     - _AngleMax: 0.3
     - _AngleMin: 0.1
-    - _Band: 0
+    - _Band: -0.07
     - _BandMultiplier: 1
     - _BeamFalloff: 1
     - _BeamHotness: 1
@@ -67,7 +68,7 @@ Material:
     - _EnableColorChord: 1
     - _EnableDMX: 0
     - _EnableStrobe: 0
-    - _EnableThemeColorSampling: 0
+    - _EnableThemeColorSampling: 1
     - _FadeDist: 1
     - _FadeMult: 1
     - _Falloff: 0
@@ -105,6 +106,7 @@ Material:
     - _Zoom: 0.29
     m_Colors:
     - _Color: {r: 1, g: 0, b: 0, a: 1}
+    - _Emission: {r: 1, g: 0, b: 0, a: 2}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
     - _MotionScale: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
