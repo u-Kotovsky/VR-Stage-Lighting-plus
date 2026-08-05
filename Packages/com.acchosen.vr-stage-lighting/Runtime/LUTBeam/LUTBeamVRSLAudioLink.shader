@@ -1,4 +1,4 @@
-Shader "LUTBeam/VRSL AudioLink"
+Shader "LUTBeam/VRSL Spotlight AudioLink"
 {
     Properties
     {

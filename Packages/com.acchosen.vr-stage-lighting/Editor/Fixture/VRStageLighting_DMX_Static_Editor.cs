@@ -267,6 +267,13 @@ namespace VRSL.EditorScripts
 
             var objRenderers = serializedObject.FindProperty("objRenderers");
             EditorGUILayout.PropertyField(objRenderers, true);
+
+            if (GUILayout.Button("Get all children renderers"))
+            {
+                var renderers = fixture.gameObject.GetComponentsInChildren<MeshRenderer>();
+                fixture.objRenderers = renderers;
+            }
+            
             #endregion
             
             if (EditorGUI.EndChangeCheck())

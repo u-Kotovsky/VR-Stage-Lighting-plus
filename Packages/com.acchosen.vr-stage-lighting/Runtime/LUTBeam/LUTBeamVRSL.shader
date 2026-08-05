@@ -1,4 +1,4 @@
-Shader "LUTBeam/VRSL"
+Shader "LUTBeam/VRSL Spotlight"
 {
     Properties
     {
@@ -88,7 +88,8 @@ Shader "LUTBeam/VRSL"
 
             inline half getGobo()
             {
-                return getDMXGoboSelection(getDMXChannel()) - 1;
+                half dmxAlive = isDMX();
+                return (dmxAlive * getDMXGoboSelection(getDMXChannel()) - 1) + ((1 - dmxAlive) * _Gobo);
             }
 
             #define LUTBEAM_CALLBACK_PROJECTION 1
@@ -173,7 +174,7 @@ Shader "LUTBeam/VRSL"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 uint dmx = getDMXChannel();
-                half zoom = isDMX() ? getValueAtCoords(dmx + 4, _Udon_DMXGridRenderTexture) : .3;
+                half zoom = isDMX() ? getValueAtCoords(dmx + 4, _Udon_DMXGridRenderTexture) : _Zoom;
                 half dimmer = getValueAtCoords(dmx + 5, _Udon_DMXGridRenderTexture);
                 float4 color = isDMX() ? GetDMXColor(dmx) * dimmer : 1.;
                 
