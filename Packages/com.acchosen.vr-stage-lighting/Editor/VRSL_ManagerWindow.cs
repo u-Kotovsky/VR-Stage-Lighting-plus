@@ -889,19 +889,32 @@ namespace VRSL.EditorScripts
                     {
                         if(fixture == null) continue;
                         if(fixture.light == null) continue;
+
+                        if (fixture.light.objRenderers == null)
+                        {
+                            Debug.LogError($"objRenderers are not assigned for '{fixture.light.name}'");
+                            continue;
+                        }
                         
                         foreach(var rend in fixture.light.objRenderers)
                         {
-                            if(rend.gameObject.name.Contains("Projection"))
+                            if (rend == null)
                             {
-                                if(rend.gameObject.name.Contains("Fixture"))
+                                Debug.LogError($"objRenderer are not assigned in '{fixture.light.name}'");
+                                return;
+                            }
+
+                            var name = rend.gameObject.name;
+                            if(name.Contains("Projection"))
+                            {
+                                if(name.Contains("Fixture"))
                                 {
                                     continue;
                                 }
                                 rend.gameObject.SetActive(lastDepthLightRequirement);
                                 continue;
                             }
-                            if(rend.gameObject.name.Contains("Disco"))
+                            if(name.Contains("Disco"))
                             {
                                 rend.gameObject.SetActive(lastDepthLightRequirement);
                                 continue;                        

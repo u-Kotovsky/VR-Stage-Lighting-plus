@@ -28,7 +28,12 @@ uint getDMXChannel()
     }
 #endif
 
-// Returns DMX value of pixel in Range(0, 1) ex.: 0, 0.2 .. 1
+/**
+ * Get DMX value by channel in texture
+ * @param DMXChannel 
+ * @param _DecodedTexture 
+ * @return DMX value, range(0, 1) ex.: 0, 0.2 .. 1
+ */
 half getValueAtCoords(uint DMXChannel, sampler2D _DecodedTexture)
 {
     uint channelIndex = DMXChannel;// - 1;
@@ -46,7 +51,12 @@ half getValueAtCoords(uint DMXChannel, sampler2D _DecodedTexture)
     return decoded.r; // r is either fallback or new dmx data
 }
 
-// Returns DMX value of pixel in Range(0, 1) ex.: 0, 0.2 .. 1
+/**
+ * Get DMX value by channel in texture
+ * @param DMXChannel 
+ * @param _Tex 
+ * @return DMX value, range(0, 1) ex.: 0, 0.2 .. 1
+ */
 half getValueAtCoordsRaw(uint DMXChannel, sampler2D _Tex)
 {
     return getValueAtCoords(DMXChannel, _Tex);
@@ -213,22 +223,27 @@ half getFinalIntensity()
         return getValueAtCoords(DMXChannel, _Udon_DMXGridRenderTexture);
     }
 
-    // Function for getting value from coarse and fine
+    /**
+     * Convert coarse and fine to value
+     * @param coarse 8bit
+     * @param fine 8bit
+     * @return 16bit value
+     */
     half GetValue(half coarse, half fine)
     {
         return coarse + (fine / 255.0);
     }
 
-    //function for getting the Pan Value (Channel 2)
-    half GetFinePanValue(uint DMXChannel)
-    {
-        return getValueAtCoords(DMXChannel + 1, _Udon_DMXGridRenderTextureMovement);
-    }
-
+    /**
+     * Get pan value in degrees by via start channel 3
+     * With fine channel next to it
+     * @param DMXChannel start channel
+     * @return pan in degrees
+     */
     half GetPanValue(uint DMXChannel)
     {
         half coarse = getValueAtCoords(DMXChannel, _Udon_DMXGridRenderTextureMovement);
-        half fine = GetFinePanValue(DMXChannel);
+        half fine = getValueAtCoords(DMXChannel + 1, _Udon_DMXGridRenderTextureMovement);
         half inputValue = GetValue(coarse, fine);
 
         #if defined(VOLUMETRIC_YES) || defined(PROJECTION_YES) || defined(FIXTURE_EMIT) || defined(FIXTURE_SHADOWCAST) || defined(VRSL_SURFACE) || defined(VRSL_FLARE)
@@ -238,21 +253,22 @@ half getFinalIntensity()
         #endif
     }
 
-    half GetFineTiltValue(uint DMXChannel)
-    {
-        return getValueAtCoords(DMXChannel + 3, _Udon_DMXGridRenderTextureMovement);
-    }
-
-    //function for getting the Tilt Value (Channel 3)
+    /**
+     * Get tilt value in degrees by via start channel 3
+     * With fine channel next to it
+     * @param DMXChannel start channel
+     * @return tilt in degrees
+     */
     half GetTiltValue(uint DMXChannel)
     {
         half coarse = getValueAtCoords(DMXChannel + 2, _Udon_DMXGridRenderTextureMovement);
-        half fine = GetFineTiltValue(DMXChannel);
+        half fine = getValueAtCoords(DMXChannel + 3, _Udon_DMXGridRenderTextureMovement);
         half inputValue = GetValue(coarse, fine);
+    
         #if defined(VOLUMETRIC_YES) || defined(PROJECTION_YES) || defined(FIXTURE_EMIT) || defined(FIXTURE_SHADOWCAST) || defined(VRSL_SURFACE) || defined(VRSL_FLARE)
-            return IF(isDMX() == 1, ((getMinMaxTilt() * 2) * (inputValue)) - getMinMaxTilt(), 0.0);
+            return IF(isDMX() == 1, ((getMinMaxTilt() * 2) * inputValue) - getMinMaxTilt(), 0.0);
         #else
-            return IF(isDMX() == 1, ((_MaxMinTiltAngle * 2) * (inputValue)) - _MaxMinTiltAngle, 0.0);
+            return IF(isDMX() == 1, ((_MaxMinTiltAngle * 2) * inputValue) - _MaxMinTiltAngle, 0.0);
         #endif
     }
 

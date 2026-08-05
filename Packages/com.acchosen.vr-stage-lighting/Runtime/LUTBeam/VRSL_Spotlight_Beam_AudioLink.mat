@@ -7,13 +7,16 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: VRSLBeam
-  m_Shader: {fileID: 4800000, guid: 2fbc9fc8e3505ae41bf343e727aa792d, type: 3}
+  m_Name: VRSL_Spotlight_Beam_AudioLink
+  m_Shader: {fileID: 4800000, guid: 4b98d3bbcbc6f4141965ca1739c235db, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
+  - USE_AUDIOLINK
   - _ENABLEAUDIOLINK_ON
+  - _ENABLECOLORCHORD_ON
+  - _ENABLETHEMECOLORSAMPLING_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
@@ -24,6 +27,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _AudioSpectrum:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _GoboLUT:
         m_Texture: {fileID: 18700000, guid: b2ea6717cf891f4438c3a438e732bae2, type: 2}
         m_Scale: {x: 1, y: 1}
@@ -43,6 +50,8 @@ Material:
     - _Angle: 0.441
     - _AngleMax: 0.3
     - _AngleMin: 0.1
+    - _Band: -0.07
+    - _BandMultiplier: 1
     - _BeamFalloff: 1
     - _BeamHotness: 1
     - _BeamIntensity: 1
@@ -51,18 +60,21 @@ Material:
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
     - _BrightnessVolumeZoomMin: 1
-    - _ConeWidth: 5.5
+    - _ConeWidth: 0
     - _DMXChannel: 0
     - _DMXMotionChannel: -1
-    - _EnableAudioLink: 0
+    - _Delay: 0
+    - _EnableAudioLink: 1
+    - _EnableColorChord: 1
     - _EnableDMX: 0
     - _EnableStrobe: 0
+    - _EnableThemeColorSampling: 1
     - _FadeDist: 1
     - _FadeMult: 1
     - _Falloff: 0
     - _FarZ: 25
     - _FarZMaxZoom: 10
-    - _FixtureMaxIntensity: 1
+    - _FixtureMaxIntensity: 0.5
     - _Gobo: 6.71
     - _GoboColorEnabled: 0
     - _GoboIntensity: 1
@@ -75,6 +87,7 @@ Material:
     - _NearRadius: 0.144
     - _NearRadiusX: 0.075
     - _NearRadiusY: 0.075
+    - _NumBands: 4
     - _Offset: 0
     - _Pan: 0
     - _PanInvert: 0
@@ -84,6 +97,7 @@ Material:
     - _RedMultiplier: 1
     - _SpinMult: 4
     - _SpinSpeed: 0.1
+    - _ThemeColorTarget: 0
     - _Tilt: 0
     - _TiltInvert: 0
     - _TiltMax: 90
@@ -91,7 +105,8 @@ Material:
     - _TiltOffset: 0
     - _Zoom: 0.29
     m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 1, g: 0, b: 0, a: 1}
+    - _Emission: {r: 1, g: 0, b: 0, a: 2}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
     - _MotionScale: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
