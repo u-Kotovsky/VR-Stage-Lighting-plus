@@ -100,7 +100,7 @@ Shader "LUTBeam/VRSL"
             }
             
             // Example from LUTBeam.cginc
-            // (Kotovsky) thank your for a nice example, it helped a lot! ^^
+            // (Kotovsky) thank you for a nice example, it helped a lot! ^^
             #define LUTBEAM_CALLBACK_TRANSFORM 1
             float3x3 LUTBeamCallbackTransform(float3 vertex, inout float3 offset)
             {
