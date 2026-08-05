@@ -388,13 +388,11 @@ v2f vert (appdata v)
 				v.vertex = ConeScale(v, v.vertex, _MinimumBeamRadius);
 			#endif
 		#endif
-
 		
-		
-		//calculate rotations for verts
+		// Calculate rotations for verts
 		v.vertex = calculateRotations(v, v.vertex, 0, oscPanValue, oscTiltValue);
 		#ifdef DMXTranslate // Translate object in 3d space based on it's local position
-		v.vertex = calculateTranslation(v.vertex);
+			v.vertex = calculateTranslation(v.vertex);
 		#endif
 		#if defined(PROJECTION_YES)
 			o.projectionorigin = calculateRotations(v, _ProjectionRangeOrigin, 0, oscPanValue, oscTiltValue);

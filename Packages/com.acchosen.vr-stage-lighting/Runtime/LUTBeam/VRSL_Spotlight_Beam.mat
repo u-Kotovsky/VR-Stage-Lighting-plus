@@ -62,7 +62,9 @@ Material:
     - _Falloff: 0
     - _FarZ: 25
     - _FarZMaxZoom: 10
+    - _FixtureBaseRotationY: 0
     - _FixtureMaxIntensity: 1
+    - _FixtureRotationX: 0
     - _Gobo: 6.71
     - _GoboColorEnabled: 0
     - _GoboIntensity: 1
@@ -75,7 +77,7 @@ Material:
     - _NearRadius: 0.144
     - _NearRadiusX: 0.075
     - _NearRadiusY: 0.075
-    - _Offset: 0
+    - _Offset: 0.22
     - _Pan: 0
     - _PanInvert: 0
     - _PanMax: 90
@@ -92,6 +94,7 @@ Material:
     - _Zoom: 0.29
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _FixtureRotationOrigin: {r: 0, g: 0, b: 0, a: 0}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
     - _MotionScale: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

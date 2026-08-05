@@ -29,6 +29,9 @@ Shader "LUTBeam/VRSL"
 		_MaxMinTiltAngle("Max/Min Tilt Angle (-y, y)", Float) = 180
 		[HideInInspector][Toggle] _PanInvert ("Invert Mover Pan", Int) = 0
 		[HideInInspector][Toggle] _TiltInvert ("Invert Mover Tilt", Int) = 0
+		[HideInInspector]_FixtureBaseRotationY("Mover Pan Offset", Range(-540,540)) = 0
+		[HideInInspector]_FixtureRotationX("Mover Tilt Offset", Range(-180,180)) = 0
+		_FixtureRotationOrigin("Fixture Pivot Origin", Float) = (0, 0.014709, -1.02868, 0)
         
 		_ConeWidth("Cone Width", Range(0,5.5)) = 0
 		_FixtureMaxIntensity ("Maximum Cone Intensity",Range (0,1)) = 1
@@ -106,8 +109,10 @@ Shader "LUTBeam/VRSL"
             {
                 uint dmx = getDMXChannel();
                 float goboSpin = getGoboSpinSpeed(dmx);
-                float tilt = radians(GetTiltValue(dmx));
-                float pan = radians(GetPanValue(dmx));
+                float tilt = radians(GetTiltValue(dmx) + getOffsetX() - 90);
+                float pan = radians(GetPanValue(dmx) + getOffsetY());
+                
+                // TODO: fix tilt/pan invert, it breaks alignment (for now only paninvert off and tiltinvert on works fine)
 
                 float3x3 spinMatrix3 = float3x3(
                     cos(goboSpin), -sin(goboSpin), 0,
@@ -120,17 +125,21 @@ Shader "LUTBeam/VRSL"
                     0, cos(tilt), -sin(tilt),
                     0, sin(tilt),  cos(tilt)
                 );
+                
+                tiltMatrix3 = checkTiltInvertZ() == 0 ? transpose(tiltMatrix3) : tiltMatrix3;
 
                 float3x3 panMatrix3 = float3x3(
                     cos(pan), -sin(pan), 0,
                     sin(pan),  cos(pan), 0,
                     0,         0,        1
                 );
+                
+                panMatrix3 = checkPanInvertY() == 0 ? transpose(panMatrix3) : panMatrix3;
 
                 float3x3 combined = mul(spinMatrix3, mul(tiltMatrix3, panMatrix3));
 
-                //offset = float3(cos(_Time.g), 0, sin(_Time.g)) * 5;
-
+                offset = _FixtureRotationOrigin.xyz;
+                
                 return combined;
             }
 
