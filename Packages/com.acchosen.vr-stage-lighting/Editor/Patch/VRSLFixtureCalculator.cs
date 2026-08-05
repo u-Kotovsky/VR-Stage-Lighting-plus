@@ -1,6 +1,7 @@
 #if UNITY_EDITOR && !COMPILER_UDONSHARP
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -13,7 +14,7 @@ namespace VRSL.EditorScripts
         private static int _fixtureCount;
         private static VRSL_LocalUIControlPanel _controlPanel;
         private static VRSL_FixtureDefinitions _fixtureDefinitions;
-        private static List<string> _uniqueFixtureDefinitions = new();
+        private static readonly List<string> UniqueFixtureDefinitions = new();
         
         private static VRSLFixtureCalculator _window;
 
@@ -45,15 +46,15 @@ namespace VRSL.EditorScripts
             return sb.ToString();
         }
 
-        private bool overrideStartChannel = false;
-        private int overrideStartChannelIndex = 0;
+        private bool _overrideStartChannel;
+        private int _overrideStartChannelIndex;
         
         private void OnGUI()
         {
             EditorGUILayout.LabelField("Yip Yap VRSL Fixture Calculator");
             EditorGUILayout.LabelField("Fixture count: " + _fixtureCount.ToString());
             EditorGUILayout.LabelField("Next free channel: " + GetNextAvailableChannel());
-            EditorGUILayout.LabelField("Fixture types used: " + string.Join(", ", _uniqueFixtureDefinitions.ToArray()));
+            EditorGUILayout.LabelField("Fixture types used: " + string.Join(", ", UniqueFixtureDefinitions.ToArray()));
             
             EditorGUILayout.Space();
             
@@ -66,20 +67,25 @@ namespace VRSL.EditorScripts
 
                 if (selectedFixtures != null && selectedFixtures.Length > 0)
                 {
-                    overrideStartChannel = EditorGUILayout.Toggle("Override Start Channel", overrideStartChannel);
-                    GUI.enabled = overrideStartChannel;
-                    overrideStartChannelIndex = EditorGUILayout.IntField("Override Start Channel", overrideStartChannelIndex);
+                    _overrideStartChannel = EditorGUILayout.Toggle("Override Start Channel", _overrideStartChannel);
+                    GUI.enabled = _overrideStartChannel;
+                    _overrideStartChannelIndex = EditorGUILayout.IntField("Override Start Channel", _overrideStartChannelIndex);
                     GUI.enabled = true;
                     if (GUILayout.Button("Auto assign ids"))
                     {
-                        if (overrideStartChannel)
+                        if (_overrideStartChannel)
                         {
-                            AutoAssignChannels(selectedFixtures, overrideStartChannelIndex);
+                            AutoAssignChannels(selectedFixtures, _overrideStartChannelIndex);
                         }
                         else
                         {
                             AutoAssignChannels(selectedFixtures, NextFreeChannel());
                         }
+                    }
+
+                    if (GUILayout.Button("Reverse selection"))
+                    {
+                        selectedFixtures = selectedFixtures.Reverse().ToArray();
                     }
                 }
                 else
@@ -134,7 +140,7 @@ namespace VRSL.EditorScripts
 
                 var channelCount = GetChannelCount(fixture);
                 lastFreeId += channelCount;
-                Debug.Log($"Assigned {fixture.GlobalChannelIndex}, ch count: {channelCount}, last free id: {lastFreeId}");
+                Debug.Log($"[VRSL Fixtures] Assigned '{fixture.GlobalChannelIndex}', channel count: '{channelCount}', last free id: '{lastFreeId}'");
             }
         }
 
@@ -195,7 +201,8 @@ namespace VRSL.EditorScripts
 
         public static int NextFreeChannel(int width = 0)
         {
-            if (_controlPanel == null) _controlPanel = FindObjectOfType<VRSL_LocalUIControlPanel>();
+            if (_controlPanel == null) 
+                _controlPanel = FindObjectOfType<VRSL_LocalUIControlPanel>();
             if (_controlPanel == null)
             {
                 _fixtureCount = 0;
@@ -215,15 +222,15 @@ namespace VRSL.EditorScripts
             var busyChannels = new List<(int, int)>();
             var startOfFreeChannelSpace = 0;
             
-            _uniqueFixtureDefinitions.Clear();
+            UniqueFixtureDefinitions.Clear();
             
             foreach (var fixture in fixtures)
             {
                 var definition = _fixtureDefinitions.definitions[fixture.fixtureDefintion];
 
-                if (!_uniqueFixtureDefinitions.Contains(definition.name))
+                if (!UniqueFixtureDefinitions.Contains(definition.name))
                 {
-                    _uniqueFixtureDefinitions.Add(definition.name);
+                    UniqueFixtureDefinitions.Add(definition.name);
                 }
 
                 var globalChannel = fixture.GlobalChannelIndex;
@@ -244,19 +251,10 @@ namespace VRSL.EditorScripts
             
             for (var i = 0; i < busyChannels.Count; i++)
             {
-                var channel = busyChannels[i];
+                var channel = busyChannels[i]; // global channel index, channel count
                 var start = channel.Item1 + channel.Item2;
-
-                if (i < busyChannels.Count - 1)
-                {
-                    var nextChannel = busyChannels[i + 1];
-                    var nextStart = nextChannel.Item1;
-
-                    if (nextStart - start >= width)
-                    {
-                        result = start;
-                    }
-                }
+                
+                result = start;
             }
             
             return result;
