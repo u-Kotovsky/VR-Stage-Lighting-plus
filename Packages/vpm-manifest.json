@@ -6,9 +6,6 @@
     "com.vrchat.worlds": {
       "version": "3.5.2"
     },
-    "com.vrchat.core.vpm-resolver": {
-      "version": "0.1.29"
-    },
     "com.texelsaur.video": {
       "version": "2.4.7"
     },
@@ -32,10 +29,6 @@
       "dependencies": {
         "com.vrchat.base": "3.10.4"
       }
-    },
-    "com.vrchat.core.vpm-resolver": {
-      "version": "0.1.29",
-      "dependencies": {}
     },
     "dev.architech.videoplayershim": {
       "version": "1.4.0",
