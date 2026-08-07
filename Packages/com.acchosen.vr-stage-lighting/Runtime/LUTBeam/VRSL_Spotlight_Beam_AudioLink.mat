@@ -85,10 +85,10 @@ Material:
     - _MaxMinPanAngle: 180
     - _MaxMinTiltAngle: 180
     - _NearRadius: 0.144
-    - _NearRadiusX: 0.075
-    - _NearRadiusY: 0.075
+    - _NearRadiusX: 0.06
+    - _NearRadiusY: 0.06
     - _NumBands: 4
-    - _Offset: 0
+    - _Offset: -0.05
     - _Pan: 0
     - _PanInvert: 0
     - _PanMax: 90
