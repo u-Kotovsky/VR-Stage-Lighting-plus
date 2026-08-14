@@ -38,11 +38,31 @@ Shader "LUTBeam/VRSL Spotlight"
 		_RedMultiplier ("Red Channel Multiplier", Range(0, 5)) = 1
 		_GreenMultiplier ("Green Channel Multiplier", Range(0, 5)) = 1
 		_BlueMultiplier ("Blue Channel Multiplier", Range(0,5)) = 1
+        
+        [Header(Stencil)]
+        [IntRange] _StencilRef ("Ref", Range(0, 255)) = 142
+        [IntRange] _StencilReadMask ("Read Mask", Range(0, 255)) = 255
+        [IntRange] _StencilWriteMask ("Write Mask", Range(0, 255)) = 255
+        [Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompareFunction ("Compare Function", Float) = 6
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilPassOp ("Pass Op", Float) = 0
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilFailOp ("Fail Op", Float) = 0
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilZFailOp ("ZFail Op", Float) = 0
     }
     SubShader
     {
         Tags {"RenderType"="Transparent" "Queue"="Transparent+303" }
 
+        Stencil
+        {
+            Ref [_StencilRef]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+            Comp [_StencilCompareFunction]
+            Pass [_StencilPassOp]
+            Fail [_StencilFailOp]
+            ZFail [_StencilZFailOp]
+        }
+        
         LOD 100
 
         Cull Back
@@ -59,6 +79,7 @@ Shader "LUTBeam/VRSL Spotlight"
 
             #include "UnityCG.cginc"
 
+            // for VRSL
             #ifndef UNITY_PASS_FORWARDBASE
             #define UNITY_PASS_FORWARDBASE
             #endif
@@ -73,6 +94,7 @@ Shader "LUTBeam/VRSL Spotlight"
             #include "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/Shared/VRSL-Defines.cginc"
             #include "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/Shared/VRSL-DMXFunctions.cginc"
             
+            // LUTBeamSimple.shader
             Texture2DArray _GoboTex;
             Texture2DArray _GoboLUT;
             float _Offset;
@@ -92,12 +114,12 @@ Shader "LUTBeam/VRSL Spotlight"
                 return (dmxAlive * getDMXGoboSelection(getDMXChannel()) - 1) + ((1 - dmxAlive) * _Gobo);
             }
 
-            #define LUTBEAM_CALLBACK_PROJECTION 1
+            #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
             {
                 return _GoboTex.SampleLevel(samp, float3(uv, getGobo()), 0).rrr;
             }
-            #define LUTBEAM_CALLBACK_VOLUME 1
+            #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
             float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
             {
                 return _GoboLUT.SampleLevel(samp, float3(uv, getGobo()), 0).rrr;
@@ -105,8 +127,9 @@ Shader "LUTBeam/VRSL Spotlight"
             
             // Example from LUTBeam.cginc
             // (Kotovsky) thank you for a nice example, it helped a lot! ^^
-            #define LUTBEAM_CALLBACK_TRANSFORM 1
-            float3x3 LUTBeamCallbackTransform(float3 vertex, inout float3 offset)
+            #define LUTBEAM_CALLBACK_VERTEX LUTBeamCallbackTransform
+            //float3x3 LUTBeamCallbackTransform(float3 vertex/*, inout float3 offset*/)
+            float3 LUTBeamCallbackTransform(float3 vertex/*, inout float3 offset*/)
             {
                 uint dmx = getDMXChannel();
                 float goboSpin = getGoboSpinSpeed(dmx);
@@ -115,6 +138,12 @@ Shader "LUTBeam/VRSL Spotlight"
                 
                 // TODO: fix tilt/pan invert, it breaks alignment (for now only paninvert off and tiltinvert on works fine)
 
+                float3x3 rotation_matrix = float3x3(
+                    1,0,0,
+                    0,1,0,
+                    0,0,1
+                );
+                
                 float3x3 spinMatrix3 = float3x3(
                     cos(goboSpin), -sin(goboSpin), 0,
                     sin(goboSpin),  cos(goboSpin), 0,
@@ -137,11 +166,18 @@ Shader "LUTBeam/VRSL Spotlight"
                 
                 panMatrix3 = checkPanInvertY() == 0 ? transpose(panMatrix3) : panMatrix3;
 
-                float3x3 combined = mul(spinMatrix3, mul(tiltMatrix3, panMatrix3));
-
-                offset = _FixtureRotationOrigin.xyz;
+                rotation_matrix = mul(rotation_matrix, panMatrix3);
+                rotation_matrix = mul(rotation_matrix, tiltMatrix3);
+                rotation_matrix = mul(rotation_matrix, spinMatrix3);
+                vertex = mul(vertex, rotation_matrix);
                 
-                return combined;
+                //float3x3 combined = mul(spinMatrix3, mul(tiltMatrix3, panMatrix3));
+
+                //offset = _FixtureRotationOrigin.xyz;
+                
+                //vertex = mul(vertex, combined);
+                return vertex;
+                //return combined;
             }
 
             #include "Assets/LUTBeam/LUTBeam.cginc"
@@ -183,7 +219,11 @@ Shader "LUTBeam/VRSL Spotlight"
                 
                 // make sure you feed in v.vertex from the unity default cube here directly without modifying it
                 // otherwise things may go wroooonngggg :)
-                o.beam = LUTBeamVert(v.vertex, zoom, zoom, _FarZ, _NearRadiusX, _NearRadiusY, _Offset, color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, zoom, zoom, _FarZ, 
+                    _NearRadiusX, _NearRadiusY, 
+                    _Offset, color * zoomFade, 
+                    _BeamIntensity, 
+                    _GoboIntensity, _BeamFalloff);
 
                 return o;
             }
@@ -193,7 +233,7 @@ Shader "LUTBeam/VRSL Spotlight"
                 UNITY_SETUP_INSTANCE_ID(i);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 
-                float3 col = LUTBeamFrag(i.beam, _BeamFalloff);
+                float3 col = LUTBeamFrag(i.beam);
                 return float4(col, 0);
             }
             ENDCG
