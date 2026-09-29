@@ -1,0 +1,100 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: VRSL_Blinder_Beam
+  m_Shader: {fileID: 4800000, guid: 2fbc9fc8e3505ae41bf343e727aa792d, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords:
+  - _ENABLEAUDIOLINK_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _GoboLUT:
+        m_Texture: {fileID: 18700000, guid: b2ea6717cf891f4438c3a438e732bae2, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GoboTex:
+        m_Texture: {fileID: 18700000, guid: 5e766cac0d0f5074d9b96af808e37770, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Shadows:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints:
+    - _Gobo: 0
+    m_Floats:
+    - _: 1
+    - _Angle: 0.441
+    - _AngleMax: 0.3
+    - _AngleMin: 0.1
+    - _BeamFalloff: 0
+    - _BeamHotness: 1
+    - _BeamIntensity: 8
+    - _BlueMultiplier: 1
+    - _BrightnessGoboZoomMax: 1
+    - _BrightnessGoboZoomMin: 1
+    - _BrightnessVolumeZoomMax: 1
+    - _BrightnessVolumeZoomMin: 1
+    - _ConeWidth: 5.5
+    - _DMXChannel: 0
+    - _DMXMotionChannel: -1
+    - _EnableAudioLink: 0
+    - _EnableDMX: 0
+    - _EnableStrobe: 0
+    - _FadeDist: 1
+    - _FadeMult: 1
+    - _Falloff: 0
+    - _FarZ: 5
+    - _FarZMaxZoom: 10
+    - _FixtureBaseRotationY: 0
+    - _FixtureMaxIntensity: 1
+    - _FixtureRotationX: 0
+    - _Gobo: 6.71
+    - _GoboColorEnabled: 0
+    - _GoboIntensity: 8
+    - _GoboSpin: 0
+    - _GreenMultiplier: 1
+    - _Hotness: 1
+    - _LUTBeamShadowIndex: 0
+    - _MaxMinPanAngle: 180
+    - _MaxMinTiltAngle: 180
+    - _NearRadius: 0.144
+    - _NearRadiusX: 0.22
+    - _NearRadiusY: 0.18
+    - _Offset: 0
+    - _Pan: 0
+    - _PanInvert: 0
+    - _PanMax: 90
+    - _PanMin: -90
+    - _PanOffset: 0
+    - _RedMultiplier: 1
+    - _SpinMult: 4
+    - _SpinSpeed: 0.1
+    - _Tilt: 0
+    - _TiltInvert: 0
+    - _TiltMax: 90
+    - _TiltMin: -90
+    - _TiltOffset: 0
+    - _Zoom: 1
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _FixtureRotationOrigin: {r: 0, g: 0, b: 0, a: 0}
+    - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
+    - _MotionScale: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
