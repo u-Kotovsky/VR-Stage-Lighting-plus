@@ -18,11 +18,11 @@
     "dev.onevr.vrworldtoolkit": {
       "version": "3.4.1"
     },
-    "com.torvid21.lutbeam": {
-      "version": "1.0.0"
-    },
     "com.spout2vrceditor": {
       "version": "0.0.2"
+    },
+    "com.torvid21.lutbeam": {
+      "version": "1.0.0"
     }
   },
   "locked": {
@@ -68,10 +68,6 @@
       "version": "3.4.1",
       "dependencies": {}
     },
-    "com.torvid21.lutbeam": {
-      "version": "1.0.0",
-      "dependencies": {}
-    },
     "com.spout2vrceditor": {
       "version": "0.0.2",
       "dependencies": {
@@ -80,6 +76,10 @@
     },
     "jp.keijiro.klak.spout": {
       "version": "2.0.6",
+      "dependencies": {}
+    },
+    "com.torvid21.lutbeam": {
+      "version": "1.0.0",
       "dependencies": {}
     }
   }
