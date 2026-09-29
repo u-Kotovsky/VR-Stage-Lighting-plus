@@ -85,21 +85,21 @@ Shader "LUTBeam/VRSL Spotlight AudioLink"
                 return _Gobo;
             }
 
-            #define LUTBEAM_CALLBACK_PROJECTION 1
-            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
+            #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
+            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboTex.SampleLevel(samp, float3(uv, getGobo()), 0).rrr;
+                return _GoboTex.SampleLevel(samp, float3(uv, getGobo()), mip).rrr;
             }
-            #define LUTBEAM_CALLBACK_VOLUME 1
-            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
+            #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
+            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboLUT.SampleLevel(samp, float3(uv, getGobo()), 0).rrr;
+                return _GoboLUT.SampleLevel(samp, float3(uv, getGobo()), mip).rrr;
             }
             
             // Example from LUTBeam.cginc
             // (Kotovsky) thank your for a nice example, it helped a lot! ^^
-            #define LUTBEAM_CALLBACK_TRANSFORM 1
-            float3x3 LUTBeamCallbackTransform(float3 vertex, inout float3 offset)
+            #define LUTBEAM_CALLBACK_TRANSFORM LUTBeamCallbackTransform
+            float3x3 LUTBeamCallbackTransform(float3 vertex)
             {
                 float goboSpin = _GoboSpin * _Time.g; // TODO: gobo spin timer instead
                 float tilt = .0;
@@ -130,7 +130,7 @@ Shader "LUTBeam/VRSL Spotlight AudioLink"
                 return combined;
             }
 
-            #include "Assets/LUTBeam/LUTBeam.cginc"
+            #include "Packages/com.torvid21.lutbeam/Runtime/LUTBeam.cginc"
         
             #pragma vertex vert
             #pragma fragment frag
@@ -161,6 +161,16 @@ Shader "LUTBeam/VRSL Spotlight AudioLink"
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
+                BeamSettings settings = DefaultBeamSettings();
+                //settings.zoomX = _Zoom;
+                //settings.zoomY = _Zoom;
+                settings.farz = _FarZ;
+                settings.nearSizeX = _NearRadiusX;
+                settings.nearSizeY = _NearRadiusY;
+                //settings.color = _Color;
+                settings.brightnessVolume = _BeamIntensity;
+                settings.brightnessGobo = _GoboIntensity;
+                settings.beamFalloff = _BeamFalloff;
 
                 float gi = getGlobalIntensity();
                 float fi = getFinalIntensity();
@@ -173,9 +183,20 @@ Shader "LUTBeam/VRSL Spotlight AudioLink"
                 // simulate dimming that happens when the gobo is zoomed out
                 float zoomFade = lerp(1, 0.1, 1-pow(1-saturate(zoom*0.5), 5));
                 
+                
+                // LUTBeamSimple.shader
+                //float ex = settings.nearSizeX*10 + tan(radians(max(settings.zoomX/2, 1))) * settings.farz;
+                //float ey = settings.nearSizeY*10 + tan(radians(max(settings.zoomY/2, 1))) * settings.farz;
+                //float minWidth = 0.05;
+                //settings.color *= 2 / pow(ex * ey + minWidth, 0.7);
+                
+                settings.color = color;
+                settings.zoomX = zoomFade;
+                settings.zoomY = zoomFade;
+                
                 // make sure you feed in v.vertex from the unity default cube here directly without modifying it
                 // otherwise things may go wroooonngggg :)
-                o.beam = LUTBeamVert(v.vertex, zoom, zoom, _FarZ, _NearRadiusX, _NearRadiusY, _Offset, color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, settings);
 
                 return o;
             }
@@ -185,7 +206,7 @@ Shader "LUTBeam/VRSL Spotlight AudioLink"
                 UNITY_SETUP_INSTANCE_ID(i);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 
-                float3 col = LUTBeamFrag(i.beam, _BeamFalloff);
+                float3 col = LUTBeamFrag(i.beam);
                 return float4(col, 0);
             }
             ENDCG
