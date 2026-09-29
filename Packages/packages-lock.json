@@ -12,6 +12,12 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.spout2vrceditor": {
+      "version": "file:com.spout2vrceditor",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.texelsaur.common": {
       "version": "file:com.texelsaur.common",
       "depth": 0,
@@ -251,6 +257,14 @@
       "source": "embedded",
       "dependencies": {
         "com.unity.postprocessing": "3.1.1"
+      }
+    },
+    "jp.keijiro.klak.spout": {
+      "version": "file:jp.keijiro.klak.spout",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.modules.screencapture": "1.0.0"
       }
     },
     "com.unity.modules.ai": {
