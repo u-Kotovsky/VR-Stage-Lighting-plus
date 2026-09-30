@@ -12,6 +12,8 @@ Shader "VRSL/DMX CRTs/Interpolation"
         _SmoothValue ("Smoothness Level (0 to 1, 0 = max)", Range(0,1)) = 0.5
         _MinimumSmoothnessDMX ("Minimum Smoothness Value for DMX", Float) = 0
         _MaximumSmoothnessDMX ("Maximum Smoothness Value for OSc", Float) = 0
+        
+        _ParameterMap ("Parameter Map", 2D) = "black" {}
     }
 
     SubShader
@@ -38,7 +40,9 @@ Shader "VRSL/DMX CRTs/Interpolation"
             half oscSmoothnessRAW;
             half3 rgbSmoothnessRaw;
             #define IF(a, b, c) lerp(b, c, step((fixed) (a), 0));
-
+            
+            sampler2D _ParameterMap;
+            
             #pragma multi_compile_local _ _OLD_SCHOOL_SMOOTHING
             #pragma multi_compile_local _ _SIGNAL_DETECTION
             
@@ -160,7 +164,7 @@ Shader "VRSL/DMX CRTs/Interpolation"
                 }*/
                 half dmxSmoothness = 1.0;
                 half3 smoothing = _EnableDMX == 1 ? getSmoothnessValue(IN.localTexcoord.xy, dmxSmoothness) : getSmoothnessValuePreSet();
-                    
+                
                 #if _OLD_SCHOOL_SMOOTHING
                     half smoothness = _EnableDMX == 1 ? getSmoothnessValue(IN.localTexcoord.xy, dmxSmoothness) : getSmoothnessValuePreSet();         
                     return lerp(clamp(lerp(previousFrame, currentFrame,smoothstep(0.0, 1.0, clamp(unity_DeltaTime.x,0.0,100.0))) , 0.0, 100.0), currentFrame, smoothness);
@@ -172,7 +176,10 @@ Shader "VRSL/DMX CRTs/Interpolation"
                     //}
                     //else
                     //{
-                        return lerp(DampComplex(previousFrame.r, currentFrame.r, smoothing, unity_DeltaTime.x, dmxSmoothness), currentFrame.r, dmxSmoothness * 0.1);
+                        
+                        return abs(previousFrame - currentFrame) > .3 
+                            ? currentFrame.r 
+                            : lerp(DampComplex(previousFrame.r, currentFrame.r, smoothing, unity_DeltaTime.x, dmxSmoothness), currentFrame.r, dmxSmoothness * 0.1);
                     //}
                 
                     //half output = SmoothDamp(previousFrame.r, currentFrame.r, currentVelocity, smoothing,100000.0,unity_DeltaTime.x);

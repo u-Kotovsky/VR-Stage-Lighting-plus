@@ -1,20 +1,21 @@
 #if UNITY_EDITOR
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System;
+
 namespace VRSL.EditorScripts
 {
+    [Obsolete("Being replaced by FixtureInfo", false)]
     [Serializable]
-    public struct FixtureDefintion
+    public struct FixtureDefinition
     {
-        public FixtureDefintion(string n)
+        public FixtureDefinition(string n)
         {
             name = n;
             channelNames = new string[1];
             foldOut = false;
         }
+        
         public string name;
         public string[] channelNames;
         public bool foldOut;
@@ -22,9 +23,9 @@ namespace VRSL.EditorScripts
         public void SetNewChannelSize(int size)
         {
             string[] newChannelNames = new string[size];
-            int loopVal = 0;
             if(channelNames != null)
             {
+                int loopVal;
                 if(newChannelNames.Length > channelNames.Length)
                 {
                     loopVal = channelNames.Length;
@@ -48,12 +49,12 @@ namespace VRSL.EditorScripts
         }
     }
     
-    [CreateAssetMenuAttribute(menuName = "VRSL/DMX Fixture Definition File", fileName = "VRSL DMX Fixture Definitions")]
-    [System.Serializable]
+    [CreateAssetMenu(menuName = "VRSL/DMX Fixture Definition File", fileName = "VRSL DMX Fixture Definitions")]
+    [Serializable]
     public class VRSL_FixtureDefinitions : ScriptableObject
     {
         [HideInInspector]
-        public FixtureDefintion[] definitions = new FixtureDefintion[1];
+        public FixtureDefinition[] definitions = new FixtureDefinition[1];
 
         public VRSL_FixtureDefinitions()
         {
@@ -70,10 +71,10 @@ namespace VRSL.EditorScripts
             //string assetPath =  AssetDatabase.GetAssetPath(this.GetInstanceID());
             //if(targetScene != null)
                 //AssetDatabase.RenameAsset(assetPath, "VRSL DMX Fixture Definitions_" + targetScene.name);
-            UnityEditor.EditorUtility.SetDirty(this);
-            UnityEditor.AssetDatabase.SaveAssets();
+            EditorUtility.SetDirty(this);
+            AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Selection.activeObject = AssetDatabase.LoadAssetAtPath<VRSL_FixtureDefinitions>(AssetDatabase.GetAssetPath(this.GetInstanceID())); 
+            Selection.activeObject = AssetDatabase.LoadAssetAtPath<VRSL_FixtureDefinitions>(AssetDatabase.GetAssetPath(GetInstanceID())); 
         }
 
         public string[] GetNames()
@@ -85,20 +86,21 @@ namespace VRSL.EditorScripts
             }
             return names;
         }
+        
         public string[] GetChannelDefinition(int defID)
         {
             return definitions[defID].channelNames;
         }
+        
         public int DefinitionsArraySize
         {
-            get
-            {
-                return definitions.Length;
-            }
+            get => definitions.Length;
             set
             {
-                FixtureDefintion[] newDefinitions = new FixtureDefintion[value];
-                int loopVal = 0;
+                FixtureDefinition[] newDefinitions = new FixtureDefinition[value];
+                
+                int loopVal;
+                
                 if(newDefinitions.Length > definitions.Length)
                 {
                     loopVal = definitions.Length;
@@ -111,8 +113,8 @@ namespace VRSL.EditorScripts
                 {
                     newDefinitions[i] = definitions[i];
                 }
+                
                 definitions = newDefinitions;
-                //definitions = new FixtureDefintion[value];
             }
         } 
     }

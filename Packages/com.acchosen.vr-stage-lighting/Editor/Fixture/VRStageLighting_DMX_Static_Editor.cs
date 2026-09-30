@@ -137,6 +137,44 @@ namespace VRSL.EditorScripts
             if (serializedObject.FindProperty("enableDMXChannels").boolValue && _panel != null)
             {
                 EditorGUI.indentLevel++;
+
+                #region Fixture Info
+                var fixtureInfoGuidProperty = serializedObject.FindProperty(nameof(VRStageLighting_DMX_Static.fixtureInfoGuid));
+                var fixtureInfos = FixtureManager.instance.Fixtures;
+                
+                bool validFixtureInfo = true;
+                if (fixtureInfoGuidProperty.stringValue.Equals(string.Empty) &&  fixtureInfos != null && fixtureInfos.Count > 0)
+                {
+                    Debug.LogError($"Fixture '{fixture.name}' had an empty GUID '{fixtureInfoGuidProperty.stringValue}'. Sets to default first available!");
+                    fixtureInfoGuidProperty.stringValue = fixtureInfos[0].GetGuid();
+                    serializedObject.ApplyModifiedProperties();
+                }
+                else if (fixtureInfos == null || fixtureInfos.Count == 0)
+                {
+                    Debug.LogError($"Fixture '{fixture.name}' had an empty GUID. No available fixture infos are available!");
+                    validFixtureInfo = false;
+                }
+
+                if (validFixtureInfo)
+                {
+                    var fixtureInfoIndex = FixtureManager.GetFixtureIndexByGuid(fixtureInfoGuidProperty.stringValue);
+                    var fixtureInfoNames = FixtureManager.GetAllFixtureInfoNames().ToArray();
+                    var newIndex = EditorGUILayout.Popup("Fixture Type (new)", fixtureInfoIndex, fixtureInfoNames);
+                    var newGuid = fixtureInfos[newIndex].GetGuid();
+                    
+                    if (!fixtureInfoGuidProperty.stringValue.Equals(newGuid))
+                    {
+                        Debug.Log($"Fixture Info GUids don't match, updating fixture! '{fixtureInfoGuidProperty.stringValue}' -> '{newGuid}'");
+                        fixtureInfoGuidProperty.stringValue = newGuid;
+                        serializedObject.ApplyModifiedProperties();
+                    }
+                }
+                else
+                {
+                    GUILayout.Label("Fixture Type (new) is not available at this moment.");
+                }
+                #endregion
+                
                 serializedObject.FindProperty("fixtureDefintion").intValue = EditorGUILayout.Popup(
                     "Fixture Type", serializedObject.FindProperty("fixtureDefintion").intValue, _fixDefinitionNames);
                 serializedObject.FindProperty("fixtureID").intValue = EditorGUILayout.IntField(new GUIContent(

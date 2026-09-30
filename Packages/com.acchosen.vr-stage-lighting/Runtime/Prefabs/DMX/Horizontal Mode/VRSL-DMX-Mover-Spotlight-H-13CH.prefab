@@ -205,6 +205,7 @@ MonoBehaviour:
   maxMinPan: 180
   maxMinTilt: -180
   fixtureDefintion: 0
+  fixtureInfoGuid: 259cf7b288b16b74bb5d148efe71daf9
   foldout: 0
 --- !u!114 &4514495141956025119
 MonoBehaviour:

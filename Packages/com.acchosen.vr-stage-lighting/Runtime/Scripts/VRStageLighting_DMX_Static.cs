@@ -381,6 +381,8 @@ namespace VRSL
 
         [HideInInspector]
         public int fixtureDefintion;
+
+        public string fixtureInfoGuid; // points to a asset guid that has info for this fixture.
         #endregion
         
         private void SetGlobalChannelFromLocal()

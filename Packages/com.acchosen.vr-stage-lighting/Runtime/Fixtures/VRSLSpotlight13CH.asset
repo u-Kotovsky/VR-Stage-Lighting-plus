@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 588bbcc3ca3ec0d4db44278d4a5deaa0, type: 3}
+  m_Name: VRSLSpotlight13CH
+  m_EditorClassIdentifier: 
+  Name: VRSL Spotlight 13CH
+  Description: Default VRSL spotlight 13 channels
+  Parameters:
+  - name: Pan
+    fine: 1
+    ultra: 0
+    uber: 0
+  - name: Tilt
+    fine: 1
+    ultra: 0
+    uber: 0
+  - name: Zoom
+    fine: 0
+    ultra: 0
+    uber: 0
+  - name: Dimmer
+    fine: 0
+    ultra: 0
+    uber: 0
+  - name: Strobe
+    fine: 0
+    ultra: 0
+    uber: 0
+  - name: Red
+    fine: 0
+    ultra: 0
+    uber: 0
+  - name: Green
+    fine: 0
+    ultra: 0
+    uber: 0
+  - name: Blue
+    fine: 0
+    ultra: 0
+    uber: 0
+  - name: GOBO Spin
+    fine: 0
+    ultra: 0
+    uber: 0
+  - name: GOBO Select
+    fine: 0
+    ultra: 0
+    uber: 0
+  - name: Movement Speed
+    fine: 0
+    ultra: 0
+    uber: 0
+  Authors:
+  - Name: ACChosen
+    Contacts: []

@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: DMXRTMaterial-Interpolated-Movement-Horizontal
-  m_Shader: {fileID: 4800000, guid: 715ebff4a0305954f96e78ccb3676141, type: 3}
+  m_Name: DMXRTMaterial-Parameters
+  m_Shader: {fileID: 4800000, guid: cb69afcde83d88240ae499cab4b49bc4, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -34,7 +34,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DMXTexture:
-        m_Texture: {fileID: 8600000, guid: b0632779d39f9014c932b54d18ad09e8, type: 2}
+        m_Texture: {fileID: 8600000, guid: d6f005c57a9df674cb5cf1e160f92029, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _DetailAlbedoMap:
@@ -74,7 +74,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _ParameterMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: bc771f06ea04ea44abdacf9a1fd651e9, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Tex:
