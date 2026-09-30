@@ -14,13 +14,13 @@ Shader "VRSL/SimpleUnlitClamped"
 			"Queue"="Geometry"
 		}
 
-		//Cull Front
+		Cull Off
 		//ZWrite Off
 		//ZClip False
 
 		Pass
 		{
-			Name "OwenTheProgrammer/Testing/#NAME#"
+			Name "VRSL/SimpleUnlitClamped"
 			CGPROGRAM
 			//#pragma target 5.0
 			#pragma vertex vert
