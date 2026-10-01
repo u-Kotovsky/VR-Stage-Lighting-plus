@@ -189,7 +189,7 @@ Material:
     - _Ior: 1.5
     - _IsEven: 0
     - _LMStrength: 1
-    - _LensMaxBrightness: 0
+    - _LensMaxBrightness: 1
     - _LightProbeMethod: 0
     - _LightingModel: 1
     - _MaxMinPanAngle: 90
