@@ -7751,7 +7751,6 @@ MonoBehaviour:
   lensFlareQuality: 0
   lockLensFlareQualityMode: 0
   strobeQuality: 0
-  strobeQualityMode: 0
   videoSampleTargetTexture: {fileID: 0}
   fixtureMaterials:
   - {fileID: 2100000, guid: 5b1ec4b5ba730ad4c8f042820e37bae3, type: 2}

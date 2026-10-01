@@ -75,8 +75,8 @@ Material:
     - _MaxMinPanAngle: 180
     - _MaxMinTiltAngle: 180
     - _NearRadius: 0.144
-    - _NearRadiusX: 0.22
-    - _NearRadiusY: 0.18
+    - _NearRadiusX: 0.163
+    - _NearRadiusY: 0.214
     - _Offset: 0
     - _Pan: 0
     - _PanInvert: 0
@@ -86,6 +86,13 @@ Material:
     - _RedMultiplier: 1
     - _SpinMult: 4
     - _SpinSpeed: 0.1
+    - _StencilCompareFunction: 6
+    - _StencilFailOp: 0
+    - _StencilPassOp: 0
+    - _StencilReadMask: 255
+    - _StencilRef: 142
+    - _StencilWriteMask: 255
+    - _StencilZFailOp: 0
     - _Tilt: 0
     - _TiltInvert: 0
     - _TiltMax: 90

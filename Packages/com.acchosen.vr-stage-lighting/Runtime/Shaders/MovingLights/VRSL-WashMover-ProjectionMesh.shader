@@ -109,47 +109,44 @@
 		[Enum(UnityEngine.Rendering.BlendOp)] _BlendOp ("Blend Operation", Float) = 0
         _ClippingThreshold ("Clipping Threshold", Range (0,1)) = 0.5
 		//_Fade ("Fade mod", Range(0, 6)) = 1.5
-
-
-	// 	[Space(16)]
 		
+		// 	[Space(16)]
+		// 	[Space(48)]
+		// 	[Header(MAIN)]
+		// [Enum(Unity Default, 0, Non Linear, 1)]_LightProbeMethod("Light Probe Sampling", Int) = 0
+		// 	[Enum(UVs, 0, Triplanar World, 1, Triplanar Object, 2)]_TextureSampleMode("Texture Mode", Int) = 0
+		// 	_TriplanarFalloff("Triplanar Blend", Range(0.5,1)) = 1
+		// 	_MainTex("Main Texture", 2D) = "white" {}
+		// _Color("Color", Color) = (1,1,1,1)
 
+		// 	[Space(16)]
+		// [Header(NORMALS)]
+		// _BumpMap("Normal Map", 2D) = "bump" {}
+		// _BumpScale("Normal Scale", Range(-1,1)) = 1
 
-	// 	[Space(48)]
-	// 	[Header(MAIN)]
-	// [Enum(Unity Default, 0, Non Linear, 1)]_LightProbeMethod("Light Probe Sampling", Int) = 0
-	// 	[Enum(UVs, 0, Triplanar World, 1, Triplanar Object, 2)]_TextureSampleMode("Texture Mode", Int) = 0
-	// 	_TriplanarFalloff("Triplanar Blend", Range(0.5,1)) = 1
-	// 	_MainTex("Main Texture", 2D) = "white" {}
-	// _Color("Color", Color) = (1,1,1,1)
+		// 	[Space(16)]
+		// [Header(METALLIC)]
+		// _MetallicGlossMap("Metallic Map", 2D) = "white" {}
+		// _Metallic("Metallic", Range(0,1)) = 0
+		// 	_Glossiness("Smoothness", Range(0,1)) = 0
 
-	// 	[Space(16)]
-	// [Header(NORMALS)]
-	// _BumpMap("Normal Map", 2D) = "bump" {}
-	// _BumpScale("Normal Scale", Range(-1,1)) = 1
-
-	// 	[Space(16)]
-	// [Header(METALLIC)]
-	// _MetallicGlossMap("Metallic Map", 2D) = "white" {}
-	// _Metallic("Metallic", Range(0,1)) = 0
-	// 	_Glossiness("Smoothness", Range(0,1)) = 0
-
-	// 	[Space(16)]
-	// [Header(LIGHTMAPPING HACKS)]
-	// _SpecularLMOcclusion("Specular Occlusion", Range(0,1)) = 0
-	// 	_SpecLMOcclusionAdjust("Spec Occlusion Sensitiviy", Range(0,1)) = 0.2
-	// 	_LMStrength("Lightmap Strength", Range(0,1)) = 1
-	// 	_RTLMStrength("Realtime Lightmap Strength", Range(0,1)) = 1
-	[Enum(Off,0,On,1)] _MultiSampleDepth ("Multi Sample Depth", Int) = 1
-
-
-
+		// 	[Space(16)]
+		// [Header(LIGHTMAPPING HACKS)]
+		// _SpecularLMOcclusion("Specular Occlusion", Range(0,1)) = 0
+		// 	_SpecLMOcclusionAdjust("Spec Occlusion Sensitiviy", Range(0,1)) = 0.2
+		// 	_LMStrength("Lightmap Strength", Range(0,1)) = 1
+		// 	_RTLMStrength("Realtime Lightmap Strength", Range(0,1)) = 1
+		[Enum(Off,0,On,1)] _MultiSampleDepth ("Multi Sample Depth", Int) = 1
 	}
+	
     SubShader
     {
         Tags
         {
-            "Queue" = "Transparent+1" "IgnoreProjector"="True" "RenderType" = "Transparent" "RenderingPipeline" = "UniversalPipeline"
+            "Queue" = "Transparent+1"
+        	"IgnoreProjector"="True"
+        	"RenderType" = "Transparent"
+        	"RenderingPipeline" = "UniversalPipeline"
         }
 
         Pass
@@ -190,7 +187,6 @@
             #include "UnityCG.cginc"
             #include "../Shared/VRSL-Defines.cginc" //Property Defines are here
 
-
             struct appdata
             {
                 float4 vertex : POSITION;
@@ -228,7 +224,6 @@
             #include "VRSL-StandardMover-ProjectionFrag.cginc" //Fragment Shader is here
             #include "VRSL-StandardMover-Vertex.cginc" //Vertex Shader is here
             ENDCG
-
         }
 
         // Used for handling Depth Buffer (DBuffer) and Depth Priming
@@ -236,13 +231,12 @@
         UsePass "Universal Render Pipeline/Lit/DepthNormals"
     }
 
-		SubShader
+	SubShader
 	{
-		
-		Tags{ "Queue" = "Transparent+1" "IgnoreProjector"="True" "RenderType" = "Transparent" }
+		Tags { "Queue" = "Transparent+1" "IgnoreProjector"="True" "RenderType" = "Transparent" }
 
 		Pass
-         {
+		{
 			AlphaToMask [_AlphaToCoverage]  
             Cull Front
             Ztest GEqual
@@ -276,50 +270,44 @@
 
             #include "UnityCG.cginc"
 			#include "../Shared/VRSL-Defines.cginc" //Property Defines are here
-			
 
-             struct appdata
-             {
-                 float4 vertex : POSITION;
-                 float2 uv : TEXCOORD0;
-                 float3 texcoord : TEXCOORD1;
-				 float4 color : COLOR;
-				 float3 normal : NORMAL;
-				 float3 tangent : TANGENT;
-				 float4 projectionorigin : TEXCOORD2;
-				 UNITY_VERTEX_INPUT_INSTANCE_ID
-             };
-             struct v2f
-             {
-                 float4 pos : SV_POSITION;
-                 float2 uv : TEXCOORD0;
-                 float3 ray : TEXCOORD2;
-                 float4 screenPos : TEXCOORD4;
-				 float4 color : COLOR;
-				 float3 normal : TEXCOORD3;	
-				 float2 dmx: TEXCOORD10;
-				 float4 projectionorigin : TEXCOORD5;
-				 float4 worldDirection : TEXCOORD6;
-				 float4 worldPos : TEXCOORD7;
-				 float3 viewDir : TEXCOORD8;
-				 float3 intensityStrobeWidth : TEXCOORD9;
-				 float4 goboPlusSpinPanTilt : TEXCOORD11;
-				 float4 rgbColor : TEXCOORD12;
-				 float4 emissionColor : TEXCOORD13;
-				 UNITY_VERTEX_INPUT_INSTANCE_ID
-				 UNITY_VERTEX_OUTPUT_STEREO 
-             };
+            struct appdata
+            {
+            	float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+                float3 texcoord : TEXCOORD1;
+				float4 color : COLOR;
+				float3 normal : NORMAL;
+				float3 tangent : TANGENT;
+				float4 projectionorigin : TEXCOORD2;
+				UNITY_VERTEX_INPUT_INSTANCE_ID
+            };
+            struct v2f
+            {
+                float4 pos : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float3 ray : TEXCOORD2;
+                float4 screenPos : TEXCOORD4;
+				float4 color : COLOR;
+				float3 normal : TEXCOORD3;	
+				float2 dmx: TEXCOORD10;
+				float4 projectionorigin : TEXCOORD5;
+				float4 worldDirection : TEXCOORD6;
+				float4 worldPos : TEXCOORD7;
+				float3 viewDir : TEXCOORD8;
+				float3 intensityStrobeWidth : TEXCOORD9;
+				float4 goboPlusSpinPanTilt : TEXCOORD11;
+				float4 rgbColor : TEXCOORD12;
+				float4 emissionColor : TEXCOORD13;
+				UNITY_VERTEX_INPUT_INSTANCE_ID
+				UNITY_VERTEX_OUTPUT_STEREO 
+            };
 			#include "../Shared/VRSL-DMXFunctions.cginc" //Custom Functions
 			#include "VRSL-StandardMover-ProjectionFrag.cginc" //Fragment Shader is here
 			#include "VRSL-StandardMover-Vertex.cginc" //Vertex Shader is here
-
-			 ENDCG
-
-		 }
-
-
+			ENDCG
+		}
 	}
-	//CustomEditor "MoverProjectionLightCustomGUI"
-	//CustomEditor "MoverProjectionLightCustomGUI"
+
 	CustomEditor "VRSLInspector"
 }

@@ -89,8 +89,6 @@
 		_Noise2ZPotato ("Magic Noise Y Scroll", Range(-10, 10)) = 1
 		_Noise2PowerPotato("Magic Noise Strength", Range(0, 1)) = 1
 
-
-
 		//[NoScaleOffset]_InsideConeNormalMap("Inside Cone Normal Map", 2D) = "bump" {}
 
 		_FixtureMaxIntensity ("Maximum Cone Intensity",Range (0,5)) = 1
@@ -129,22 +127,20 @@
 		[Toggle]_UseDepthLight("Toggle The Requirement of the depth light to function.", Int) = 1
 		[Toggle]_PotatoMode("Reduces the overhead on the fragment shader by removing both noise components to extra texture sampling", Int) = 0
 		[Toggle]_HQMode("A higher quality volumetric mode (Experimental)", Int) = 0
-
-
-
+		
 		//[Space(16)]
-
-
-
 		//[Toggle] _UseWorldNorm("Use World Normal vs View Normal", Float) = 0
 		//[KeywordEnum(None, UseDNTexture)] _DNEnabler ("Enable Depth Normal Texture", Float) = 0
-
 	}
+	
     SubShader
     {
         Tags
         {
-            "Queue" = "Transparent+2" "IgnoreProjector"="True" "RenderType" = "Transparent" "RenderingPipeline" = "UniversalPipeline"
+            "Queue" = "Transparent+2"
+        	"IgnoreProjector"="True"
+        	"RenderType" = "Transparent"
+        	"RenderingPipeline" = "UniversalPipeline"
         }
         //Volumetric Pass
 
@@ -155,16 +151,19 @@
             Cull Off
             ZWrite [_ZWrite]
             Lighting Off
+            
             Tags
             {
                 "LightMode" = "UniversalForward"
             }
+            
             Stencil
             {
                 Ref 142
                 Comp NotEqual
                 Pass Keep
             }
+            
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -178,12 +177,13 @@
             #pragma multi_compile_local _ _HQ_MODE
             #pragma multi_compile_local _ _2D_NOISE_ON
             #pragma multi_compile_local _ _ALPHATEST_ON
+            
             #define VOLUMETRIC_YES //To identify the pass in the vert/frag
             #define WASH
             #define VRSL_DMX
+            
             #include "UnityCG.cginc"
             #include "../Shared/VRSL-Defines.cginc" //Property Defines are here
-            float3 thisIsAChange;
             #include "../Shared/VRSL-DMXFunctions.cginc" //Custom Functions
 
             struct appdata
@@ -228,13 +228,13 @@
         }
     }
 
-		SubShader
+	SubShader
 	{
 		
 		Tags{ "Queue" = "Transparent+2" "IgnoreProjector"="True" "RenderType" = "Transparent" }
 		//Volumetric Pass
 
-	Pass
+		Pass
 		{
 			AlphaToMask [_AlphaToCoverage]
 			Blend One [_BlendDst]
@@ -242,12 +242,14 @@
 			ZWrite [_ZWrite]
 			Lighting Off
 			Tags{ "LightMode" = "Always" }
+			
 			Stencil
 			{
 				Ref 142
 				Comp NotEqual
 				Pass Keep
 			}
+			
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
@@ -264,9 +266,9 @@
 			#define VOLUMETRIC_YES //To identify the pass in the vert/frag
 			#define WASH
 			#define VRSL_DMX
+			
 			#include "UnityCG.cginc"
 			#include "../Shared/VRSL-Defines.cginc" //Property Defines are here
-			float3 thisIsAChange;
 			#include "../Shared/VRSL-DMXFunctions.cginc" //Custom Functions
 
 			struct appdata
@@ -304,10 +306,9 @@
 				UNITY_VERTEX_INPUT_INSTANCE_ID
 				UNITY_VERTEX_OUTPUT_STEREO 
 			};
+			
 			#include "VRSL-StandardMover-VolumetricFrag.cginc" //Fragment Shader is here
 			#include "VRSL-StandardMover-Vertex.cginc" //Vertex Shader is here
-
-			
 			ENDCG
 		}
 

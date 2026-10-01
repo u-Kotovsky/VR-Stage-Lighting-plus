@@ -231,7 +231,7 @@ half getFinalIntensity()
      */
     half GetValue(half coarse, half fine)
     {
-        return coarse + (fine / 255.0);
+        return coarse + (fine / 256.0);
     }
 
     /**
@@ -242,9 +242,7 @@ half getFinalIntensity()
      */
     half GetPanValue(uint DMXChannel)
     {
-        half coarse = getValueAtCoords(DMXChannel, _Udon_DMXGridRenderTextureMovement);
-        half fine = getValueAtCoords(DMXChannel + 1, _Udon_DMXGridRenderTextureMovement);
-        half inputValue = GetValue(coarse, fine);
+        half inputValue = getValueAtCoords(DMXChannel, _Udon_DMXGridRenderTextureMovement);
 
         #if defined(VOLUMETRIC_YES) || defined(PROJECTION_YES) || defined(FIXTURE_EMIT) || defined(FIXTURE_SHADOWCAST) || defined(VRSL_SURFACE) || defined(VRSL_FLARE)
             return IF(isDMX() == 1, ((getMinMaxPan() * 2) * (inputValue)) - getMinMaxPan(), 0.0);
@@ -261,9 +259,7 @@ half getFinalIntensity()
      */
     half GetTiltValue(uint DMXChannel)
     {
-        half coarse = getValueAtCoords(DMXChannel + 2, _Udon_DMXGridRenderTextureMovement);
-        half fine = getValueAtCoords(DMXChannel + 3, _Udon_DMXGridRenderTextureMovement);
-        half inputValue = GetValue(coarse, fine);
+        half inputValue = getValueAtCoords(DMXChannel + 2, _Udon_DMXGridRenderTextureMovement);
     
         #if defined(VOLUMETRIC_YES) || defined(PROJECTION_YES) || defined(FIXTURE_EMIT) || defined(FIXTURE_SHADOWCAST) || defined(VRSL_SURFACE) || defined(VRSL_FLARE)
             return IF(isDMX() == 1, ((getMinMaxTilt() * 2) * inputValue) - getMinMaxTilt(), 0.0);
@@ -293,8 +289,8 @@ half getFinalIntensity()
 
     half getDMXConeWidth(uint DMXChannel) //Motor Speed Channel// CHANNEL 5
     {
-        half inputvalue = getValueAtCoords(DMXChannel + 4, _Udon_DMXGridRenderTexture);
-        half DMXWidth = lerp(0, 5.5, inputvalue) - 1.5;
+        half inputValue = getValueAtCoords(DMXChannel + 4, _Udon_DMXGridRenderTexture);
+        half DMXWidth = lerp(0, 5.5, inputValue) - 1.5;
         return IF(isDMX() == 1, DMXWidth, getConeWidth());
     }
 #endif

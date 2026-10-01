@@ -93,6 +93,7 @@ Shader "LUTBeam/VRSL Spotlight"
             
             #include "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/Shared/VRSL-Defines.cginc"
             #include "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/Shared/VRSL-DMXFunctions.cginc"
+			#include "Packages/com.acchosen.vr-stage-lighting/Runtime/Shaders/Shared/VRSL-Helpers.cginc"
             
             // LUTBeamSimple.shader
             Texture2DArray _GoboTex;
@@ -113,6 +114,7 @@ Shader "LUTBeam/VRSL Spotlight"
                 half dmxAlive = isDMX();
                 return (dmxAlive * getDMXGoboSelection(getDMXChannel()) - 1) + ((1 - dmxAlive) * _Gobo);
             }
+            
 
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
@@ -132,51 +134,10 @@ Shader "LUTBeam/VRSL Spotlight"
             {
                 uint dmx = getDMXChannel();
                 float goboSpin = getGoboSpinSpeed(dmx);
-                float tilt = radians(GetTiltValue(dmx) + getOffsetX() - 90);
-                float pan = radians(GetPanValue(dmx) + getOffsetY());
+                float tilt = GetTiltValue(dmx) - 90;
+                float pan = GetPanValue(dmx);
                 
-                // TODO: fix tilt/pan invert, it breaks alignment (for now only paninvert off and tiltinvert on works fine)
-
-                float3x3 rotation_matrix = float3x3(
-                    1,0,0,
-                    0,1,0,
-                    0,0,1
-                );
-                
-                float3x3 spinMatrix3 = float3x3(
-                    cos(goboSpin), -sin(goboSpin), 0,
-                    sin(goboSpin),  cos(goboSpin), 0,
-                    0,              0,             1
-                );
-
-                float3x3 tiltMatrix3 = float3x3(
-                    1, 0,           0,
-                    0, cos(tilt), -sin(tilt),
-                    0, sin(tilt),  cos(tilt)
-                );
-                
-                tiltMatrix3 = checkTiltInvertZ() == 0 ? transpose(tiltMatrix3) : tiltMatrix3;
-
-                float3x3 panMatrix3 = float3x3(
-                    cos(pan), -sin(pan), 0,
-                    sin(pan),  cos(pan), 0,
-                    0,         0,        1
-                );
-                
-                panMatrix3 = checkPanInvertY() == 0 ? transpose(panMatrix3) : panMatrix3;
-
-                rotation_matrix = mul(rotation_matrix, panMatrix3);
-                rotation_matrix = mul(rotation_matrix, tiltMatrix3);
-                rotation_matrix = mul(rotation_matrix, spinMatrix3);
-                vertex = mul(vertex, rotation_matrix);
-                
-                //float3x3 combined = mul(spinMatrix3, mul(tiltMatrix3, panMatrix3));
-
-                //offset = _FixtureRotationOrigin.xyz;
-                
-                //vertex = mul(vertex, combined);
-                return vertex;
-                //return combined;
+                return calculateRotations(float4(0,0,1,0), float4(vertex,0), 0, pan, tilt).xyz;
             }
 
             #include "Packages/com.torvid21.lutbeam/Runtime/LUTBeam.cginc"

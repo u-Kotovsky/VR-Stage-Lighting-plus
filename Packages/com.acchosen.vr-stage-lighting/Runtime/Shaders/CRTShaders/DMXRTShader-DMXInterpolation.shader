@@ -14,6 +14,7 @@ Shader "VRSL/DMX CRTs/Interpolation"
         _MaximumSmoothnessDMX ("Maximum Smoothness Value for OSc", Float) = 0
         
         _ParameterMap ("Parameter Map", 2D) = "black" {}
+        _SnapThreshold ("Snap threshold", Range(0, 1)) = 0.3
     }
 
     SubShader
@@ -42,6 +43,7 @@ Shader "VRSL/DMX CRTs/Interpolation"
             #define IF(a, b, c) lerp(b, c, step((fixed) (a), 0));
             
             sampler2D _ParameterMap;
+            float _SnapThreshold;
             
             #pragma multi_compile_local _ _OLD_SCHOOL_SMOOTHING
             #pragma multi_compile_local _ _SIGNAL_DETECTION
@@ -177,7 +179,7 @@ Shader "VRSL/DMX CRTs/Interpolation"
                     //else
                     //{
                         
-                        return abs(previousFrame - currentFrame) > .3 
+                        return abs(previousFrame - currentFrame) > _SnapThreshold 
                             ? currentFrame.r 
                             : lerp(DampComplex(previousFrame.r, currentFrame.r, smoothing, unity_DeltaTime.x, dmxSmoothness), currentFrame.r, dmxSmoothness * 0.1);
                     //}

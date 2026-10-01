@@ -2,77 +2,9 @@
 //FOR MOVER LIGHT SHADER
 #define IF(a, b, c) lerp(b, c, step((fixed) (a), 0));
 
+#include "../Shared/VRSL-Helpers.cginc"
+
 #ifdef VRSL_DMX
-	half4 calculateRotations(appdata v, half4 input, int normalsCheck, half pan, half tilt)
-	{
-	//	input = IF(worldspacecheck == 1, half4(UnityObjectToWorldNormal(v.normal).x * -1.0, UnityObjectToWorldNormal(v.normal).y * -1.0, UnityObjectToWorldNormal(v.normal).z * -1.0, 1), input)
-		//CALCULATE BASE ROTATION. MORE FUN MATH. THIS IS FOR PAN.
-		half angleY = radians(getOffsetY() + pan);
-		half c, s;
-		sincos(angleY, s, c);
-
-		half3x3 rotateYMatrix = half3x3(c, -s, 0,
-										s, c, 0,
-										0, 0, 1);
-		half3 BaseAndFixturePos = input.xyz;
-
-		//INVERSION CHECK
-		rotateYMatrix = checkPanInvertY() == 1 ? transpose(rotateYMatrix) : rotateYMatrix;
-
-		half3 localRotY = mul(rotateYMatrix, BaseAndFixturePos);
-		//LOCALROTY IS NEW ROTATION
-
-
-		//CALCULATE FIXTURE ROTATION. WOO FUN MATH. THIS IS FOR TILT.
-
-		//set new origin to do transform
-		half3 newOrigin = input.w * _FixtureRotationOrigin.xyz;
-		//if input.w is 1 (vertex), origin changes
-		//if input.w is 0 (normal/tangent), origin doesn't change
-
-		//subtract new origin from original origin for blue vertexes
-		input.xyz = v.color.b == 1.0 ? input.xyz - newOrigin : input.xyz;
-
-
-		//DO ROTATION
-
-
-		//#if defined(PROJECTION_YES)
-		//buffer[3] = GetTiltValue(sector);
-		//#endif
-		half angleX = radians(getOffsetX() + tilt);
-		sincos(angleX, s, c);
-		half3x3 rotateXMatrix = half3x3(1, 0, 0,
-										0, c, -s,
-										0, s, c);
-			
-		//half4 fixtureVertexPos = input;
-			
-		//INVERSION CHECK
-		rotateXMatrix = checkTiltInvertZ() == 1 ? transpose(rotateXMatrix) : rotateXMatrix;
-
-		//half4 localRotX = mul(rotateXMatrix, fixtureVertexPos);
-		//LOCALROTX IS NEW ROTATION
-
-
-
-		//COMBINED ROTATION FOR FIXTURE
-
-		half3x3 rotateXYMatrix = mul(rotateYMatrix, rotateXMatrix);
-		half3 localRotXY = mul(rotateXYMatrix, input.xyz);
-		//LOCALROTXY IS COMBINED ROTATION
-
-		//Apply fixture rotation ONLY to those with blue vertex colors
-
-		//apply LocalRotXY rotation then add back old origin
-		input.xyz = v.color.b == 1.0 ? localRotXY + newOrigin : input.xyz;
-		//input.xyz = v.color.b == 1.0 ? input.xyz + newOrigin : input.xyz;
-		
-		//appy LocalRotY rotation to lightfixture base;
-		input.xyz = v.color.g == 1.0 ? localRotY : input.xyz;
-
-		return input;
-	}
 	half4 InvertVolumetricRotations (half4 input, half pan, half tilt)
 	{
 		half sX, cX, sY, cY;
@@ -390,12 +322,12 @@ v2f vert (appdata v)
 		#endif
 		
 		// Calculate rotations for verts
-		v.vertex = calculateRotations(v, v.vertex, 0, oscPanValue, oscTiltValue);
+		v.vertex = calculateRotations(v.color, v.vertex, 0, oscPanValue, oscTiltValue);
 		#ifdef DMXTranslate // Translate object in 3d space based on it's local position
 			v.vertex = calculateTranslation(v.vertex);
 		#endif
 		#if defined(PROJECTION_YES)
-			o.projectionorigin = calculateRotations(v, _ProjectionRangeOrigin, 0, oscPanValue, oscTiltValue);
+			o.projectionorigin = calculateRotations(v.color, _ProjectionRangeOrigin, 0, oscPanValue, oscTiltValue);
 		#endif
 		
 		#if defined(VOLUMETRIC_YES)
@@ -441,12 +373,12 @@ v2f vert (appdata v)
 
 		//calculate rotations for normals, cast to half4 first with 0 as w
 		half4 newNormals = half4(v.normal.x, v.normal.y, v.normal.z, 0);
-		newNormals = calculateRotations(v, newNormals, 1, oscPanValue, oscTiltValue);
+		newNormals = calculateRotations(v.color, newNormals, 1, oscPanValue, oscTiltValue);
 		v.normal = newNormals.xyz;
 
 		//calculate rotations for tangents, cast to half4 first with 0 as w
 		// half4 newTangent = half4(v.tangent.x, v.tangent.y, v.tangent.z, 0);
-		// newTangent = calculateRotations(v, newTangent, 1, oscPanValue, oscTiltValue);
+		// newTangent = calculateRotations(v.color, newTangent, 1, oscPanValue, oscTiltValue);
 		// v.tangent = newTangent.xyz;
 
 		#if defined(FIXTURE_SHADOWCAST)
@@ -615,7 +547,7 @@ v2f vert (appdata v)
 			#endif
 		#endif
 		//calculate rotations for verts
-		//v.vertex = calculateRotations(v, v.vertex, 0);
+		//v.vertex = calculateRotations(v.color, v.vertex, 0);
 		#if defined(PROJECTION_YES)
 			#ifdef RAW
 				o.globalFinalIntensity.x = getGlobalIntensity();
@@ -669,12 +601,12 @@ v2f vert (appdata v)
 
 		//calculate rotations for normals, cast to half4 first with 0 as w
 		half4 newNormals = half4(v.normal.x, v.normal.y, v.normal.z, 0);
-		//newNormals = calculateRotations(v, newNormals, 1);
+		//newNormals = calculateRotations(v.color, newNormals, 1);
 		v.normal = newNormals.xyz;
 
 		//calculate rotations for tangents, cast to half4 first with 0 as w
 		half4 newTangent = half4(v.tangent.x, v.tangent.y, v.tangent.z, 0);
-		//newTangent = calculateRotations(v, newTangent, 1);
+		//newTangent = calculateRotations(v.color, newTangent, 1);
 		v.tangent = newTangent.xyz;
 
 		//original surface shader related code

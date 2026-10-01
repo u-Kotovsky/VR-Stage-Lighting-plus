@@ -46,6 +46,8 @@ Shader "VRSL/DMX CRTs/DMXParameters"
                 // check fine channel
                 uint xf = x+1;
                 uint yf = y;
+                
+                // TODO: redo in branchless way
                 if (xf >= OUTPUT_W) // we are on the border, move up to next channel
                 {
                     xf = 0;
@@ -57,6 +59,8 @@ Shader "VRSL/DMX CRTs/DMXParameters"
                 // top left corner: green, x: 0, y: 1
                 // top right corner: yellow, x: 1, y: 1
                 //return float4(inUV.x, inUV.y, 0, 1);
+                
+                // TODO: UV position for ultra & uber (x+2, x+3)
                 
                 float2 fineUV = float2((float)xf/OUTPUT_W, (float)yf/OUTPUT_H);
                 //return float4(fineUV,0,1);
