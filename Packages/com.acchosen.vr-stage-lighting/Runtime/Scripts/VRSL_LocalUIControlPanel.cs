@@ -57,6 +57,7 @@ namespace VRSL
         private readonly int _minimumSmoothnessDmx = Shader.PropertyToID("_MinimumSmoothnessDMX");
         private readonly int _samplingTexture = Shader.PropertyToID("_SamplingTexture");
         private readonly int _nineUniverseMode = Shader.PropertyToID("_NineUniverseMode");
+        private readonly int _parameterMap = Shader.PropertyToID("_ParameterMap");
         
         public Material targetDeserializerMaterial;
         public CustomRenderTexture globalChannelCrt;
@@ -436,8 +437,7 @@ namespace VRSL
                 return;
             }
 
-            ApplyIfPropertyExists(dmxParametersMaterial, Shader.PropertyToID("_ParameterMap"),
-                dmxParametersMap);
+            ApplyIfPropertyExists(dmxParametersMaterial, _parameterMap, dmxParametersMap);
         }
         
         private void _CheckBloomAnimator()
