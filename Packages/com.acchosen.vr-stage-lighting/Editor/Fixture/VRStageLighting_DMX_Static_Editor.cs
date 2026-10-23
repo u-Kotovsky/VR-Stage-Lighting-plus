@@ -140,7 +140,7 @@ namespace VRSL.EditorScripts
 
                 #region Fixture Info
                 var fixtureInfoGuidProperty = serializedObject.FindProperty(nameof(VRStageLighting_DMX_Static.fixtureInfoGuid));
-                var fixtureInfos = FixtureManager.instance.Fixtures;
+                var fixtureInfos = FixtureManager.GetInstance().Fixtures;
                 
                 bool validFixtureInfo = true;
                 if (fixtureInfoGuidProperty.stringValue.Equals(string.Empty) &&  fixtureInfos != null && fixtureInfos.Count > 0)

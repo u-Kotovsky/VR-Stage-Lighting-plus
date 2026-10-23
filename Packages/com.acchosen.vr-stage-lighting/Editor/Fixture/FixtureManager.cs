@@ -10,9 +10,23 @@ namespace VRSL.EditorScripts
     [CreateAssetMenu(menuName = "VRSL/Fixture Manager")]
     public class FixtureManager : ScriptableObject
     {
-        public List<FixtureInfo> Fixtures;
+        public List<FixtureInfo> Fixtures = new List<FixtureInfo>(Array.Empty<FixtureInfo>());
 
-        public static FixtureManager instance;
+        private static FixtureManager instance;
+
+        public static FixtureManager GetInstance()
+        {
+            // ensure all initialized
+
+            if (instance == null)
+            {
+                // process all fixtures
+                UpdateFixtures();
+            }
+            
+            // only then return instance
+            return instance;
+        }
 
         public FixtureManager()
         {
