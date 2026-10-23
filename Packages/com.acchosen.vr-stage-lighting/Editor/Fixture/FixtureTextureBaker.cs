@@ -196,7 +196,7 @@ namespace VRSL.EditorScripts
             const float pad = 12f;
             var px = position.width / 2f;
             var py = GUILayoutUtility.GetRect(128, 128).y;
-            var size = MathF.Min(position.width, position.height - py) - pad;
+            var size = MathF.Max(0, MathF.Min(position.width, position.height - py) - pad);
             
             px -= size / 2f;
             
