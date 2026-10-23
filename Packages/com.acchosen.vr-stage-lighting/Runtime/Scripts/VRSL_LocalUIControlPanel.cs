@@ -97,7 +97,6 @@ namespace VRSL
         public DefaultQualityModes strobeQuality;
         #endregion
         
-
         #region Materials
         [Header("Materials")]
         public Material[] fixtureMaterials;
