@@ -50,7 +50,6 @@ namespace VRSL.EditorScripts
             replaceParameterTextureInCurrentScene = EditorGUILayout.ToggleLeft("Replace Parameter Texture in Current Scene", replaceParameterTextureInCurrentScene);
             overrideParameterTextureIfExists = EditorGUILayout.ToggleLeft("Override Parameter Texture If Exists", overrideParameterTextureIfExists);
             EditorGUILayout.EndHorizontal();
-            showPreviewTexture = EditorGUILayout.ToggleLeft("Show Preview Texture", showPreviewTexture);
             
             var so = new SerializedObject(this);
 
@@ -82,6 +81,7 @@ namespace VRSL.EditorScripts
             }
 
             var asset = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/VRSL_BakeTexture.asset");
+            showPreviewTexture = EditorGUILayout.Foldout(showPreviewTexture, "Show Preview Texture");
             if (showPreviewTexture)
             {
                 DrawPreview(position, asset);
@@ -193,8 +193,6 @@ namespace VRSL.EditorScripts
 
         private static void DrawPreview(Rect position, Texture2D texture)
         {
-            GUILayout.Label("Preview", EditorStyles.boldLabel);
-            
             const float pad = 12f;
             var px = position.width / 2f;
             var py = GUILayoutUtility.GetRect(128, 128).y;
