@@ -54,7 +54,12 @@ namespace VRSL.EditorScripts
             
             var so = new SerializedObject(this);
 
-            if (selectedFixtures == null) selectedFixtures = Array.Empty<VRStageLighting_DMX_Static>();
+            // If empty or slots are missing/null
+            if (selectedFixtures == null || selectedFixtures.Length > 0 && selectedFixtures.All(x => x == null))
+            {
+                selectedFixtures = Array.Empty<VRStageLighting_DMX_Static>();
+            }
+            
             var fixtures = so.FindProperty(nameof(selectedFixtures));
             if (fixtures != null)
             {
