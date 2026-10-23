@@ -7796,7 +7796,6 @@ MonoBehaviour:
   - {fileID: 2100000, guid: eaae179237f65574bae7399376889d0a, type: 2}
   - {fileID: 2100000, guid: f5f7c06367e781b4dabd4ca8c426e21d, type: 2}
   - {fileID: 2100000, guid: f5c9d7150b2d1804599f42324e39f040, type: 2}
-  - {fileID: 2100000, guid: 3f818c175be68ac40a730c80e35046ca, type: 2}
   volumetricMaterials:
   - {fileID: 2100000, guid: f655f58706b465b499a323489898bcab, type: 2}
   - {fileID: 2100000, guid: 547d40805583e1c458aa8baf22f77ba5, type: 2}
