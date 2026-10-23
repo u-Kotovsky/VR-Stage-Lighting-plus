@@ -59,11 +59,11 @@ namespace VRSL
         private readonly int _nineUniverseMode = Shader.PropertyToID("_NineUniverseMode");
         private readonly int _parameterMap = Shader.PropertyToID("_ParameterMap");
         
-        public Material targetDeserializerMaterial;
-        public CustomRenderTexture globalChannelCrt;
-        public CustomRenderTexture sourceVideoTexture;
+        public Texture videoSampleTargetTexture;
         public Texture dmxParametersMap;
         public Material dmxParametersMaterial;
+        public Material targetDeserializerMaterial;
+        public CustomRenderTexture globalChannelCrt;
 
         #region Fixtures
         [SerializeField, HideInInspector]
@@ -97,8 +97,6 @@ namespace VRSL
         public DefaultQualityModes strobeQuality;
         #endregion
         
-        [Header("Video Sampling")]
-        public Texture videoSampleTargetTexture;
 
         #region Materials
         [Header("Materials")]
@@ -395,7 +393,7 @@ namespace VRSL
                 return;
             }
 
-            if (!sourceVideoTexture)
+            if (!videoSampleTargetTexture)
             {
                 Debug.LogError($"VideoCRT on '{gameObject.name}' was not found. Please assign one.");
                 return;
@@ -407,8 +405,8 @@ namespace VRSL
                 return;
             }
 
-            Debug.Log($"'{gameObject.name}': Applied texture '{sourceVideoTexture.name}' on '{targetDeserializerMaterial.name}' material");
-            targetDeserializerMaterial.SetTexture(_mainTex, sourceVideoTexture);
+            Debug.Log($"'{gameObject.name}': Applied texture '{videoSampleTargetTexture.name}' on '{targetDeserializerMaterial.name}' material");
+            targetDeserializerMaterial.SetTexture(_mainTex, videoSampleTargetTexture);
 
             if (!globalChannelCrt)
             {

@@ -7732,9 +7732,11 @@ MonoBehaviour:
     PrefabModifications: []
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 5530545822544342666}
-  globalChannelCrt: {fileID: 8600000, guid: d6f005c57a9df674cb5cf1e160f92029, type: 2}
-  sourceVideoTexture: {fileID: 0}
+  videoSampleTargetTexture: {fileID: 0}
+  dmxParametersMap: {fileID: 0}
+  dmxParametersMaterial: {fileID: 2100000, guid: f4cba7e836dfa5f42bb0c8ab6e089f92, type: 2}
   targetDeserializerMaterial: {fileID: 2100000, guid: e9bb3031b1cbd334c867baed960fc6ce, type: 2}
+  globalChannelCrt: {fileID: 8600000, guid: d6f005c57a9df674cb5cf1e160f92029, type: 2}
   audioLinkLasers: []
   audiolinkLights: []
   dmxLights: []
@@ -7751,7 +7753,6 @@ MonoBehaviour:
   lensFlareQuality: 0
   lockLensFlareQualityMode: 0
   strobeQuality: 0
-  videoSampleTargetTexture: {fileID: 0}
   fixtureMaterials:
   - {fileID: 2100000, guid: 5b1ec4b5ba730ad4c8f042820e37bae3, type: 2}
   - {fileID: 2100000, guid: 1e5e69646ccc2ef4294992a17022832b, type: 2}
