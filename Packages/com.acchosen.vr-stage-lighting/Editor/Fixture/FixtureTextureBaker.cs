@@ -68,6 +68,9 @@ namespace VRSL.EditorScripts
                 so.Update();
             }
             
+            // todo: add option for asset selection/path
+            // todo: add option for file save popup
+            
             if (fixtures != null && GUILayout.Button("Bake"))
             {
                 BakeTexture();
@@ -76,7 +79,7 @@ namespace VRSL.EditorScripts
             var asset = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/VRSL_BakeTexture.asset");
             if (showPreviewTexture)
             {
-                DrawPreview(asset);
+                DrawPreview(position, asset);
             }
         }
 
@@ -183,17 +186,13 @@ namespace VRSL.EditorScripts
             Debug.Log("Texture created, saved and imported: " + texture.name + " vs orig: " +texture.format);
         }
 
-        private void DrawPreview(Texture2D texture)
+        private static void DrawPreview(Rect position, Texture2D texture)
         {
-            // todo: fix preview fit in the window math
-            // todo: add proper description and info why and how this is useful
-            // todo: add option for asset selection/path
-            // todo: add option for file save popup
             GUILayout.Label("Preview", EditorStyles.boldLabel);
             
             const float pad = 12f;
             var px = position.width / 2f;
-            const float py = 20f*8; // height of property * count of properties before 
+            var py = GUILayoutUtility.GetRect(128, 128).y;
             var size = MathF.Min(position.width, position.height - py) - pad;
             
             px -= size / 2f;
