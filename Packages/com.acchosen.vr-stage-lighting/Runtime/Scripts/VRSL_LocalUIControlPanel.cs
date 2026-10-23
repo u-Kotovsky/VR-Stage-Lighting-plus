@@ -58,9 +58,11 @@ namespace VRSL
         private readonly int _samplingTexture = Shader.PropertyToID("_SamplingTexture");
         private readonly int _nineUniverseMode = Shader.PropertyToID("_NineUniverseMode");
         
+        public Material targetDeserializerMaterial;
         public CustomRenderTexture globalChannelCrt;
         public CustomRenderTexture sourceVideoTexture;
-        public Material targetDeserializerMaterial;
+        public Texture dmxParametersMap;
+        public Material dmxParametersMaterial;
 
         #region Fixtures
         [SerializeField, HideInInspector]
@@ -94,7 +96,7 @@ namespace VRSL
         public DefaultQualityModes strobeQuality;
         #endregion
         
-        [Header("Video Sampling")] // Unoptimized?
+        [Header("Video Sampling")]
         public Texture videoSampleTargetTexture;
 
         #region Materials
@@ -351,6 +353,7 @@ namespace VRSL
         
         private void Start()
         {
+            _ApplyDmxParameterMap();
             _EnsureDeserializerGotVideoCRT();
             _CheckBloomAnimator();
             _SetTextureIDS();
@@ -380,41 +383,61 @@ namespace VRSL
             SetStrobeTextureStatus();
         }
         
+        /// <summary>
+        /// Apply SourceVideoTexture on targetDeserializerMaterial and globalChannelCrt.
+        /// </summary>
         private void _EnsureDeserializerGotVideoCRT()
         {
-            if (targetDeserializerMaterial)
-            {
-                if (sourceVideoTexture)
-                {
-                    if (targetDeserializerMaterial.HasTexture(_mainTex))
-                    {
-                        Debug.Log($"'{gameObject.name}': Applied texture '{sourceVideoTexture.name}' on '{targetDeserializerMaterial.name}' material");
-                        targetDeserializerMaterial.SetTexture(_mainTex, sourceVideoTexture);
-
-                        if (globalChannelCrt)
-                        {
-                            Debug.Log($"'{gameObject.name}': Applied material '{targetDeserializerMaterial.name}' on '{globalChannelCrt.name}' custom render texture");
-                            globalChannelCrt.material = targetDeserializerMaterial;
-                        }
-                        else
-                        {
-                            Debug.LogError($"Global channel container was not found (GlobalChannelCRT) on '{gameObject.name}' please assign one.");
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogError($"Deserializer material on '{gameObject.name}' doesn't have texture property.");
-                    }
-                }
-                else
-                {
-                    Debug.LogError($"VideoCRT on '{gameObject.name}' was not found. Please assign one.");
-                }
-            }
-            else
+            if (!targetDeserializerMaterial)
             {
                 Debug.LogError($"Deserializer material on '{gameObject.name}' was not found. Please assign one.");
+                return;
             }
+
+            if (!sourceVideoTexture)
+            {
+                Debug.LogError($"VideoCRT on '{gameObject.name}' was not found. Please assign one.");
+                return;
+            }
+
+            if (!targetDeserializerMaterial.HasTexture(_mainTex))
+            {
+                Debug.LogError($"Deserializer material on '{gameObject.name}' doesn't have texture property.");
+                return;
+            }
+
+            Debug.Log($"'{gameObject.name}': Applied texture '{sourceVideoTexture.name}' on '{targetDeserializerMaterial.name}' material");
+            targetDeserializerMaterial.SetTexture(_mainTex, sourceVideoTexture);
+
+            if (!globalChannelCrt)
+            {
+                Debug.LogError($"Global channel container was not found (GlobalChannelCRT) on '{gameObject.name}' please assign one.");
+                return;
+            }
+
+            Debug.Log($"'{gameObject.name}': Applied material '{targetDeserializerMaterial.name}' on '{globalChannelCrt.name}' custom render texture");
+            globalChannelCrt.material = targetDeserializerMaterial;
+        }
+
+        /// <summary>
+        /// Apply DMX Parameter Texture Map to the DMX Parameter Material
+        /// </summary>
+        private void _ApplyDmxParameterMap()
+        {
+            if (!dmxParametersMaterial)
+            {
+                Debug.LogError($"DMX Parameters material is invalid.");
+                return;
+            }
+
+            if (!dmxParametersMap)
+            {
+                Debug.LogError($"DMX Parameters texture is invalid.");
+                return;
+            }
+
+            ApplyIfPropertyExists(dmxParametersMaterial, Shader.PropertyToID("_ParameterMap"),
+                dmxParametersMap);
         }
         
         private void _CheckBloomAnimator()
