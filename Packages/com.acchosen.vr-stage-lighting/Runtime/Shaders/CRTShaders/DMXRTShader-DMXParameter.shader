@@ -2,10 +2,9 @@ Shader "VRSL/DMX CRTs/DMXParameters"
 {
     Properties
     {
-        [Toggle] _EnableDMX ("Enable Stream DMX/DMX Control", Int) = 0
-        [NoScaleOffset]_DMXTexture("DMX Grid Render Texture (To Control Lights)", 2D) = "white" {}
-        
-        _ParameterMap ("Parameter Map", 2D) = "black" {}
+        [Toggle] _EnableDMX ("Enable DMX", Int) = 0
+        [NoScaleOffset]_DMXTexture("DMX Grid Render Texture", 2D) = "white" {}
+        [NoScaleOffset]_ParameterMap ("Parameter Map", 2D) = "black" {}
     }
 
     SubShader
