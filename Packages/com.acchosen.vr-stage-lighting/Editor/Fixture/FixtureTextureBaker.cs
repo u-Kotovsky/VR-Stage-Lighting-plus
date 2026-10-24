@@ -5,6 +5,10 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
+#if VRSL_GPUREADBACK
+using VRSL.GPUReadBack;
+#endif
+
 namespace VRSL.EditorScripts
 {
     public class FixtureTextureBaker : EditorWindow
@@ -12,6 +16,9 @@ namespace VRSL.EditorScripts
         private static FixtureTextureBaker _window;
         private string _targetAssetPath = "Assets/VRSL_BakeTexture.asset";
         public VRStageLighting_DMX_Static[] selectedFixtures = Array.Empty<VRStageLighting_DMX_Static>();
+        #if VRSL_GPUREADBACK
+        public VRSL_ReadBackFunction[] selectedGpuReadBacks = Array.Empty<VRSL_ReadBackFunction>();
+        #endif
         public bool replaceParameterTextureInCurrentScene = true;
         public bool overrideParameterTextureIfExists = true;
         public bool showPreviewTexture = false;
@@ -65,12 +72,28 @@ namespace VRSL.EditorScripts
                 EditorGUILayout.PropertyField(fixtures);
                 so.ApplyModifiedProperties();
             }
-
+            
             if (GUILayout.Button("Get DMX Fixtures from scene"))
             {
                 selectedFixtures = FindObjectsOfType<VRStageLighting_DMX_Static>().Where(x => x.enableDMXChannels).ToArray();
                 so.Update();
             }
+            
+            #if VRSL_GPUREADBACK
+            var readbacks = so.FindProperty(nameof(selectedGpuReadBacks));
+            if (readbacks != null)
+            {
+                EditorGUILayout.PropertyField(readbacks);
+                so.ApplyModifiedProperties();
+            }
+            
+            if (GUILayout.Button("Get DMX GPUReadBacks from scene"))
+            {
+                selectedGpuReadBacks = FindObjectsOfType<VRSL_ReadBackFunction>().ToArray();
+                so.Update();
+            }
+            #endif
+
             
             // todo: add option for asset selection/path
             // todo: add option for file save popup
@@ -95,11 +118,6 @@ namespace VRSL.EditorScripts
             texture.wrapMode = TextureWrapMode.Clamp;
             texture.filterMode = FilterMode.Point;
             
-            var pixels = new Color[texture.width * texture.height];
-            pixels[0] = Color.white;
-            texture.SetPixels(pixels);
-            texture.Apply();
-            
             // go through each fixture, grab their definition and channel start,
             // set pixel masks based on their parameter definitions
             foreach (var fixture in selectedFixtures)
@@ -109,6 +127,7 @@ namespace VRSL.EditorScripts
                 {
                     var info = FixtureManager.GetFixtureInfoByGuid(fixture.fixtureInfoGuid);
 
+                    // Fixtures
                     for (var i = 0; i < info.Parameters.Length; i++)
                     {
                         // get previous channels
@@ -124,12 +143,8 @@ namespace VRSL.EditorScripts
                         var index = fixture.GlobalChannelIndex + i + previousChannelCount;
                         var parameter = info.Parameters[i];
                         
-                        // Coords on 2D texture
-                        var x = (int)((float)index / texture.width);
-                        var y = (int)((float)index % texture.width);
-                        if (y > texture.height) // Skip out of bounds.
+                        if (!GetTextureCoords(index, texture.width, texture.height, out var x, out var y))
                         {
-                            Debug.LogError($"y is above texture width. x: {x}, y: {y}, {texture.width}x{texture.height}");
                             continue;
                         }
 
@@ -150,6 +165,37 @@ namespace VRSL.EditorScripts
                     // soft ignore for now
                 }
             }
+        
+            #if VRSL_GPUREADBACK
+            // GPUReadBack functions
+            Debug.Log($"{selectedGpuReadBacks.Length}");
+            for (var index = 0; index < selectedGpuReadBacks.Length; index++)
+            {
+                var function = selectedGpuReadBacks[index];
+
+                for (int i = 0; i < function.size; i++)
+                {
+                    var globalChannelIndex = ((function.dmxUnviverses[i] - 1) * 512) + function.dmxChannels[i];
+
+                    if (!GetTextureCoords(globalChannelIndex, texture.width, texture.height, out var x, out var y))
+                    {
+                        continue;
+                    }
+
+                    //float g = parameter.fine ? 1 : 0;
+                    //float b = parameter.ultra ? 1 : 0;
+                    //float a = parameter.uber ? 1 : 0; // for now I don't think anyone will ever use it, and it is easier to read texture with alpha = 1
+                    //var color = new Color(1,g,b,1);
+                    var color = new Color(1, 0, 0, 1);
+                    
+                    //Debug.Log($"{index}, {i}, {globalChannelIndex}; x:{x}, y:{y} col:{color}");
+                    
+                    texture.SetPixel(y, x, color);
+                }
+            }
+            #endif
+            
+            texture.Apply();
             
             // Save asset
             // TODO: find a way to override asset content only (to keep same GUIDs so references won't break in other things)
@@ -176,6 +222,20 @@ namespace VRSL.EditorScripts
             // Save to PNG // Not doing that right now because it needs to have compression set to none
             // and it would require to use AssetImport extension which isn't quite what I need to do at the moment
             //SaveTextureAsPNG(texture, assetPath);
+        }
+
+        private bool GetTextureCoords(int index, int width, int height, out int x, out int y)
+        {
+            // Coords on 2D texture
+            x = (int)((float)index / width);
+            y = (int)((float)index % height);
+            if (y > height) // Skip out of bounds.
+            {
+                Debug.LogError($"y is above texture width. x: {x}, y: {y}, {width}x{height}, index: {index}");
+                return false;
+            }
+
+            return true;
         }
 
         private void SaveTextureAsPNG(Texture2D texture, string path)
