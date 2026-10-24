@@ -87,7 +87,7 @@ namespace VRSL.EditorScripts
         public static FixtureInfo GetFixtureInfoByGuid(string searchGuid)
         {
             foreach (var instanceFixture in from instanceFixture
-                         in instance.Fixtures let guid = instanceFixture.GetGuid() where guid == searchGuid select instanceFixture)
+                         in GetInstance().Fixtures let guid = instanceFixture.GetGuid() where guid == searchGuid select instanceFixture)
             {
                 return instanceFixture;
             }
