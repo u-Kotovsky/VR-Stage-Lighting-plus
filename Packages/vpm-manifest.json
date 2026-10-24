@@ -89,13 +89,13 @@
       "dependencies": {}
     },
     "com.acchosen.vrsl-gpureadback": {
-      "version": "1.1.0",
+      "version": "1.1.2",
       "dependencies": {
         "com.acchosen.vr-stage-lighting": "^2.8.0"
       }
     },
     "com.acchosen.vrsl-screenspacefx": {
-      "version": "1.2.0",
+      "version": "1.2.1",
       "dependencies": {
         "com.acchosen.vr-stage-lighting": "^2.8.0",
         "com.llealloo.audiolink": ">=0.3.1"
