@@ -23,6 +23,12 @@
     },
     "com.torvid21.lutbeam": {
       "version": "1.0.0"
+    },
+    "com.acchosen.vrsl-gpureadback": {
+      "version": "1.1.0"
+    },
+    "com.acchosen.vrsl-screenspacefx": {
+      "version": "1.2.0"
     }
   },
   "locked": {
@@ -55,7 +61,7 @@
       }
     },
     "com.acchosen.vr-stage-lighting": {
-      "version": "2.7.0",
+      "version": "2.8.5",
       "dependencies": {
         "com.llealloo.audiolink": ">=0.3.1"
       }
@@ -81,6 +87,19 @@
     "com.torvid21.lutbeam": {
       "version": "1.0.0",
       "dependencies": {}
+    },
+    "com.acchosen.vrsl-gpureadback": {
+      "version": "1.1.0",
+      "dependencies": {
+        "com.acchosen.vr-stage-lighting": "^2.8.0"
+      }
+    },
+    "com.acchosen.vrsl-screenspacefx": {
+      "version": "1.2.0",
+      "dependencies": {
+        "com.acchosen.vr-stage-lighting": "^2.8.0",
+        "com.llealloo.audiolink": ">=0.3.1"
+      }
     }
   }
 }

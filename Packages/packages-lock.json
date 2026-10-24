@@ -6,6 +6,18 @@
       "source": "embedded",
       "dependencies": {}
     },
+    "com.acchosen.vrsl-gpureadback": {
+      "version": "file:com.acchosen.vrsl-gpureadback",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "com.acchosen.vrsl-screenspacefx": {
+      "version": "file:com.acchosen.vrsl-screenspacefx",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
     "com.llealloo.audiolink": {
       "version": "file:com.llealloo.audiolink",
       "depth": 0,
