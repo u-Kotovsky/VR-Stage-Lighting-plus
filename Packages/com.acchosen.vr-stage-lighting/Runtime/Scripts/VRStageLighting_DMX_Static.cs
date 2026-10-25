@@ -322,7 +322,7 @@ namespace VRSL
         }
         
         //[Header("Mesh Settings")]
-        [Tooltip ("The meshes used to make up the light. You need atleast 1 mesh in this group for the script to work properly.")]
+        [Tooltip ("The meshes used to make up the light. You need at least 1 mesh in this group for the script to work properly."), NonReorderable]
         public MeshRenderer[] objRenderers;
 
         [Range(0, 5.5f)]
