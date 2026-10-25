@@ -35,10 +35,7 @@ namespace VRSL
         public bool enableDMXChannels = true;
         public bool IsDMX
         {
-            get
-            {
-                return enableDMXChannels;
-            }
+            get => enableDMXChannels;
             set
             {
                 enableDMXChannels = value;
@@ -99,10 +96,7 @@ namespace VRSL
         public float globalIntensity = 1;
         public float GlobalIntensity
         {
-            get
-            {
-                return globalIntensity;
-            }
+            get => globalIntensity;
             set
             {
                 previousGlobalIntensity = globalIntensity;
@@ -116,10 +110,7 @@ namespace VRSL
         public float finalIntensity = 1;
         public float FinalIntensity
         {
-            get
-            {
-                return finalIntensity;
-            }
+            get => finalIntensity;
             set
             {
                 previousFinalIntensity = finalIntensity;
@@ -132,10 +123,7 @@ namespace VRSL
         public bool finalIntensityComponentMode;
         public bool FinalIntensityComponentMode
         {
-            get
-            {
-                return finalIntensityComponentMode;
-            }
+            get => finalIntensityComponentMode;
             set
             {
                 finalIntensityComponentMode = value;
@@ -148,14 +136,11 @@ namespace VRSL
         public float finalIntensityVolumetric = 1;
         public float FinalIntensityVolumetric
         {
-            get
-            {
-                return finalIntensityVolumetric;
-            }
+            get => finalIntensityVolumetric;
             set
             {
                 previousFinalIntensityVolumetric = finalIntensityVolumetric;
-                finalIntensityVolumetric  = value;
+                finalIntensityVolumetric = value;
                 _UpdateInstancedProperties();
             }
         }
@@ -165,10 +150,7 @@ namespace VRSL
         public float finalIntensityProjection = 1;
         public float FinalIntensityProjection
         {
-            get
-            {
-                return finalIntensityProjection;
-            }
+            get => finalIntensityProjection;
             set
             {
                 previousFinalIntensityProjection = finalIntensityProjection;
@@ -182,10 +164,7 @@ namespace VRSL
         public float finalIntensityFixture = 1;
         public float FinalIntensityFixture
         {
-            get
-            {
-                return finalIntensityFixture;
-            }
+            get => finalIntensityFixture;
             set
             {
                 previousFinalIntensityFixture = finalIntensityFixture;
@@ -199,10 +178,7 @@ namespace VRSL
         public Color lightColorTint = Color.white * 2.0f;
         public Color LightColorTint
         {
-            get
-            {
-                return lightColorTint;
-            }
+            get => lightColorTint;
             set
             {
                 previousColorTint = lightColorTint;
@@ -219,10 +195,7 @@ namespace VRSL
         public bool invertPan;
         public bool InvertPan
         {
-            get
-            {
-                return invertPan;
-            }
+            get => invertPan;
             set
             {
                 invertPan = value;
@@ -234,10 +207,7 @@ namespace VRSL
         public bool invertTilt;
         public bool InvertTilt
         {
-            get
-            {
-                return invertTilt;
-            }
+            get => invertTilt;
             set
             {
                 invertTilt = value;
@@ -256,10 +226,7 @@ namespace VRSL
         public bool enableAutoSpin = true;
         public bool ProjectionSpin
         {
-            get
-            {
-                return enableAutoSpin;
-            }
+            get => enableAutoSpin;
             set
             {
                 enableAutoSpin = value;
@@ -275,10 +242,7 @@ namespace VRSL
         public float tiltOffsetBlue = 90.0f;
         public float Tilt
         {
-            get
-            {
-                return tiltOffsetBlue;
-            }
+            get => tiltOffsetBlue;
             set
             {
                 tiltOffsetBlue = value;
@@ -292,10 +256,7 @@ namespace VRSL
         public float panOffsetBlueGreen;
         public float Pan
         {
-            get
-            {
-                return panOffsetBlueGreen;
-            }
+            get => panOffsetBlueGreen;
             set
             {
                 panOffsetBlueGreen = value;
@@ -309,10 +270,7 @@ namespace VRSL
         public int selectGOBO = 1;
         public int SelectGOBO
         {
-            get
-            {
-                return selectGOBO;
-            }
+            get => selectGOBO;
             set
             {
                 previousGOBOSelection = selectGOBO;
@@ -330,10 +288,7 @@ namespace VRSL
         public float coneWidth = 2.5f;
         public float ConeWidth
         {
-            get
-            {
-                return coneWidth;
-            }
+            get => coneWidth;
             set
             {
                 previousConeWidth = coneWidth;
@@ -342,15 +297,12 @@ namespace VRSL
             }
         }
 
-        [Range(0.5f,10.0f)]
+        [Range(0.5f, 10.0f)]
         [Tooltip ("Controls the length of the cone of a mover/spot light.")]
         public float coneLength = 8.5f;
         public float ConeLength
         {
-            get
-            {
-                return ConeLength;
-            }
+            get => ConeLength;
             set
             {
                 previousConeLength = coneLength;
@@ -364,10 +316,7 @@ namespace VRSL
         public float maxConeLength = 1.0f;
         public float MaxConeLength
         {
-            get
-            {
-                return MaxConeLength;
-            }
+            get => MaxConeLength;
             set
             {
                 previousMaxConeLength = maxConeLength;
@@ -415,7 +364,7 @@ namespace VRSL
         private MaterialPropertyBlock props;
         private bool enableInstancing;
         private float targetPanAngle, targetTiltAngle;
-        private UnityEngine.Vector3 targetToFollowLast;
+        private Vector3 targetToFollowLast;
         private Color previousColorTint;
         private Transform previousTargetToFollowTransform;
         
