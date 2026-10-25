@@ -21,7 +21,7 @@ namespace VRSL.EditorScripts
         #endif
         public bool replaceParameterTextureInCurrentScene = true;
         public bool overrideParameterTextureIfExists = true;
-        public bool showPreviewTexture = false;
+        public bool showPreviewTexture;
         public bool parameterInfoFoldout = true;
         
         [MenuItem("VRSL/Fixture Texture Baker")]
@@ -39,24 +39,23 @@ namespace VRSL.EditorScripts
         {
             EditorGUILayout.LabelField("Fixture Parameter Map Baker", EditorStyles.boldLabel);
 
-            parameterInfoFoldout = EditorGUILayout.Foldout(parameterInfoFoldout, "Parameter Texture Info");
+            parameterInfoFoldout = EditorGUILayout.BeginFoldoutHeaderGroup(parameterInfoFoldout, "Parameter Texture Info");
             if (parameterInfoFoldout)
             {
                 EditorGUI.indentLevel++;
                 EditorStyles.label.wordWrap = true;
-                EditorGUILayout.LabelField($"Parameter Map is required for properly mapping each parameter to it's coarse, fine, ultra and uber channels. That map is used by DMX Parameter shader to convert raw bytes into floats with specified precision. That way we can properly calculate smoothing and snapping. And it requires less code to read a single parameter.",
+                EditorGUILayout.LabelField("Parameter Map is required for properly mapping each parameter to it's coarse, fine, ultra and uber channels. That map is used by DMX Parameter shader to convert raw bytes into floats with specified precision. That way we can properly calculate smoothing and snapping. And it requires less code to read a single parameter.",
                     EditorStyles.label);
-                EditorGUILayout.LabelField($"You can read it as:\nRed: Coarse Channel (Same index);\nGreen: Fine Channel (Index + 1);\nBlue: Ultra Channel (Index + 2);\nAlpha: Uber Channel (Index + 3) (unused for now)",
+                EditorGUILayout.LabelField("You can read it as:\nRed: Coarse Channel (Same index);\nGreen: Fine Channel (Index + 1);\nBlue: Ultra Channel (Index + 2);\nAlpha: Uber Channel (Index + 3) (unused for now)",
                     EditorStyles.label);
                 EditorGUI.indentLevel--;
             }
+            EditorGUILayout.EndFoldoutHeaderGroup();
             
             // TODO: choose what asset to override
 
-            EditorGUILayout.BeginHorizontal();
             replaceParameterTextureInCurrentScene = EditorGUILayout.ToggleLeft("Replace Parameter Texture in Current Scene", replaceParameterTextureInCurrentScene);
             overrideParameterTextureIfExists = EditorGUILayout.ToggleLeft("Override Parameter Texture If Exists", overrideParameterTextureIfExists);
-            EditorGUILayout.EndHorizontal();
             
             var so = new SerializedObject(this);
 
@@ -80,6 +79,12 @@ namespace VRSL.EditorScripts
             }
             
             #if VRSL_GPUREADBACK
+            // If empty or slots are missing/null
+            if (selectedGpuReadBacks == null || selectedGpuReadBacks.Length > 0 && selectedGpuReadBacks.All(x => x == null))
+            {
+                selectedGpuReadBacks = Array.Empty<VRSL_ReadBackFunction>();
+            }
+
             var readbacks = so.FindProperty(nameof(selectedGpuReadBacks));
             if (readbacks != null)
             {
@@ -93,7 +98,6 @@ namespace VRSL.EditorScripts
                 so.Update();
             }
             #endif
-
             
             // todo: add option for asset selection/path
             // todo: add option for file save popup
@@ -104,11 +108,12 @@ namespace VRSL.EditorScripts
             }
 
             var asset = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/VRSL_BakeTexture.asset");
-            showPreviewTexture = EditorGUILayout.Foldout(showPreviewTexture, "Show Preview Texture");
+            showPreviewTexture = EditorGUILayout.BeginFoldoutHeaderGroup(showPreviewTexture, "Show Preview Texture");
             if (showPreviewTexture)
             {
                 DrawPreview(position, asset);
             }
+            EditorGUILayout.EndFoldoutHeaderGroup();
         }
 
         private void BakeTexture()
@@ -175,13 +180,14 @@ namespace VRSL.EditorScripts
 
                 for (int i = 0; i < function.size; i++)
                 {
-                    var globalChannelIndex = ((function.dmxUnviverses[i] - 1) * 512) + function.dmxChannels[i];
+                    var globalChannelIndex = GetGlobalChannel(function.dmxUnviverses[i], function.dmxChannels[i]);
 
                     if (!GetTextureCoords(globalChannelIndex, texture.width, texture.height, out var x, out var y))
                     {
                         continue;
                     }
 
+                    // TODO: read channelLength
                     //float g = parameter.fine ? 1 : 0;
                     //float b = parameter.ultra ? 1 : 0;
                     //float a = parameter.uber ? 1 : 0; // for now I don't think anyone will ever use it, and it is easier to read texture with alpha = 1
@@ -222,6 +228,11 @@ namespace VRSL.EditorScripts
             // Save to PNG // Not doing that right now because it needs to have compression set to none
             // and it would require to use AssetImport extension which isn't quite what I need to do at the moment
             //SaveTextureAsPNG(texture, assetPath);
+        }
+        
+        private int GetGlobalChannel(int universe, int channel)
+        {
+            return channel - 1 + ((universe - 1) * 512);
         }
 
         private bool GetTextureCoords(int index, int width, int height, out int x, out int y)
