@@ -1,7 +1,7 @@
 ﻿#if !COMPILER_UDONSHARP && UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
-using System.IO;
+using VRSL.EditorScripts;
 
 // help link https://docs.unity3d.com/ScriptReference/EditorStyles.html
 // ---DISCLAIMER--- THIS CODE IS BASED OFF OF "SYNQARK"'s ARKTOON-SHADERS AND "XIEXE"'s UNITY-SHADERS. FOR MORE INFORMATION PLEASE REFER TO THE ORIGINAL BASE WRITER "https://github.com/synqark", "https://github.com/synqark/Arktoon-Shaders" or "https://github.com/Xiexe", "https://github.com/Xiexe/Xiexes-Unity-Shaders"
@@ -9,31 +9,136 @@ using System.IO;
 [InitializeOnLoad]
 public class VRSLStyles : MonoBehaviour
 {
-    public static Texture logo = Resources.Load("VRStageLighting-Logo") as Texture;
-
+    public static readonly Texture Logo = Resources.Load("VRStageLighting-Logo") as Texture;
     //public static string ver = "VR Stage Lighting ver:" + " <b><color=#6a15ce> 2.4.1</color></b>";
-
+    private const string PackagePath = "Packages/com.acchosen.vrsl-gpureadback/package.json";
+    private static Package _package = VRSLPackageUtility.ReadPackage(PackagePath);
+    
     public static void DepthPassWarning()
     {
         EditorGUILayout.HelpBox("Shader looking weird? \nPlease ensure that the depth texture is enabled by having the included 'Directional Light' prefab somewhere in your scene, located in \nAssets/VRStageLighting/VR-Stage-Lighting/Other", MessageType.Info);
     }
+    
     public static string GetVersion()
     {
-        string path = Application.dataPath;
-        path = path.Replace("Assets","");
-        path += "Packages"  + "\\" + "com.acchosen.vr-stage-lighting" + "\\";
-        path += "Runtime" + "\\"  + "VERSION.txt";
+        return _package.version;
+    }
+    
+    public static GUIStyle InfoLabel()
+    {
+        var style = new GUIStyle();
+        style.fontSize = 13;
+        style.fontStyle = FontStyle.Italic;
+        style.normal.textColor = Color.white;
+        return style;
+    }
+    
+    public static GUIStyle SectionLabel()
+    {
+        var style = new GUIStyle();
+        style.fontSize = 15;
+        style.fontStyle = FontStyle.Bold;
+        style.normal.textColor = Color.white;
+        return style;
+    }
+    
+    public static GUIStyle Title()
+    {
+        var style = new GUIStyle("label");
+        style.fontSize = 20;
+        style.alignment = TextAnchor.MiddleCenter;
+        style.fontStyle = FontStyle.Italic;
+        return style;
+    }
+    
+    public static GUIContent Label(string label)
+    {
+        GUIContent content = new GUIContent();
+        content.text = label;
+        return content;
+    }
+    
+    public static GUIStyle Title1Foldout()
+    {
+        GUIStyle style = new GUIStyle(EditorStyles.foldoutHeader);
+        style.fontSize = 20;
+        //g.fontStyle = FontStyle.Bold;
+        //g.normal.textColor = Color.white;
+        style.alignment = TextAnchor.MiddleCenter;
+        style.fixedHeight = 40;
+        style.fontStyle = FontStyle.BoldAndItalic;
+        style.stretchWidth = true;
+            
+        return style;
+    }
+    
+    public static void GUILine(int height = 1)
+    {
+        Rect rect = EditorGUILayout.GetControlRect(false, height );
+        rect.height = height;
+        EditorGUI.DrawRect(rect, new Color ( 0.5f,0.5f,0.5f, 1 ) );
+    }
+    
+    public static GUIStyle RawDataStyle(float value)
+    {
+        var style = new GUIStyle("label");
+        
+        if (value <= 0)
+        {
+            style.normal.textColor = Color.red;
+        }
+        else if (value > 0 && value <= 127)
+        {
+            style.normal.textColor = Color.yellow;
+        }
+        else
+        {
+            style.normal.textColor = Color.green;
+        }
 
-        StreamReader reader = new StreamReader(path); 
-        string versionNum = reader.ReadToEnd();
-        string ver = "VR Stage Lighting ver:" + " <b><color=#b33cff>" + versionNum + "</color></b>";
-        return ver;
+        return style;
+    }
+    
+    public static GUIStyle BoolDataStyle(bool value)
+    {
+        var style = new GUIStyle("label");
+        
+        style.normal.textColor = value ? Color.green : Color.red;
+        
+        return style;
+    }
+    
+    public static GUIStyle IntDataStyle(int value)
+    {
+        var style = new GUIStyle("label");
+        
+        style.normal.textColor = value > 0 ? Color.green : Color.red;
+
+        return style;
+    }
+    
+    public static GUIStyle FloatDataStyle(float value)
+    {
+        var style = new GUIStyle("label");
+            
+        style.normal.textColor = value <= 0.0f ? Color.red : Color.green;
+
+        return style;
     }
 
+    public static GUIStyle StringDataStyle()
+    {
+        var style = new GUIStyle("label");
+
+        style.normal.textColor = Color.magenta;
+
+        return style;
+    }
+    
     public static void DrawLogo()
     {
-        ///GUILayout.BeginArea(new Rect(0,0, Screen.width, Screen.height));
-        // GUILayout.FlexibleSpace();
+        //GUILayout.BeginArea(new Rect(0,0, Screen.width, Screen.height));
+        //GUILayout.FlexibleSpace();
         //GUI.DrawTexture(pos,logo,ScaleMode.ScaleToFit);
         //EditorGUI.DrawPreviewTexture(new Rect(0,0,400,150), logo);
         Vector2 contentOffset = new Vector2(0f, -2f);
@@ -44,12 +149,13 @@ public class VRSLStyles : MonoBehaviour
         style.alignment = TextAnchor.MiddleCenter;
         var rect = GUILayoutUtility.GetRect(300f, 190f, style);
         //GUILayout.Label(logo,style, GUILayout.MaxWidth(500), GUILayout.MaxHeight(200));
-        GUI.Box(rect, logo,style);
+        GUI.Box(rect, Logo, style);
         //GUILayout.Label(logo);
         // GUILayout.FlexibleSpace();
         //GUILayout.EndArea();
     }
-    private static Rect DrawShuriken(string title, Vector2 contentOffset, int HeaderHeight)
+    
+    public static Rect DrawShuriken(string title, Vector2 contentOffset, int HeaderHeight)
     {
         var style = new GUIStyle("ShurikenModuleTitle");
         style.font = new GUIStyle(EditorStyles.boldLabel).font;
@@ -62,7 +168,7 @@ public class VRSLStyles : MonoBehaviour
     }
 
     /// indent support
-    private static Rect DrawShuriken(string title, Vector2 contentOffset, int HeaderHeight, int indent)
+    public static Rect DrawShuriken(string title, Vector2 contentOffset, int HeaderHeight, int indent)
     {
         var style = new GUIStyle("ShurikenModuleTitle");
         style.font = new GUIStyle(EditorStyles.boldLabel).font;
@@ -75,16 +181,16 @@ public class VRSLStyles : MonoBehaviour
         return rect;
     }
 
-    private static Rect DrawShurikenCenteredTitle(string title, Vector2 contentOffset, int HeaderHeight)
+    public static Rect DrawShurikenCenteredTitle(string title, Vector2 contentOffset, int HeaderHeight)
     {
         var style = new GUIStyle("ShurikenModuleTitle");
         style.font = new GUIStyle(EditorStyles.boldLabel).font;
         style.border = new RectOffset(15, 7, 4, 4);
+        style.fontSize = 14;
         style.fixedHeight = HeaderHeight;
         style.contentOffset = contentOffset;
         style.alignment = TextAnchor.MiddleCenter;
         var rect = GUILayoutUtility.GetRect(16f, HeaderHeight, style);
-
         GUI.Box(rect, title, style);
         return rect;
     }
@@ -105,7 +211,8 @@ public class VRSLStyles : MonoBehaviour
         }
         return display;
     }
-        //// indent support
+    
+    // indent support
     public static bool ShurikenFoldout(string title, bool display, int intent)
     {
         // var indentAmmount = (float)(typeof(EditorGUI).GetField("kIndentPerLevel").GetValue(null));//// reeeee it was private, WHY UNITY?
@@ -125,8 +232,9 @@ public class VRSLStyles : MonoBehaviour
         }
         return display;
     }
+    
     //parting line text
-    private static Rect DrawShurikenPartingLineText(string title, Vector2 contentOffset, int HeaderHeight)
+    public static Rect DrawShurikenPartingLineText(string title, Vector2 contentOffset, int HeaderHeight)
     {
         var style = new GUIStyle("ShurikenModuleTitle");
         style.font = new GUIStyle(EditorStyles.boldLabel).font;
@@ -142,19 +250,19 @@ public class VRSLStyles : MonoBehaviour
     //end of parting line text
 
     //parting lines
-    static public void PartingLine()
+    public static void PartingLine()
     {
         GUILayout.Space(5);
         GUILine(new Color(0.5f, 0.5f, 0.5f), 1.5f);
         GUILayout.Space(5);
     }
 
-    static public void GUILine(float height = 0f)
+    public static void GUILine(float height = 0f)
     {
         GUILine(Color.black, height);
     }
 
-    static public void GUILine(Color color, float height = 0f)
+    public static void GUILine(Color color, float height = 0f)
     {
         Rect position = GUILayoutUtility.GetRect(0f, float.MaxValue, height, height, LineStyle);
 
@@ -167,8 +275,8 @@ public class VRSLStyles : MonoBehaviour
         }
     }
 
-    static public GUIStyle _LineStyle;
-    static public GUIStyle LineStyle
+    public static GUIStyle _LineStyle;
+    public static GUIStyle LineStyle
     {
         get
         {
@@ -196,9 +304,5 @@ public class VRSLStyles : MonoBehaviour
     {
         DrawShurikenPartingLineText(title, new Vector2(6f, -2f), 22);
     }
-
-
-
-
 }
 #endif
