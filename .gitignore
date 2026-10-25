@@ -64,10 +64,14 @@ crashlytics-build.properties
 Assets/PackageMakerWindowData.asset*
 .idea
 .vscode
-Thry/Config.json
+
 bakery_times.log
+
+Thry/Config.json
 Thry/persistent_data
 Thry/preset_cache.txt
+
 ClientSimStorage
 UserSettings
+Packages
 .audiolink_pipeline
