@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 #if UDONSHARP
@@ -681,8 +682,8 @@ namespace VRSL.EditorScripts
         public static GUIStyle Title2()
         {
             GUIStyle g = new GUIStyle();
-            g.fontSize = 24;
-            g.fixedHeight = 35;
+            g.fontSize = 18;
+            //g.fixedHeight = 35;
             //g.fontStyle = FontStyle.Bold;
             g.normal.textColor = Color.white;
             g.hover.textColor = Color.white;
@@ -717,11 +718,11 @@ namespace VRSL.EditorScripts
         public static GUIStyle Title1Foldout()
         {
             GUIStyle g = new GUIStyle(EditorStyles.foldoutHeader);
-            g.fontSize = 20;
+            g.fontSize = 14;//20;
             // g.fontStyle = FontStyle.Bold;
             // g.normal.textColor = Color.white;
-            g.alignment = TextAnchor.MiddleCenter;
-            g.fixedHeight = 45;
+            //g.alignment = TextAnchor.MiddleCenter;
+            //g.fixedHeight = 45;
             g.fontStyle = FontStyle.Bold;
             g.stretchWidth = true;
             
@@ -3039,15 +3040,16 @@ namespace VRSL.EditorScripts
                 }
                 GuiLine();
                 GUILayout.Label("Fixture List", Title2());
-                EditorGUILayout.Space(5f);
+                //EditorGUILayout.Space(5f);
                 // EditorGUILayout.BeginHorizontal();
                 // GUILayout.Label("DMX Fixture Count: " + GetFixtureCount());
                 // GUILayout.Label("Audiolink Fixture Count: " + GetAudioLinkFixtureCount());
                 // EditorGUILayout.EndHorizontal();
                 int dmxCount = GetFixtureCount();
                 int audioLinkCount = GetAudioLinkFixtureCount();
-                EditorGUILayout.Space(5f);
-                if (GUILayout.Button(Label("Update Fixtures", "Apply all changes in the fixture list to all affected fixtures in the scene! Also ensures all fixtures are updated with the current global statuses of the control panel."), BigButton()))
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button(Label("Update Fixtures", "Apply all changes in the fixture list to all affected fixtures in the scene! Also ensures all fixtures are updated with the current global statuses of the control panel."), 
+                        NormalButton()))
                 {
                     Debug.Log($"{Prefix}: Applying Changes!");
                     ApplyChangesToFixtures(true, false, false);
@@ -3061,14 +3063,15 @@ namespace VRSL.EditorScripts
                     ResetItems(false);
                     Repaint();
                 }
+                EditorGUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
 
                 so = new SerializedObject(panel);
 
                 ////////////////////////////////////////////////////////////////////////
-                Color bg = GUI.backgroundColor;
-                GUIContent dmxRectText = new GUIContent(ToggleText(panel.isUsingDMX,"DMX (" + dmxCount +")"), "Enable/Disable DMX mode from this scene. This will disable all corresponding DMX render textures and prevent them from updating at runtime.");
-                Rect dmxRect = GUILayoutUtility.GetRect(dmxRectText, NormalButtonToggle(panel.isUsingDMX, dmxHover));
+                var bg = GUI.backgroundColor;
+                var dmxRectText = new GUIContent(ToggleText(panel.isUsingDMX,$"DMX ({dmxCount})"), "Enable/Disable DMX mode from this scene. This will disable all corresponding DMX render textures and prevent them from updating at runtime.");
+                var dmxRect = GUILayoutUtility.GetRect(dmxRectText, NormalButtonToggle(panel.isUsingDMX, dmxHover));
                 if (Event.current.type == EventType.Repaint && dmxRect.Contains(Event.current.mousePosition))
                 {
                     dmxHover = true;
@@ -3078,21 +3081,11 @@ namespace VRSL.EditorScripts
                     dmxHover = false;
                 }
                 so.FindProperty(nameof(panel.isUsingDMX)).boolValue = GUI.Toggle(dmxRect, panel.isUsingDMX, dmxRectText, NormalButtonToggle(panel.isUsingDMX, dmxHover));
-                //so.FindProperty(nameof(panel.isUsingDMX)).boolValue = GUILayout.Toggle(panel.isUsingDMX, ToggleText(panel.isUsingDMX,"DMX"), NormalButtonToggle(panel.isUsingDMX, dmxHover));
                 
-                GUIContent audioRectText = new GUIContent(ToggleText(panel.isUsingAudioLink,$"AUDIOLINK ({audioLinkCount})"), "Enable/Disable AudioLink mode from this scene. This will diable all corresponding AudioLink render textures and prevent them from updating at runtime.");
-                Rect audioRect = GUILayoutUtility.GetRect(audioRectText, NormalButtonToggle(panel.isUsingAudioLink, audioLinkHover));
-                if (Event.current.type == EventType.Repaint && audioRect.Contains(Event.current.mousePosition))
-                {
-                    audioLinkHover = true;
-                }
-                else
-                {
-                    audioLinkHover = false;
-                }
+                var audioRectText = new GUIContent(ToggleText(panel.isUsingAudioLink,$"AUDIOLINK ({audioLinkCount})"), "Enable/Disable AudioLink mode from this scene. This will diable all corresponding AudioLink render textures and prevent them from updating at runtime.");
+                var audioRect = GUILayoutUtility.GetRect(audioRectText, NormalButtonToggle(panel.isUsingAudioLink, audioLinkHover));
+                audioLinkHover = Event.current.type == EventType.Repaint && audioRect.Contains(Event.current.mousePosition);
                 so.FindProperty(nameof(panel.isUsingAudioLink)).boolValue = GUI.Toggle(audioRect, panel.isUsingAudioLink, audioRectText, NormalButtonToggle(panel.isUsingAudioLink, audioLinkHover));
-                //so.FindProperty(nameof(panel.isUsingAudioLink)).boolValue = GUILayout.Toggle(panel.isUsingAudioLink, ToggleText(panel.isUsingAudioLink,"AUDIOLINK"), NormalButtonToggle(panel.isUsingAudioLink, audioLinkHover));
-
                 GUI.backgroundColor = bg;
                 /////////////////////////////////////////////////////////////////////////////////
 
@@ -3111,13 +3104,14 @@ namespace VRSL.EditorScripts
     #endif
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                float sectionWidth = position.width /2;
-                dmxScrollPos = EditorGUILayout.BeginScrollView(dmxScrollPos, true, true, GUILayout.MaxWidth((sectionWidth)));
+                var sectionWidth = position.width / 2;
+                dmxScrollPos = EditorGUILayout.BeginScrollView(dmxScrollPos, true, true, GUILayout.MaxWidth(sectionWidth));
                 if(panel.isUsingDMX)
                 {
                     for(int i = 0; i < universes.Length; i++)
                     {
-                        universeFold[i] = EditorGUILayout.BeginFoldoutHeaderGroup(universeFold[i], Label("Universe " + (i + 1), "Show/Hide all fixtures in in DMX Universe " + (i+1)), Title1Foldout());
+                        if(universes[i] == null || universes[i].Count == 0) continue;
+                        universeFold[i] = EditorGUILayout.BeginFoldoutHeaderGroup(universeFold[i], Label($"Universe {i + 1} ({universes[i].Count})", "Show/Hide all fixtures in in DMX Universe " + (i+1)), Title1Foldout());
                         EditorGUILayout.EndFoldoutHeaderGroup();
                         GuiLine();
 
@@ -3131,7 +3125,7 @@ namespace VRSL.EditorScripts
                                 //GUILayout.Space(2.0f);
                                 EditorGUILayout.BeginHorizontal();
                                 GUILayout.Space(15f);
-                                fixture.foldout = EditorGUILayout.BeginFoldoutHeaderGroup(fixture.foldout,"<b><i>Channel: " + fixture.light._GetDMXChannel() + "</i></b> \n" + fixture.light.name, SelectionFoldout());
+                                fixture.foldout = EditorGUILayout.BeginFoldoutHeaderGroup(fixture.foldout,$"<b><i>Channel: {fixture.light._GetDMXChannel()}</i></b> \n{fixture.light.name}", SelectionFoldout());
                                 if(GUILayout.Button("Copy", GUILayout.MinWidth(45f), GUILayout.MaxWidth(45f),GUILayout.MinHeight(28f)))
                                 {
                                     try
@@ -3175,15 +3169,12 @@ namespace VRSL.EditorScripts
                                     EditorGUILayout.ObjectField("Selected Fixture",fixture.light, fixture.light.GetType(), true, GUILayout.MaxWidth(sectionWidth -10));
                                     EditorGUI.EndDisabledGroup();
                                     
-                                    GUILayout.Space(15.0f);
                                     GUILayout.Label("DMX Settings", SecLabel());
                                     GUILayout.Space(8.0f);
                                     fixture.P_enableDMXChannels = EditorGUILayout.Toggle("Enable DMX", fixture.P_enableDMXChannels);
                                     fixture.P_fixtureID = EditorGUILayout.IntField("Fixture ID", fixture.P_fixtureID, GUILayout.MaxWidth(sectionWidth - 10));
-                                    
                                     fixture.P_dmxChannel = EditorGUILayout.IntSlider("DMX Channel",fixture.P_dmxChannel, 1, 512, GUILayout.MaxWidth(sectionWidth - 10));
                                     fixture.P_dmxUniverse = EditorGUILayout.IntSlider("Universe",fixture.P_dmxUniverse, 1, 3, GUILayout.MaxWidth(sectionWidth - 10));
-                                    
                                     fixture.P_legacyGoboRange = EditorGUILayout.Toggle("Legacy Gobo Range",fixture.P_legacyGoboRange);
                                     GUILayout.Space(4.0f);
 
@@ -3201,8 +3192,7 @@ namespace VRSL.EditorScripts
                                     fixture.P_isUpsideDown = EditorGUILayout.Toggle("Is Upside Down?", fixture.P_isUpsideDown);
                                     fixture.P_maxMinPan = EditorGUILayout.FloatField("Max/Min Pan Range", fixture.P_maxMinPan);
                                     fixture.P_maxMinTilt = EditorGUILayout.FloatField("Max/Min Tilt Range", fixture.P_maxMinTilt);
-                                    GUILayout.Space(4.0f);
-                                    GUILayout.Space(4.0f);
+                                    GUILayout.Space(8.0f);
                                     GUILayout.Label("Fixture Settings", SecLabel());
                                     GUILayout.Space(8.0f);
                                     fixture.P_enableAutoSpin = EditorGUILayout.Toggle("Projection Spin", fixture.P_enableAutoSpin);
@@ -3210,14 +3200,13 @@ namespace VRSL.EditorScripts
                                     fixture.P_tiltOffsetBlue = EditorGUILayout.Slider("Tilt Offset",fixture.P_tiltOffsetBlue, 0f, 360f, GUILayout.MaxWidth(sectionWidth - 10));
                                     fixture.P_panOffsetBlueGreen = EditorGUILayout.Slider("Pan Offset",fixture.P_panOffsetBlueGreen, 0f, 360f, GUILayout.MaxWidth(sectionWidth - 10));
                                     fixture.P_selectGOBO = EditorGUILayout.IntSlider("GOBO Selection",fixture.P_selectGOBO, 1, 8, GUILayout.MaxWidth(sectionWidth - 10));
-                                    GUILayout.Space(4.0f);
-                                    GUILayout.Space(4.0f);
+                                    GUILayout.Space(8.0f);
                                     GUILayout.Label("Mesh Settings", SecLabel());
                                     GUILayout.Space(8.0f);
                                     fixture.P_coneWidth = EditorGUILayout.Slider("Cone Width",fixture.P_coneWidth, 0f, 5.5f, GUILayout.MaxWidth(sectionWidth - 10));
                                     fixture.P_coneLength = EditorGUILayout.Slider("Cone Length",fixture.P_coneLength, 0.5f, 10.0f, GUILayout.MaxWidth(sectionWidth - 10));
                                     fixture.P_maxConeLength = EditorGUILayout.Slider("Max Cone Length",fixture.P_maxConeLength, 0.275f, 10.0f, GUILayout.MaxWidth(sectionWidth - 10));
-                                    GUILayout.Space(15.0f);
+                                    //GUILayout.Space(15.0f);
 
                                     EditorGUILayout.EndVertical();
                                 }
@@ -3263,14 +3252,13 @@ namespace VRSL.EditorScripts
                                 b = "(Treble)";
                                 break;
                         }
-                        bandFold[i] = EditorGUILayout.BeginFoldoutHeaderGroup(bandFold[i], Label($"Band {i} {b}", "Show/Hide all fixtures on AudioLink Band " + i), Title1Foldout());
+                        bandFold[i] = EditorGUILayout.BeginFoldoutHeaderGroup(bandFold[i], Label($"Band {i} {b} ({audioLinkLights.Count(x => x.P_band == (AudioLinkBandState)i)})", "Show/Hide all fixtures on AudioLink Band " + i), Title1Foldout());
                         EditorGUILayout.EndFoldoutHeaderGroup();
                         GuiLine();
                         if(bandFold[i])
                         {
                             foreach(var fixture in audioLinkLights)
                             {
-                                
                                 if(fixture.isLaser)
                                 {
                                     if((int) fixture.laser.Band == i)
@@ -3282,8 +3270,8 @@ namespace VRSL.EditorScripts
                                         {
                                             try
                                             {
-                                            copyAudioLinkListProx = new AudioLinkListItem(fixture.laser,false);
-                                            Debug.Log("Copying properties from laser: " + fixture.laser.name);
+                                                copyAudioLinkListProx = new AudioLinkListItem(fixture.laser,false);
+                                                Debug.Log("Copying properties from laser: " + fixture.laser.name);
                                             }
                                             catch(MissingReferenceException e)
                                             {
@@ -3293,10 +3281,10 @@ namespace VRSL.EditorScripts
                                         }
                                         if(GUILayout.Button("Paste", GUILayout.MinWidth(45f), GUILayout.MaxWidth(45f),GUILayout.MinHeight(28f)))
                                         {
-                                            try{
+                                            try
+                                            {
                                                 if(copyAudioLinkListProx != null)
                                                 {
-                                                    
                                                     if(copyAudioLinkListProx.light != null)
                                                     {
                                                         Debug.Log("Pasting properties from fixture: " + copyAudioLinkListProx.light.name);
@@ -3321,10 +3309,10 @@ namespace VRSL.EditorScripts
                                         }
                                         if(GUILayout.Button("Paste w/ Bands", GUILayout.MinWidth(105f), GUILayout.MaxWidth(105f),GUILayout.MinHeight(28f)))
                                         {
-                                            try{
+                                            try
+                                            {
                                                 if(copyAudioLinkListProx != null)
                                                 {
-                                                    
                                                     if(copyAudioLinkListProx.light != null)
                                                     {
                                                         Debug.Log("Pasting properties from fixture: " + copyAudioLinkListProx.light.name);
@@ -3356,8 +3344,7 @@ namespace VRSL.EditorScripts
                                             EditorGUILayout.BeginVertical();
                                             EditorGUI.BeginDisabledGroup(true);
                                             EditorGUILayout.ObjectField("Band: " + fixture.laser.Band + " Delay: " + fixture.laser.Delay,fixture.laser, fixture.laser.GetType(), true, GUILayout.MaxWidth(sectionWidth - 10));
-                                            EditorGUI.EndDisabledGroup();                                            
-                                            GUILayout.Space(15.0f);
+                                            EditorGUI.EndDisabledGroup();
                                             GUILayout.Label("AudioLink Settings", SecLabel());
                                             GUILayout.Space(8.0f);
                                             fixture.P_enableAudioLink = EditorGUILayout.Toggle("Enable AudioLink", fixture.P_enableAudioLink);
@@ -3392,7 +3379,7 @@ namespace VRSL.EditorScripts
                                             fixture.P_laserThickness = EditorGUILayout.Slider("Laser Thickness",fixture.P_laserThickness, 0.003f, 0.25f, GUILayout.MaxWidth(sectionWidth - 10));
                                             fixture.P_laserScroll = EditorGUILayout.Slider("Laser Scroll",fixture.P_laserScroll, -1.0f, 1.0f, GUILayout.MaxWidth(sectionWidth - 10));
                                             
-                                            GUILayout.Space(15.0f);
+                                            //GUILayout.Space(15.0f);
                                             EditorGUILayout.EndVertical();
                                             EditorGUILayout.EndHorizontal();
                                         }
@@ -3489,7 +3476,7 @@ namespace VRSL.EditorScripts
                                             EditorGUILayout.ObjectField("Band: " + fixture.light.Band + " Delay: " + fixture.light.Delay,fixture.light, fixture.light.GetType(), true, GUILayout.MaxWidth(sectionWidth - 10));
                                             EditorGUI.EndDisabledGroup();
 
-                                            GUILayout.Space(15.0f);
+                                            //GUILayout.Space(15.0f);
                                             GUILayout.Label("AudioLink Settings", SecLabel());
                                             GUILayout.Space(8.0f);
                                             fixture.P_enableAudioLink = EditorGUILayout.Toggle("Enable AudioLink", fixture.P_enableAudioLink);
@@ -3529,7 +3516,7 @@ namespace VRSL.EditorScripts
                                             fixture.P_coneLength = EditorGUILayout.Slider("Cone Length",fixture.P_coneLength, 0.5f, 10.0f, GUILayout.MaxWidth(sectionWidth - 10));
                                             fixture.P_maxConeLength = EditorGUILayout.Slider("Max Cone Length",fixture.P_maxConeLength, 0.275f, 10.0f, GUILayout.MaxWidth(sectionWidth - 10));
                                             
-                                            GUILayout.Space(15.0f);
+                                            //GUILayout.Space(15.0f);
                                             EditorGUILayout.EndVertical();
                                             EditorGUILayout.EndHorizontal();
                                         }
