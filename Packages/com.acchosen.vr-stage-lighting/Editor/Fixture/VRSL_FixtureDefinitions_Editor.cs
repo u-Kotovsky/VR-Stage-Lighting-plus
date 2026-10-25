@@ -9,31 +9,14 @@ namespace VRSL.EditorScripts
     [CustomEditor(typeof(VRSL_FixtureDefinitions))]
     public class VRSL_FixtureDefinitionss_Editor: Editor 
     {
-        private void GuiLine(int lineHeight = 1)
-        {
-            try
-            {
-                Rect rect = EditorGUILayout.GetControlRect(false, lineHeight);
-                rect.height = lineHeight;
-
-                EditorGUI.DrawRect(rect, new Color ( 0.5f,0.5f,0.5f, 1 ) );
-            }
-            catch(Exception e)
-            {
-                Debug.LogException(e);
-            }
-        }
-        
-        private SerializedProperty definitions;
-        private VRSL_FixtureDefinitions fd;
-        //SerializedObject so;
+        private SerializedProperty _definitions;
+        private VRSL_FixtureDefinitions _fixtureDefinitions;
         
         private void OnEnable()
         {
             // Link the properties
-            fd = (VRSL_FixtureDefinitions) target;
-            //so = new SerializedObject(fd);
-            definitions = serializedObject.FindProperty("definitions");
+            _fixtureDefinitions = (VRSL_FixtureDefinitions) target;
+            _definitions = serializedObject.FindProperty(nameof(_definitions));
         }
 
         public override void OnInspectorGUI() 
@@ -42,101 +25,109 @@ namespace VRSL.EditorScripts
             serializedObject.Update();
             //EditorGUI.BeginChangeCheck();
             
-            if(fd != null && definitions.isArray)
+            if(_fixtureDefinitions != null && _definitions.isArray)
             {
-                var size = definitions.arraySize;
+                var size = _definitions.arraySize;
                     
                 EditorGUILayout.BeginHorizontal();
-                var newSize = EditorGUILayout.IntField("Size", size);
-                newSize = Mathf.Abs(newSize);
-                if(GUILayout.Button("-", GUILayout.Width(25f)))
+                var newSize = Mathf.Abs(EditorGUILayout.IntField("Size", size));
+                if (GUILayout.Button("-", GUILayout.Width(25f)))
                 {
                     newSize--;
-                    if(newSize < 1){newSize = 1;}
+                    if (newSize < 1)
+                    {
+                        newSize = 1;
+                    }
                 }
-                if(GUILayout.Button("+", GUILayout.Width(25f)))
+                if (GUILayout.Button("+", GUILayout.Width(25f)))
                 {
                     newSize++;
                 }
                 EditorGUILayout.EndHorizontal();
-                if(GUILayout.Button("Save Changes"))
+                
+                
+                if (GUILayout.Button("Save Changes"))
                 {
                     serializedObject.ApplyModifiedProperties();
-                    fd.ForceSave();
+                    _fixtureDefinitions.ForceSave();
                 }
-                GuiLine();
+                
+                VRSLStyles.GUILine(1);
+                
                 GUILayout.Space(25);
+                
                 bool mainIncreased = false;
                 if (newSize != size)
                 {
-                    definitions.arraySize = newSize;
-                    fd.DefinitionsArraySize = newSize;
+                    _definitions.arraySize = newSize;
+                    _fixtureDefinitions.DefinitionsArraySize = newSize;
                     mainIncreased = newSize > size;
                 }
                 EditorGUI.indentLevel++;
-                //EditorGUI.indentLevel++;
-                //definitions.arraySize = EditorGUILayout.IntField("Size",definitions.arraySize);
-                for(int i = 0; i < newSize; i++)
+                
+                for (int i = 0; i < newSize; i++)
                 {
                     EditorGUILayout.BeginVertical("box");
-                    SerializedProperty defProp = definitions.GetArrayElementAtIndex(i); 
-                    SerializedProperty nameProp = defProp.FindPropertyRelative("name");
+                    var defProp = _definitions.GetArrayElementAtIndex(i); 
+                    var nameProp = defProp.FindPropertyRelative("name");
                     EditorGUILayout.BeginHorizontal("box");
                     nameProp.stringValue = EditorGUILayout.TextField($"Definition {i + 1}", nameProp.stringValue);
                         
-                    SerializedProperty channelNamesProp = defProp.FindPropertyRelative("channelNames");
+                    var channelNamesProp = defProp.FindPropertyRelative("channelNames");
                     if (i >= size && mainIncreased)
                     {
                         nameProp.stringValue = string.Empty;
                         if (channelNamesProp.isArray)
                         {
                             channelNamesProp.arraySize = 1;
-                            fd.definitions[i].SetNewChannelSize(1);
-                            SerializedProperty channel = channelNamesProp.GetArrayElementAtIndex(0); 
+                            _fixtureDefinitions.definitions[i].SetNewChannelSize(1);
+                            var channel = channelNamesProp.GetArrayElementAtIndex(0); 
                             channel.stringValue = string.Empty;
                         }
                     }
                     else
                     {
-                        int chanSize = channelNamesProp.arraySize;
-                        int newChanSize = chanSize;
-                        if(GUILayout.Button("-", GUILayout.Width(25f)))
+                        var chanSize = channelNamesProp.arraySize;
+                        var newChanSize = chanSize;
+                        if (GUILayout.Button("-", GUILayout.Width(25f)))
                         {
                             newChanSize--;
-                            if(newChanSize < 1){newChanSize = 1;}
+                            if (newChanSize < 1)
+                            {
+                                newChanSize = 1;
+                            }
                         }
-                        if(GUILayout.Button("+", GUILayout.Width(25f)))
+                        if (GUILayout.Button("+", GUILayout.Width(25f)))
                         {
                             newChanSize++;
                         }
                         EditorGUILayout.EndHorizontal();
                         EditorGUI.indentLevel++;
                         EditorGUI.indentLevel++;
-                        defProp.FindPropertyRelative("foldOut").boolValue = EditorGUILayout.Foldout(defProp.FindPropertyRelative("foldOut").boolValue, "Channels");
-                        if(defProp.FindPropertyRelative("foldOut").boolValue)
+                        defProp.FindPropertyRelative("foldOut").boolValue = 
+                            EditorGUILayout.Foldout(defProp.FindPropertyRelative("foldOut").boolValue, "Channels");
+                        if (defProp.FindPropertyRelative("foldOut").boolValue)
                         {
-                            if(channelNamesProp.isArray)
+                            if (channelNamesProp.isArray)
                             {
-                                bool increased = false;
+                                var increased = false;
                                 if (newChanSize != chanSize)
                                 {
                                     channelNamesProp.arraySize = newChanSize;
-                                    fd.definitions[i].SetNewChannelSize(newChanSize);
+                                    _fixtureDefinitions.definitions[i].SetNewChannelSize(newChanSize);
                                     increased = newChanSize > chanSize;
                                 }
 
                                 EditorGUI.indentLevel++;
-                                // EditorGUI.indentLevel++;
-                                for (int j = 0; j < newChanSize; j++)
+                                for (var j = 0; j < newChanSize; j++)
                                 {
-                                    SerializedProperty channel = channelNamesProp.GetArrayElementAtIndex(j); 
-                                    channel.stringValue = EditorGUILayout.TextField("Channel " + (j + 1).ToString(), channel.stringValue);
-                                    if(j == newChanSize-1 && increased)
+                                    var channel = channelNamesProp.GetArrayElementAtIndex(j); 
+                                    channel.stringValue = EditorGUILayout.TextField("Channel " + (j + 1), channel.stringValue);
+                                    if (j == newChanSize-1 && increased)
                                     {
                                         channel.stringValue = "";
                                     }
                                 }
-                                //EditorGUI.indentLevel--;
                                 EditorGUI.indentLevel--;
                             }
                         }
@@ -147,15 +138,14 @@ namespace VRSL.EditorScripts
                     GUILayout.Space(10);
                 }
                 EditorGUI.indentLevel--;
-                //EditorGUI.indentLevel--;
             }
             
             //if(EditorGUI.EndChangeCheck())
             //{
                 serializedObject.ApplyModifiedProperties();
-                // if(fd != null)
+                // if(_fixtureDefinitions != null)
                 // {
-                //     fd.ForceSave()
+                //     _fixtureDefinitions.ForceSave()
                 // }
             //}
         }

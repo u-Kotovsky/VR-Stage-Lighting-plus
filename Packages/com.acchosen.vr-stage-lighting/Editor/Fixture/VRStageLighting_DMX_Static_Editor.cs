@@ -33,9 +33,8 @@ namespace VRSL.EditorScripts
             return bitArray;
         }
 
-        public new void OnEnable()
+        public void OnEnable()
         {
-            base.OnEnable();
             EditorApplication.hierarchyChanged += HierarchyChanged;
             SceneView.duringSceneGui += OnSceneGUI;
             GetPanel();
@@ -116,7 +115,7 @@ namespace VRSL.EditorScripts
 #if UDONSHARP
             if (UdonSharpGUI.DrawDefaultUdonSharpBehaviourHeader(target)) return;
 #endif
-            VRSLStyles.ShurikenHeaderCentered($"UnityEditor: {Application.unityVersion}, {DisplayVersionText.Replace("{0}", _package.version)}");
+            DrawCenteredInfo();
             
             var fixture = (VRStageLighting_DMX_Static)target;
             EditorGUI.BeginChangeCheck();

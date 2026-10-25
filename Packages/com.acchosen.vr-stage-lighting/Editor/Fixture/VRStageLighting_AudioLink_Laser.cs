@@ -1,4 +1,5 @@
 #if !COMPILER_UDONSHARP && UNITY_EDITOR
+using System.Linq;
 using UdonSharpEditor;
 using UnityEditor;
 using UnityEngine;
@@ -9,67 +10,41 @@ namespace VRSL.EditorScripts
     [CanEditMultipleObjects]
     public class VRStageLighting_AudioLink_Laser_Editor : VRSL_UdonEditor
     {
-        void OnSceneGUI(SceneView sceneView)
-        {
+        private void OnSceneGUI(SceneView sceneView) { }
 
-        }
-
-        new void OnEnable( )
+        private void OnEnable()
         {
-            base.OnEnable();
             EditorApplication.hierarchyChanged += HierarchyChanged;
-            SceneView.duringSceneGui += this.OnSceneGUI;
+            SceneView.duringSceneGui += OnSceneGUI;
         }
     
-        void OnDisable( )
+        private void OnDisable( )
         {
             EditorApplication.hierarchyChanged -= HierarchyChanged;
-            SceneView.duringSceneGui -= this.OnSceneGUI;
+            SceneView.duringSceneGui -= OnSceneGUI;
         }
 
-        private void HierarchyChanged( )
+        private void HierarchyChanged()
         {
-            VRStageLighting_AudioLink_Laser fixture = (VRStageLighting_AudioLink_Laser)target;
+            var fixture = (VRStageLighting_AudioLink_Laser)target;
             UpdateSettings(fixture);
         }
-
-
-
-        void UpdateSettings(VRStageLighting_AudioLink_Laser fixture)
+        
+        private void UpdateSettings(VRStageLighting_AudioLink_Laser fixture)
         {
-            if(fixture.objRenderers.Length > 0)
+            if (fixture.objRenderers.Length <= 0) return;
+            if (fixture.objRenderers.Any(rend => rend == null)) return;
+            
+            fixture._SetProps();
+            
+            if (Application.isPlaying)
             {
-                bool isEmpty = false;
-                foreach(MeshRenderer rend in fixture.objRenderers)
-                {
-                    if(rend == null)
-                    {
-                        isEmpty = true;
-                        break;
-                    }
-                }
-                if(!isEmpty)
-                {
-                    fixture._SetProps();
-                    if(Application.isPlaying)
-                    {
-                        fixture._UpdateInstancedProperties();
-                    }
-                    else
-                    {
-                        fixture._UpdateInstancedPropertiesSansAudioLink();
-                    }
-
-                }
+                fixture._UpdateInstancedProperties();
             }
-        }
-        public static GUIStyle SectionLabel()
-        {
-            GUIStyle g = new GUIStyle();
-            g.fontSize = 15;
-            g.fontStyle = FontStyle.Bold;
-            g.normal.textColor = Color.white;
-            return g;
+            else
+            {
+                fixture._UpdateInstancedPropertiesSansAudioLink();
+            }
         }
 
         public override void OnInspectorGUI()
@@ -77,20 +52,21 @@ namespace VRSL.EditorScripts
 #if UDONSHARP
             if (UdonSharpGUI.DrawDefaultUdonSharpBehaviourHeader(target)) return;
 #endif
-            DrawLogo();
-            ShurikenHeaderCentered(GetVersion());
-            EditorGUILayout.Space();
+            DrawCenteredInfo();
+            
             EditorGUILayout.Space();
             
-            //EditorGUILayout.Space();
-            VRStageLighting_AudioLink_Laser fixture = (VRStageLighting_AudioLink_Laser)target;
+            var fixture = (VRStageLighting_AudioLink_Laser)target;
+            
             EditorGUI.BeginChangeCheck();
+            
             base.OnInspectorGUI();
-            if(EditorGUI.EndChangeCheck())
+            
+            if (EditorGUI.EndChangeCheck())
             {
-                foreach(Object obj in targets)
+                foreach(var obj in targets)
                 {
-                    VRStageLighting_AudioLink_Laser f = (VRStageLighting_AudioLink_Laser)obj;
+                    var f = (VRStageLighting_AudioLink_Laser)obj;
                     UpdateSettings(f);
                 }
             }

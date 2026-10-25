@@ -26,7 +26,7 @@ namespace VRSL.EditorScripts
             if(channelNames != null)
             {
                 int loopVal;
-                if(newChannelNames.Length > channelNames.Length)
+                if (newChannelNames.Length > channelNames.Length)
                 {
                     loopVal = channelNames.Length;
                 }
@@ -49,6 +49,7 @@ namespace VRSL.EditorScripts
         }
     }
     
+    [Obsolete("Being replaced by FixtureManager", false)]
     [CreateAssetMenu(menuName = "VRSL/DMX Fixture Definition File", fileName = "VRSL DMX Fixture Definitions")]
     [Serializable]
     public class VRSL_FixtureDefinitions : ScriptableObject
@@ -58,14 +59,13 @@ namespace VRSL.EditorScripts
 
         public VRSL_FixtureDefinitions()
         {
-            if(definitions != null)
+            if (definitions != null)
             {
-                if(definitions.Length > 0)
-                {
-                    definitions[0].channelNames = new string[1];
-                }
+                if (definitions.Length <= 0) return;
+                definitions[0].channelNames = new string[1];
             }
         }
+        
         public void ForceSave()
         {
             //string assetPath =  AssetDatabase.GetAssetPath(this.GetInstanceID());
@@ -97,11 +97,11 @@ namespace VRSL.EditorScripts
             get => definitions.Length;
             set
             {
-                FixtureDefinition[] newDefinitions = new FixtureDefinition[value];
+                var newDefinitions = new FixtureDefinition[value];
                 
                 int loopVal;
                 
-                if(newDefinitions.Length > definitions.Length)
+                if (newDefinitions.Length > definitions.Length)
                 {
                     loopVal = definitions.Length;
                 }
@@ -109,7 +109,8 @@ namespace VRSL.EditorScripts
                 {
                     loopVal = newDefinitions.Length;
                 }
-                for(int i = 0; i < loopVal; i++)
+                
+                for (int i = 0; i < loopVal; i++)
                 {
                     newDefinitions[i] = definitions[i];
                 }
