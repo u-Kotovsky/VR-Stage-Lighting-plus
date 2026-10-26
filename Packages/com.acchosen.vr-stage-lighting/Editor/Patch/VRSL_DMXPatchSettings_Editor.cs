@@ -8,16 +8,11 @@ namespace VRSL.EditorScripts
     public class VRSL_DMXPatchSettings_Editor: Editor 
     {
         private SerializedProperty data, idStrings, targetScene, scenePath;
-        SceneAsset sceneAsset;
-        VRSL_DMXPatchSettings settings = null;
+        private SceneAsset sceneAsset;
+        private VRSL_DMXPatchSettings settings;
+        
         private void OnEnable()
         {
-            // // Link the properties
-            // data = serializedObject.FindProperty("data");
-            // idStrings = serializedObject.FindProperty("idStrings");
-            // targetScene = serializedObject.FindProperty("targetScene");
-            // scenePath = serializedObject.FindProperty("scenePath");
-            
             settings = (VRSL_DMXPatchSettings) target;
             sceneAsset = AssetDatabase.LoadAssetAtPath<SceneAsset>(settings.scenePath);
         }
@@ -25,49 +20,44 @@ namespace VRSL.EditorScripts
         public override void OnInspectorGUI() 
         {
             DrawDefaultInspector();
-            SerializedObject so = new SerializedObject(settings);
+            var so = new SerializedObject(settings);
             // Load the real class values into the serialized copy
             so.Update();
-            if(settings != null)
+            
+            if (settings != null)
             {
                 EditorGUI.BeginDisabledGroup(true);
                 EditorGUILayout.ObjectField("Target Scene", sceneAsset, typeof(SceneAsset), false);
                 EditorGUI.EndDisabledGroup();
-                // if(GUILayout.Button("Check Data Status"))
-                // {
-                //     settings.CheckData();
-                // }
-                if(GUILayout.Button("Save Scene DMX Patch Data"))
+                
+                if (GUILayout.Button("Save Scene DMX Patch Data"))
                 {
-                    settings.SetDMXFixtureData();
+                    settings.SetDmxFixtureData();
                     settings.ForceSave();
-                 //   EditorUtility.SetDirty(settings);
-                 //   Undo.RecordObject(settings, "Undo Save Scene DXM Patch Data");
-
                 }
-                if(GUILayout.Button("Load Scene DMX Patch Data"))
+                if (GUILayout.Button("Load Scene DMX Patch Data"))
                 {
-                    settings.LoadDMXFixtureData();
+                    settings.LoadDmxFixtureData();
                 }
-                if(GUILayout.Button("Export To JSON File"))
+                if (GUILayout.Button("Export To JSON File"))
                 {
                     settings.ToJsonFile(true);
                 }
-                if(GUILayout.Button("Export To MVR File"))
+                if (GUILayout.Button("Export To MVR File"))
                 {
                     settings.ToMVRFile();
                 }
-                if(GUILayout.Button("Export To PDF File (Windows)"))
+                if (GUILayout.Button("Export To PDF File (Windows)"))
                 {
 #if !UNITY_EDITOR_LINUX && !UNITY_ANDROID  && !UNITY_IOS
-                    settings.ToPDF();
+                    settings.ToPdf();
 #else
                     EditorUtility.DisplayDialog("PDF export error", "PDF export is currently a Windows only feature", "OK", "Cancel");
 #endif
                 }
-                if(settings.data != null)
+                if (settings.data != null)
                 {
-                    for(int i = 0; i < settings.data.Length; i++)
+                    for (var i = 0; i < settings.data.Length; i++)
                     {
                         EditorGUILayout.BeginHorizontal("box");
                         EditorGUILayout.LabelField(settings.data[i].name);

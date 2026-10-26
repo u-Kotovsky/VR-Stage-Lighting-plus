@@ -1,10 +1,6 @@
 #if !COMPILER_UDONSHARP && UNITY_EDITOR
 using System.Collections.Generic;
 using System;
-using System.Diagnostics;
-using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEditor;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
@@ -12,6 +8,10 @@ using System.Xml;
 using System.Drawing;
 using System.Data;
 using System.Linq;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEditor;
+using Debug = UnityEngine.Debug;
 
 #if UDONSHARP
 using VRC.Udon;
@@ -28,6 +28,8 @@ namespace VRSL.EditorScripts
     [Serializable]
     public class VRSL_DMXPatchSettings : ScriptableObject
     {
+        private const string Prefix = "VRSL DMX Patch Settings";
+        
         [HideInInspector]
         public Scene targetScene;
         [HideInInspector] 
@@ -37,36 +39,37 @@ namespace VRSL.EditorScripts
         [HideInInspector]
         public DMXFixtureData[] data;
 
-        private VRSL_LocalUIControlPanel panel;
-        private string[] dataToPDF;
-        private int pdfLineCount = 0;
-        private int pdfPageCount = 1;
-        private DataTable patchList;
+        private VRSL_LocalUIControlPanel _panel;
+        private string[] _dataToPdf;
+        private int _pdfLineCount;
+        private int _pdfPageCount = 1;
+        private DataTable _patchList;
         
         public void CheckData()
         {
-            if(data == null)
+            if (data == null)
             {
-                UnityEngine.Debug.Log("DMX Fixture Data Array is null!");
+                Debug.Log("DMX Fixture Data Array is null!");
             }
             else
             {
-                if(data.Length == 0)
+                if (data.Length == 0)
                 {
-                    UnityEngine.Debug.Log("DMX Fixture Data Array is length 0!");
+                    Debug.Log("DMX Fixture Data Array is length 0!");
                 }
             }
         }
         
         public void ForceSave()
         {
-            string assetPath =  AssetDatabase.GetAssetPath(this.GetInstanceID());
-            if(targetScene != null)
-                AssetDatabase.RenameAsset(assetPath, "VRSL DMX Patch Data_" + targetScene.name);
+            var assetPath =  AssetDatabase.GetAssetPath(GetInstanceID());
+            
+            AssetDatabase.RenameAsset(assetPath, "VRSL DMX Patch Data_" + targetScene.name);
+            
             EditorUtility.SetDirty(this);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
-            Selection.activeObject = AssetDatabase.LoadAssetAtPath<VRSL_DMXPatchSettings>(AssetDatabase.GetAssetPath(this.GetInstanceID())); 
+            Selection.activeObject = AssetDatabase.LoadAssetAtPath<VRSL_DMXPatchSettings>(AssetDatabase.GetAssetPath(GetInstanceID())); 
         }
         
         public void SetScene()
@@ -75,37 +78,37 @@ namespace VRSL.EditorScripts
             scenePath = targetScene.path;
         }
         
-        public void SetDMXFixtureData()
+        public void SetDmxFixtureData()
         {
-            UnityEngine.Debug.Log("Saving Fixture Data...");
-            List<GameObject> sceneObjects = GetAllObjectsOnlyInScene();
-            List<VRStageLighting_DMX_Static> sceneFixtures = new List<VRStageLighting_DMX_Static>();
-            foreach(GameObject go in sceneObjects)
+            Debug.Log($"{Prefix}: Saving Fixture Data...");
+            var sceneObjects = GetAllObjectsOnlyInScene();
+            var sceneFixtures = new List<VRStageLighting_DMX_Static>();
+            foreach(var go in sceneObjects)
             {
 #if UDONSHARP
                 #pragma warning disable 0618 //suppressing obsoletion warnings
-                VRStageLighting_DMX_Static lightScript = go.GetUdonSharpComponent<VRStageLighting_DMX_Static>();
+                var lightScript = go.GetUdonSharpComponent<VRStageLighting_DMX_Static>();
                 #pragma warning restore 0618 //suppressing obsoletion warnings
 #else
                 VRStageLighting_DMX_Static lightScript = go.GetComponent<VRStageLighting_DMX_Static>();
 #endif
-                if(lightScript != null)
+                if (lightScript != null)
                 {
                     sceneFixtures.Add(lightScript);
                 }
             }
-            VRStageLighting_DMX_Static[] fixtures = sceneFixtures.ToArray();
-            if(fixtures.Length > 0)
+            
+            var fixtures = sceneFixtures.ToArray();
+            if (fixtures.Length > 0)
             {
                 targetScene = SceneManager.GetActiveScene();
                 scenePath = targetScene.path;
-                //this.name += "_" + targetScene.name;
 
                 data = new DMXFixtureData[fixtures.Length];
-                GlobalObjectId[] ids = new GlobalObjectId[fixtures.Length];
+                var ids = new GlobalObjectId[fixtures.Length];
                 idStrings = new string[fixtures.Length];
                 GlobalObjectId.GetGlobalObjectIdsSlow(fixtures, ids);
-                for(int i = 0; i < data.Length; i++)
+                for(var i = 0; i < data.Length; i++)
                 {
                     idStrings[i] = ids[i].ToString();
                     data[i] = new DMXFixtureData(fixtures[i], ids[i]);
@@ -117,213 +120,203 @@ namespace VRSL.EditorScripts
         {
             var objectsInScene = new List<GameObject>();
 
-            foreach (var go in Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[])
+            foreach (var go in (GameObject[])Resources.FindObjectsOfTypeAll(typeof(GameObject)))
             {
                 if (!EditorUtility.IsPersistent(go.transform.root.gameObject) && !(go.hideFlags == HideFlags.NotEditable || go.hideFlags == HideFlags.HideAndDontSave))
+                {
                     objectsInScene.Add(go);
+                }
             }
 
             return objectsInScene;
         }
 
-        // GlobalObjectId[] GetAllFixtureIDs(VRStageLighting_DMX_Static[] fixtures)
-        // {
-        //     GlobalObjectId[] ids = new GlobalObjectId[fixtures.Length];
-        //     GlobalObjectId.GetGlobalObjectIdsSlow(fixtures, ids);
-        //     return ids;
-        // }
-        public void LoadDMXFixtureData()
+        public void LoadDmxFixtureData()
         {
-            if(data == null){return;}
-
-            if(targetScene == null){return;}
-            if(data.Length > 0)
+            if (data == null)
             {
-                List<GameObject> sceneObjects = GetAllObjectsOnlyInScene();
-                List<VRStageLighting_DMX_Static> sceneFixtures = new List<VRStageLighting_DMX_Static>();
-                foreach(GameObject go in sceneObjects)
-                {
+                return;
+            }
+
+            if (data.Length <= 0)
+            {
+                return;
+            }
+            
+            var sceneObjects = GetAllObjectsOnlyInScene();
+            var sceneFixtures = new List<VRStageLighting_DMX_Static>();
+            foreach(var go in sceneObjects)
+            {
 #if UDONSHARP
-                    #pragma warning disable 0618 //suppressing obsoletion warnings
-                    VRStageLighting_DMX_Static lightScript = go.GetUdonSharpComponent<VRStageLighting_DMX_Static>();
-                    #pragma warning restore 0618 //suppressing obsoletion warnings
+#pragma warning disable 0618 //suppressing obsoletion warnings
+                VRStageLighting_DMX_Static lightScript = go.GetUdonSharpComponent<VRStageLighting_DMX_Static>();
+#pragma warning restore 0618 //suppressing obsoletion warnings
 #else
                     VRStageLighting_DMX_Static lightScript = go.GetComponent<VRStageLighting_DMX_Static>();
 #endif
-                    if(lightScript != null)
-                    {
-                        sceneFixtures.Add(lightScript);
-                    }
-                }
-
-                //GlobalObjectId[] ids  = GetAllFixtureIDs(sceneFixtures.ToArray());
-                foreach(var fixture in sceneFixtures)
+                if (lightScript != null)
                 {
-                    try
-                    {
-                        bool sucess = false;
+                    sceneFixtures.Add(lightScript);
+                }
+            }
 
-                        int dmxID = 0;
-                        GlobalObjectId id = GlobalObjectId.GetGlobalObjectIdSlow(fixture);
-                        string guid = id.assetGUID.ToString();
-                        ulong localID = 0;
-                        for(int i = 0; i < data.Length; i++)
-                        {   
-                            if(PrefabUtility.IsPartOfAnyPrefab(fixture))
+            foreach(var fixture in sceneFixtures)
+            {
+                try
+                {
+                    var success = false;
+                    var dmxID = 0;
+                    var id = GlobalObjectId.GetGlobalObjectIdSlow(fixture);
+                    var guid = id.assetGUID.ToString();
+                        
+                    for(var i = 0; i < data.Length; i++)
+                    {
+                        ulong localID;
+                        if (PrefabUtility.IsPartOfAnyPrefab(fixture))
+                        {
+                            localID = id.targetPrefabId;
+                            if (guid == data[i].assetGUID)
                             {
-                                localID = id.targetPrefabId;
-                                    if(guid == data[i].assetGUID)
-                                    {
-                                      //  Debug.Log("Found " + guid + " with " + data[i].assetGUID);
-                                        if((ulong) localID == data[i].targetPrefabId)
-                                        {
-                                            UnityEngine.Debug.Log("Found " + localID + " successfully at " + fixture.name);
-                                            sucess = true;
-                                            dmxID = i;
-                                            break;
-                                        }
-                                    }
-                            }
-                            else
-                            {
-                                localID = id.targetObjectId;    
-                                if(guid == data[i].assetGUID)
+                                if (localID == data[i].targetPrefabId)
                                 {
-                                 //   Debug.Log("Found " + guid + " with " + data[i].assetGUID);
-                                    if((ulong) localID == data[i].targetObjectId)
-                                    {
-                                        UnityEngine.Debug.Log("Found " + localID + " successfully at " + fixture.name);
-                                        sucess = true;
-                                        dmxID = i;
-                                        break;
-                                    }
+                                    Debug.Log($"{Prefix}: Found {localID} successfully at {fixture.name}");
+                                    success = true;
+                                    dmxID = i;
+                                    break;
                                 }
                             }
                         }
-                        if(sucess)
+                        else
                         {
-                            var so = new SerializedObject(fixture);
-                            so.FindProperty("enableDMXChannels").boolValue = data[dmxID].enableDMXChannels;
-                            so.FindProperty("fixtureID").intValue = data[dmxID].fixtureID;
-                            so.FindProperty("dmxChannel").intValue = data[dmxID].dmxChannel;
-                            so.FindProperty("dmxUniverse").intValue = data[dmxID].dmxUniverse;
-                            so.FindProperty("Channel").intValue = data[dmxID].Channel;
-                            so.FindProperty("legacyGoboRange").boolValue = data[dmxID].legacyGoboRange;
-                            so.FindProperty("globalIntensity").floatValue = data[dmxID].globalIntensity;
-                            so.FindProperty("finalIntensity").floatValue = data[dmxID].finalIntensity;
-                            so.FindProperty("lightColorTint").colorValue = data[dmxID].lightColorTint;
-                            so.FindProperty("invertPan").boolValue = data[dmxID].invertPan;
-                            so.FindProperty("invertTilt").boolValue = data[dmxID].invertTilt;
-                            so.FindProperty("isUpsideDown").boolValue = data[dmxID].isUpsideDown;
-                            so.FindProperty("enableAutoSpin").boolValue = data[dmxID].enableAutoSpin;
-                            so.FindProperty("enableStrobe").boolValue = data[dmxID].enableStrobe;
-                            so.FindProperty("tiltOffsetBlue").floatValue = data[dmxID].tiltOffsetBlue;
-                            so.FindProperty("panOffsetBlueGreen").floatValue = data[dmxID].panOffsetBlueGreen;
-                            so.FindProperty("selectGOBO").intValue = data[dmxID].selectGOBO;
-                            so.FindProperty("coneWidth").floatValue = data[dmxID].coneWidth;
-                            so.FindProperty("coneLength").floatValue = data[dmxID].coneLength;
-                            so.FindProperty("maxConeLength").floatValue = data[dmxID].maxConeLength;
-                            so.FindProperty("maxMinPan").floatValue = data[dmxID].maxMinPan;
-                            so.FindProperty("maxMinTilt").floatValue = data[dmxID].maxMinTilt;
-                            so.FindProperty("fixtureDefintion").intValue = data[dmxID].fixtureDefintion;
-                            SerializedProperty rendsProp = so.FindProperty("objRenderers");
-                            rendsProp.ClearArray();
-                            so.ApplyModifiedProperties();
-
-                            var sof = new SerializedObject(fixture);
-                            var rendsProperty = sof.FindProperty("objRenderers");
-                            var rends = data[dmxID].objRenderers.GetRenderers();
-                            rendsProperty.arraySize = rends.Length;
-                            for(int i = 0; i < rends.Length; i++)
+                            localID = id.targetObjectId;    
+                            if (guid == data[i].assetGUID)
                             {
-                                UnityEngine.Debug.Log("Array Element: " + i);
-                                rendsProperty.InsertArrayElementAtIndex(i);
-                                rendsProperty.GetArrayElementAtIndex(i).objectReferenceValue = rends[i];
-                            }
-                            sof.ApplyModifiedProperties();
-
-#if UDONSHARP
-                            #pragma warning disable 0618 //suppressing obsoletion warnings
-                            fixture.UpdateProxy();
-                            #pragma warning restore 0618 //suppressing obsoletion warnings.
-#endif
-
-                            fixture.enableDMXChannels = data[dmxID].enableDMXChannels;
-                            fixture.fixtureID = data[dmxID].fixtureID;
-                            fixture.dmxChannel = data[dmxID].dmxChannel;
-                            fixture.dmxUniverse = data[dmxID].dmxUniverse;
-                            fixture.Channel = data[dmxID].Channel;
-                            fixture.legacyGoboRange = data[dmxID].legacyGoboRange;
-                            fixture.globalIntensity = data[dmxID].globalIntensity;
-                            fixture.finalIntensity = data[dmxID].finalIntensity;
-                            fixture.lightColorTint = data[dmxID].lightColorTint;
-                            fixture.invertPan = data[dmxID].invertPan;
-                            fixture.invertTilt = data[dmxID].invertTilt;
-                            fixture.isUpsideDown = data[dmxID].isUpsideDown;
-                            fixture.enableAutoSpin = data[dmxID].enableAutoSpin;
-                            fixture.enableStrobe = data[dmxID].enableStrobe;
-                            fixture.tiltOffsetBlue = data[dmxID].tiltOffsetBlue;
-                            fixture.panOffsetBlueGreen = data[dmxID].panOffsetBlueGreen;
-                            fixture.selectGOBO = data[dmxID].selectGOBO;
-                            fixture.coneWidth = data[dmxID].coneWidth;
-                            fixture.coneLength = data[dmxID].coneLength;
-                            fixture.maxConeLength =  data[dmxID].maxConeLength;
-                            fixture.maxMinPan = data[dmxID].maxMinPan;
-                            fixture.maxMinTilt = data[dmxID].maxMinTilt;
-                            fixture.fixtureDefintion = data[dmxID].fixtureDefintion;
-                            fixture.objRenderers = rends;
-
-#if UDONSHARP
-                            #pragma warning disable 0618 //suppressing obsoletion warnings
-                            fixture.ApplyProxyModifications();
-                            #pragma warning restore 0618 //suppressing obsoletion warnings
-#endif
-                            if(PrefabUtility.IsPartOfAnyPrefab(fixture))
-                            {
-                                PrefabUtility.RecordPrefabInstancePropertyModifications(fixture);
-                            }
-                            if(Application.isPlaying)
-                            {
-                                fixture._UpdateInstancedProperties();
-                            }
-                            else
-                            {
-                                fixture._UpdateInstancedPropertiesSansDMX();
+                                if (localID == data[i].targetObjectId)
+                                {
+                                    Debug.Log($"{Prefix}: Found {localID} successfully at {fixture.name}");
+                                    success = true;
+                                    dmxID = i;
+                                    break;
+                                }
                             }
                         }
                     }
-                    catch(Exception ex)
+                    if (success)
                     {
-                        // Get stack trace for the exception with source file information
-                        var st = new StackTrace(ex, true);
-                        // Get the top stack frame
-                        var frame = st.GetFrame(0);
-                        // Get the line number from the stack frame
-                        var line = frame.GetFileLineNumber();
-                        UnityEngine.Debug.LogError("Error At Line: " + line.ToString());
-                        throw;
+                        var so = new SerializedObject(fixture);
+                        so.FindProperty(nameof(fixture.enableDMXChannels)).boolValue = data[dmxID].enableDMXChannels;
+                        so.FindProperty(nameof(fixture.fixtureID)).intValue = data[dmxID].fixtureID;
+                        so.FindProperty(nameof(fixture.dmxChannel)).intValue = data[dmxID].dmxChannel;
+                        so.FindProperty(nameof(fixture.dmxUniverse)).intValue = data[dmxID].dmxUniverse;
+                        so.FindProperty(nameof(fixture.Channel)).intValue = data[dmxID].Channel;
+                        so.FindProperty(nameof(fixture.legacyGoboRange)).boolValue = data[dmxID].legacyGoboRange;
+                        so.FindProperty(nameof(fixture.globalIntensity)).floatValue = data[dmxID].globalIntensity;
+                        so.FindProperty(nameof(fixture.finalIntensity)).floatValue = data[dmxID].finalIntensity;
+                        so.FindProperty(nameof(fixture.lightColorTint)).colorValue = data[dmxID].lightColorTint;
+                        so.FindProperty(nameof(fixture.invertPan)).boolValue = data[dmxID].invertPan;
+                        so.FindProperty(nameof(fixture.invertTilt)).boolValue = data[dmxID].invertTilt;
+                        so.FindProperty(nameof(fixture.isUpsideDown)).boolValue = data[dmxID].isUpsideDown;
+                        so.FindProperty(nameof(fixture.enableAutoSpin)).boolValue = data[dmxID].enableAutoSpin;
+                        so.FindProperty(nameof(fixture.enableStrobe)).boolValue = data[dmxID].enableStrobe;
+                        so.FindProperty(nameof(fixture.tiltOffsetBlue)).floatValue = data[dmxID].tiltOffsetBlue;
+                        so.FindProperty(nameof(fixture.panOffsetBlueGreen)).floatValue = data[dmxID].panOffsetBlueGreen;
+                        so.FindProperty(nameof(fixture.selectGOBO)).intValue = data[dmxID].selectGOBO;
+                        so.FindProperty(nameof(fixture.coneWidth)).floatValue = data[dmxID].coneWidth;
+                        so.FindProperty(nameof(fixture.coneLength)).floatValue = data[dmxID].coneLength;
+                        so.FindProperty(nameof(fixture.maxConeLength)).floatValue = data[dmxID].maxConeLength;
+                        so.FindProperty(nameof(fixture.maxMinPan)).floatValue = data[dmxID].maxMinPan;
+                        so.FindProperty(nameof(fixture.maxMinTilt)).floatValue = data[dmxID].maxMinTilt;
+                        so.FindProperty(nameof(fixture.fixtureDefintion)).intValue = data[dmxID].fixtureDefintion;
+                        var rendsProp = so.FindProperty(nameof(fixture.objRenderers));
+                        rendsProp.ClearArray();
+                        so.ApplyModifiedProperties();
+
+                        var sof = new SerializedObject(fixture);
+                        var rendsProperty = sof.FindProperty(nameof(fixture.objRenderers));
+                        var rends = data[dmxID].objRenderers.GetRenderers();
+                        rendsProperty.arraySize = rends.Length;
+                        for(int i = 0; i < rends.Length; i++)
+                        {
+                            //Debug.Log("Array Element: " + i);
+                            rendsProperty.InsertArrayElementAtIndex(i);
+                            rendsProperty.GetArrayElementAtIndex(i).objectReferenceValue = rends[i];
+                        }
+                        sof.ApplyModifiedProperties();
+
+#if UDONSHARP
+#pragma warning disable 0618 //suppressing obsoletion warnings
+                        fixture.UpdateProxy();
+#pragma warning restore 0618 //suppressing obsoletion warnings.
+#endif
+
+                        // TODO: replace with internal copy method
+                        fixture.enableDMXChannels = data[dmxID].enableDMXChannels;
+                        fixture.fixtureID = data[dmxID].fixtureID;
+                        fixture.dmxChannel = data[dmxID].dmxChannel;
+                        fixture.dmxUniverse = data[dmxID].dmxUniverse;
+                        fixture.Channel = data[dmxID].Channel;
+                        fixture.legacyGoboRange = data[dmxID].legacyGoboRange;
+                        fixture.globalIntensity = data[dmxID].globalIntensity;
+                        fixture.finalIntensity = data[dmxID].finalIntensity;
+                        fixture.lightColorTint = data[dmxID].lightColorTint;
+                        fixture.invertPan = data[dmxID].invertPan;
+                        fixture.invertTilt = data[dmxID].invertTilt;
+                        fixture.isUpsideDown = data[dmxID].isUpsideDown;
+                        fixture.enableAutoSpin = data[dmxID].enableAutoSpin;
+                        fixture.enableStrobe = data[dmxID].enableStrobe;
+                        fixture.tiltOffsetBlue = data[dmxID].tiltOffsetBlue;
+                        fixture.panOffsetBlueGreen = data[dmxID].panOffsetBlueGreen;
+                        fixture.selectGOBO = data[dmxID].selectGOBO;
+                        fixture.coneWidth = data[dmxID].coneWidth;
+                        fixture.coneLength = data[dmxID].coneLength;
+                        fixture.maxConeLength =  data[dmxID].maxConeLength;
+                        fixture.maxMinPan = data[dmxID].maxMinPan;
+                        fixture.maxMinTilt = data[dmxID].maxMinTilt;
+                        fixture.fixtureDefintion = data[dmxID].fixtureDefintion;
+                        fixture.objRenderers = rends;
+
+#if UDONSHARP
+#pragma warning disable 0618 //suppressing obsoletion warnings
+                        fixture.ApplyProxyModifications();
+#pragma warning restore 0618 //suppressing obsoletion warnings
+#endif
+                        if (PrefabUtility.IsPartOfAnyPrefab(fixture))
+                        {
+                            PrefabUtility.RecordPrefabInstancePropertyModifications(fixture);
+                        }
+                        if (Application.isPlaying)
+                        {
+                            fixture._UpdateInstancedProperties();
+                        }
+                        else
+                        {
+                            fixture._UpdateInstancedPropertiesSansDMX();
+                        }
                     }
+                }
+                catch(Exception ex)
+                {
+                    Debug.LogException(ex);
                 }
             }
         }
         
         private bool CheckForLocalPanel()
         {
-            List<GameObject> sceneObjects = sceneObjects = GetAllObjectsOnlyInScene();
-            bool hasLocalPanel = false;
-            panel = null;
-            //colorLabel = new GUIContent();
-            //colorLabel.text = "Emission Color";
+            var sceneObjects = GetAllObjectsOnlyInScene();
+            var hasLocalPanel = false;
+            _panel = null;
+            
             foreach (var go in sceneObjects)
             {
 #if UDONSHARP
                 #pragma warning disable 0618 //suppressing obsoletion warnings
-                panel =  go.GetUdonSharpComponent<VRSL_LocalUIControlPanel>();
+                _panel = go.GetUdonSharpComponent<VRSL_LocalUIControlPanel>();
                 #pragma warning restore 0618
 #else
-                panel =  go.GetComponent<VRSL_LocalUIControlPanel>();
+                panel = go.GetComponent<VRSL_LocalUIControlPanel>();
 #endif
-                if(panel != null)
+                if (_panel != null)
                 {
                     hasLocalPanel = true;
                     break;
@@ -335,36 +328,37 @@ namespace VRSL.EditorScripts
 #if !UNITY_EDITOR_LINUX && !UNITY_ANDROID && !UNITY_IOS
         private void OnPrintPage(object sender, PrintPageEventArgs ev)
         {   
-            pdfPageCount++;
+            _pdfPageCount++;
             ev.HasMorePages = DrawTable(ev.Graphics);          
         }
 
         private bool DrawTable(System.Drawing.Graphics graph)
         {
-            int rowHeight = 30;
-            int rowCount = 33;
-            int tableHeight = rowHeight * rowCount;
-            int numOfItems = Mathf.Abs(data.Length - pdfLineCount);
+            var rowHeight = 30;
+            var rowCount = 33;
+            var tableHeight = rowHeight * rowCount;
+            var numOfItems = Mathf.Abs(data.Length - _pdfLineCount);
             if(numOfItems < rowCount)
             {
                 rowCount = numOfItems;
             }
             var image = new Bitmap(800, (rowHeight * rowCount)-10);
-            int xOffset = 25;
-            int yOFfset = 50;
+            var xOffset = 25;
+            var yOFfset = 50;
             try 
             {
                 graph.DrawString(name, new System.Drawing.Font("Arial", 16), Brushes.Black,new Point(xOffset,15));
-
                 graph.FillRectangle(Brushes.White, new Rectangle(new Point(0 + xOffset, 0+ yOFfset), image.Size));
-                int col = 0 + xOffset;
-                int finalNumberofRows = 0;
-                bool drewRectangle = false;
+                var col = 0 + xOffset;
+                var finalNumberofRows = 0;
+                var drewRectangle = false;
+                
                 for (int i = 0; i < 5; i++) 
                 {
-                    int nextColumn = 0;
-                    string columnName = "ID";
+                    var nextColumn = 0;
+                    string columnName;
                     graph.DrawLine(Pens.Black, new Point(col, 0 + yOFfset), new Point(col, image.Height + yOFfset));
+                    
                     switch(i)
                     {
                         default:
@@ -388,15 +382,15 @@ namespace VRSL.EditorScripts
                             columnName = "Address";
                             break;
                     }
-                    finalNumberofRows = 0 + pdfLineCount;
+                    finalNumberofRows = 0 + _pdfLineCount;
                     
-                    for (int row = 0 + yOFfset; row <= image.Height; row += rowHeight) 
+                    for (var row = 0 + yOFfset; row <= image.Height; row += rowHeight) 
                     {
-                        if(row == 0 + yOFfset)
+                        if (row == 0 + yOFfset)
                         {
-                            if(drewRectangle == false)
+                            if (!drewRectangle)
                             {
-                                graph.FillRectangle(Brushes.Gray, new Rectangle(new Point(col, row), new System.Drawing.Size(image.Width,rowHeight)));
+                                graph.FillRectangle(Brushes.Gray, new Rectangle(new Point(col, row), new Size(image.Width,rowHeight)));
                                 drewRectangle = true;
                             }
 
@@ -405,40 +399,37 @@ namespace VRSL.EditorScripts
                         }
                         else
                         {
-                            if(finalNumberofRows < patchList.Rows.Count)
+                            if (finalNumberofRows < _patchList.Rows.Count)
                             {
                                 graph.DrawLine(Pens.Black, new Point(col, row), new Point(col + nextColumn, row));
-                                graph.DrawString(patchList.Rows[finalNumberofRows][i].ToString(), new System.Drawing.Font("Arial", 12), Brushes.Black,new Point(col+1,row+8));
+                                graph.DrawString(_patchList.Rows[finalNumberofRows][i].ToString(), new System.Drawing.Font("Arial", 12), Brushes.Black,new Point(col+1,row+8));
                                 finalNumberofRows++;
                             }
                         }
                     }
                     col+= nextColumn;
-
-                   // graph.DrawString(i.ToString(), new System.Drawing.Font("Arial", 16), Brushes.Black,new Point(col-25,5+yOFfset));
                 }
-                pdfLineCount+=finalNumberofRows;
+                _pdfLineCount += finalNumberofRows;
 
-                // for (int row = 0 + yOFfset; row < image.Height; row += rowHeight) {
-                //     graph.DrawLine(Pens.Black, new Point(0 + xOffset, row), new Point(image.Width + xOffset, row));
-                // }
                 graph.DrawRectangle(Pens.Black, new Rectangle(0+ xOffset, 0 + yOFfset, image.Width - 1, image.Height - 1));
-                graph.DrawString(pdfPageCount.ToString(), new System.Drawing.Font("Arial", 12), Brushes.Black,new Point((image.Width / 2) + xOffset ,tableHeight + yOFfset + 20));
+                graph.DrawString(_pdfPageCount.ToString(), new System.Drawing.Font("Arial", 12), Brushes.Black,new Point((image.Width / 2) + xOffset ,tableHeight + yOFfset + 20));
             } 
             finally 
             {
                 image.Dispose();
             }
-            return pdfLineCount < data.ToArray().Length;
+            
+            return _pdfLineCount < data.ToArray().Length;
         }
         
-        public void ToPDF()
+        public void ToPdf()
         {
-            if(CheckForLocalPanel() == false) return;
-            pdfLineCount = 0;
-            pdfPageCount = 0;
+            if (!CheckForLocalPanel()) return;
+            
+            _pdfLineCount = 0;
+            _pdfPageCount = 0;
 
-            patchList = new DataTable("Patch List");
+            _patchList = new DataTable("Patch List");
             DataColumn column;
             DataRow row;
             
@@ -449,7 +440,7 @@ namespace VRSL.EditorScripts
             column.Caption = "Fixture ID";
             column.ReadOnly = false;
             column.Unique = false;
-            patchList.Columns.Add(column);
+            _patchList.Columns.Add(column);
             
             //Name Column
             column = new DataColumn();
@@ -458,7 +449,7 @@ namespace VRSL.EditorScripts
             column.Caption = "Fixture Name";
             column.ReadOnly = false;
             column.Unique = false;
-            patchList.Columns.Add(column);
+            _patchList.Columns.Add(column);
             
             //Type Column
             column = new DataColumn();
@@ -467,7 +458,7 @@ namespace VRSL.EditorScripts
             column.Caption = "Fixture Type";
             column.ReadOnly = false;
             column.Unique = false;
-            patchList.Columns.Add(column);
+            _patchList.Columns.Add(column);
 
             //Universe Column
             column = new DataColumn();
@@ -476,7 +467,7 @@ namespace VRSL.EditorScripts
             column.Caption = "Universe";
             column.ReadOnly = false;
             column.Unique = false;
-            patchList.Columns.Add(column);
+            _patchList.Columns.Add(column);
 
             //Address Column
             column = new DataColumn();
@@ -485,84 +476,78 @@ namespace VRSL.EditorScripts
             column.Caption = "Address";
             column.ReadOnly = false;
             column.Unique = false;
-            patchList.Columns.Add(column);
-
-            // DataColumn[] PrimaryKeyColumns = new DataColumn[1];
-            // PrimaryKeyColumns[0] = patchList.Columns["id"];
-            // patchList.PrimaryKey = PrimaryKeyColumns;
+            _patchList.Columns.Add(column);
 
             var dtSet = new DataSet();
 
-            dtSet.Tables.Add(patchList);
+            dtSet.Tables.Add(_patchList);
             
-            var fixDefAsset = (VRSL_FixtureDefinitions) AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(panel.fixtureDefGUID), typeof(VRSL_FixtureDefinitions));
+            // TODO: replace with new fixture definitions
+            var fixDefAsset = (VRSL_FixtureDefinitions) AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(_panel.fixtureDefGUID), typeof(VRSL_FixtureDefinitions));
             var definitions = fixDefAsset.GetNames();
 
             var sortedData = data.OrderBy(c => c.fixtureID).ToArray();
             
             foreach(var f in sortedData)
             {
-                row = patchList.NewRow();
+                row = _patchList.NewRow();
                 row["ID"] = f.fixtureID;
                 row["Fixture Name"] = f.name;
                 row["Fixture Type"] = definitions[f.fixtureDefintion];
                 row["Universe"] = f.dmxUniverse;
                 row["Address"] = f.dmxChannel;
-                patchList.Rows.Add(row);
+                _patchList.Rows.Add(row);
             }
 
-            pdfLineCount = 0;
+            _pdfLineCount = 0;
             var document = new PrintDocument();
-            document.PrintPage += new PrintPageEventHandler(OnPrintPage);
+            document.PrintPage += OnPrintPage;
             document.PrinterSettings.PrinterName = "Microsoft Print to PDF";
             document.Print();
-            UnityEngine.Debug.Log("Sucessfully Exported PDF File"); 
+            Debug.Log($"{Prefix}: Successfully Exported PDF File"); 
         }
 #endif
         
         public string ToJsonFile(bool refreshEditor)
         {
-            if(CheckForLocalPanel())
-            {
-                try
-                {
-                    var fixDefAsset = (VRSL_FixtureDefinitions) AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(panel.fixtureDefGUID), typeof(VRSL_FixtureDefinitions));
-                    var jsonFixtureData = new JSONDMXFixtureData[data.Length];
-                    var definitions = fixDefAsset.GetNames();
-                    for(int i = 0; i < jsonFixtureData.Length; i++)
-                    {
-                        jsonFixtureData[i] = new JSONDMXFixtureData(data[i], definitions, fixDefAsset.GetChannelDefinition(data[i].fixtureDefintion));
-                    }
-                    var jsonContainer = new JSONDMXFixtureData_Container(jsonFixtureData);
-                    var json = JsonUtility.ToJson(jsonContainer, true);
-                    var assetPath = AssetDatabase.GetAssetPath(this);
-                    var filePath = Path.Combine(Directory.GetCurrentDirectory(), assetPath);
-                    var targetString = name + ".asset";
-                    var newString = name + ".json";
-                    filePath = filePath.Replace("/", "\\");
-                    filePath = filePath.Replace(targetString, newString);
-                    File.WriteAllText(filePath, json);
-                    //UnityEngine.Debug.Log(json);
-                    if(refreshEditor)
-                    {
-                        AssetDatabase.Refresh();
-                    }
-                    UnityEngine.Debug.Log("Successfully Exported JSON File");
-                    return filePath;
-                }
-                catch
-                {
-                    UnityEngine.Debug.LogError("Failed to Export to JSON!");
-                    return "FAILED";
-                }
-            }
+            if (!CheckForLocalPanel()) return "FAILED";
             
-            return "FAILED";
+            try
+            {
+                var fixDefAsset = (VRSL_FixtureDefinitions) AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(_panel.fixtureDefGUID), typeof(VRSL_FixtureDefinitions));
+                var jsonFixtureData = new JSONDMXFixtureData[data.Length];
+                var definitions = fixDefAsset.GetNames();
+                for(var i = 0; i < jsonFixtureData.Length; i++)
+                {
+                    jsonFixtureData[i] = new JSONDMXFixtureData(data[i], definitions, fixDefAsset.GetChannelDefinition(data[i].fixtureDefintion));
+                }
+                var jsonContainer = new JSONDMXFixtureData_Container(jsonFixtureData);
+                var json = JsonUtility.ToJson(jsonContainer, true);
+                var assetPath = AssetDatabase.GetAssetPath(this);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), assetPath);
+                var targetString = name + ".asset";
+                var newString = name + ".json";
+                filePath = filePath.Replace("/", "\\");
+                filePath = filePath.Replace(targetString, newString);
+                File.WriteAllText(filePath, json);
+                
+                if (refreshEditor)
+                {
+                    AssetDatabase.Refresh();
+                }
+                Debug.Log($"{Prefix}: Successfully Exported JSON File");
+                return filePath;
+            }
+            catch
+            {
+                Debug.LogError($"{Prefix}: Failed to Export to JSON!");
+                return "FAILED";
+            }
         }
         
-        private string ToXMLTransformMatrix(Vector3 Position, Vector3 Rotation)
+        private string ToXMLTransformMatrix(Vector3 position, Vector3 rotation)
         {
-            var rotationMatrix = Matrix4x4.Rotate(Quaternion.Euler(Rotation));
+            var rotationMatrix = Matrix4x4.Rotate(Quaternion.Euler(rotation));
             var u = rotationMatrix.GetRow(0);
             var v = rotationMatrix.GetRow(1);
             var w = rotationMatrix.GetRow(2);
@@ -570,119 +555,106 @@ namespace VRSL.EditorScripts
             var u1 = new Vector3(u.x, u.y, u.z);
             var v1 = new Vector3(v.x, v.y, v.z);
             var w1 = new Vector3(w.x, w.y, w.z);
-            Position = new Vector3(Position.x * 1000f, Position.y * 1000f, Position.z * 1000f);
+            position = new Vector3(position.x * 1000f, position.y * 1000f, position.z * 1000f);
             //Vector3 o1 = new Vector3(o.x, o.y, o.z);
-            var output = u1.ToString("F6") + " " + v1.ToString("F6") + " " + w1.ToString("F6") + " " + Position.ToString("F6");
+            var output = u1.ToString("F6") + " " + v1.ToString("F6") + " " + w1.ToString("F6") + " " + position.ToString("F6");
             output = output.Replace("(", "{");
             output = output.Replace(")", "}");
             output = output.Replace(" ", "");
             return output;
         }
 
-        private int GetAbsoluteDMXAddress(int universe, int channel)
+        private int GetAbsoluteDmxAddress(int universe, int channel)
         {
             return ((universe-1) * 512) + channel;
         }
         
-        private XmlElement GenerateFixtureElement(XmlDocument doc, JSONDMXFixtureData data)
+        private XmlElement GenerateFixtureElement(XmlDocument doc, JSONDMXFixtureData fixtureData)
         {
             var fixture = doc.CreateElement("Fixture");
             fixture.SetAttribute("uuid", Guid.NewGuid().ToString());
-            fixture.SetAttribute("name", data.name);
+            fixture.SetAttribute("name", fixtureData.name);
             
             var matrix = doc.CreateElement("Matrix");
-            matrix.InnerText = ToXMLTransformMatrix(data.position, data.rotation);
+            matrix.InnerText = ToXMLTransformMatrix(fixtureData.position, fixtureData.rotation);
             
-            var FixtureID = doc.CreateElement("FixtureID");
-            FixtureID.InnerText = data.id.ToString();
+            var fixtureID = doc.CreateElement("FixtureID");
+            fixtureID.InnerText = fixtureData.id.ToString();
 
-            var Addresses = doc.CreateElement("Addresses");
-            var Address = doc.CreateElement("Address");
-            Address.InnerText = GetAbsoluteDMXAddress(data.universe, data.channel).ToString();
-            Addresses.AppendChild(Address);
+            var addresses = doc.CreateElement("Addresses");
+            var address = doc.CreateElement("Address");
+            address.InnerText = GetAbsoluteDmxAddress(fixtureData.universe, fixtureData.channel).ToString();
+            addresses.AppendChild(address);
 
-            var DMXInvertPan = doc.CreateElement("DMXInvertPan");
-            DMXInvertPan.InnerText = data.invertPan.ToString();
-            var DMXInvertTilt = doc.CreateElement("DMXInvertTilt");
-            DMXInvertTilt.InnerText = data.invertTilt.ToString();
+            var dmxInvertPan = doc.CreateElement("DMXInvertPan");
+            dmxInvertPan.InnerText = fixtureData.invertPan.ToString();
+            var dmxInvertTilt = doc.CreateElement("DMXInvertTilt");
+            dmxInvertTilt.InnerText = fixtureData.invertTilt.ToString();
             
-            var UnitNumber = doc.CreateElement("UnitNumber");
-            UnitNumber.InnerText = "0";
+            var unitNumber = doc.CreateElement("UnitNumber");
+            unitNumber.InnerText = "0";
 
-            var GDTFSpec = doc.CreateElement("GDTFSpec");
-            GDTFSpec.InnerText = data.fixtureDefintion + ".gdtf";
+            var gdtfSpec = doc.CreateElement("GDTFSpec");
+            gdtfSpec.InnerText = fixtureData.fixtureDefintion + ".gdtf";
 
-            var GDTFMode = doc.CreateElement("GDTFMode");
-            GDTFMode.InnerText = "Default";
+            var gdtfMode = doc.CreateElement("GDTFMode");
+            gdtfMode.InnerText = "Default";
 
             fixture.AppendChild(matrix);
-            fixture.AppendChild(FixtureID);
-            fixture.AppendChild(GDTFSpec);
-            fixture.AppendChild(GDTFMode);
-            fixture.AppendChild(UnitNumber);
-            fixture.AppendChild(Addresses);
-            fixture.AppendChild(DMXInvertPan);
-            fixture.AppendChild(DMXInvertTilt);
+            fixture.AppendChild(fixtureID);
+            fixture.AppendChild(gdtfSpec);
+            fixture.AppendChild(gdtfMode);
+            fixture.AppendChild(unitNumber);
+            fixture.AppendChild(addresses);
+            fixture.AppendChild(dmxInvertPan);
+            fixture.AppendChild(dmxInvertTilt);
             
             return fixture;
         }
         
-        private string GeneralSceneDescriptionXML(JSONDMXFixtureData[] data)
+        private string GeneralSceneDescriptionXML(JSONDMXFixtureData[] fixtureData)
         {
-            string output = "";
+            var output = string.Empty;
+            
             try
             {
-                // output += "\n" + @"<GeneralSceneDescription verMajor=""1"" verMinor=""6"" provider=""VR Stage Lighting"" providerVersion""1"">";
-                // output += "\n";
-                // output += "\n" + " <UserData/>";
-                XmlDocument xdoc = new XmlDocument();
+                var xdoc = new XmlDocument();
                 XmlNode docNode = xdoc.CreateXmlDeclaration("1.0", null, "no");
                 xdoc.AppendChild(docNode);
 
+                var version = VRSLStyles.GetVersion().Split(".");
 
-                //UnityEngine.Debug.Log("Creating XML Document");
-                //xdoc.LoadXml(@"<?xml version=""1.0"" encoding=""UTF-8""?>");
-                //UnityEngine.Debug.Log("Loading XML Document");
-                XmlElement GeneralSceneDescription = xdoc.CreateElement("GeneralSceneDescription");
-                //UnityEngine.Debug.Log("Generating Scene Description Node");
-                GeneralSceneDescription.SetAttribute("verMajor", "1");
-                GeneralSceneDescription.SetAttribute("verMinor", "6");
-                GeneralSceneDescription.SetAttribute("provider", "VR Stage Lighting");
-                GeneralSceneDescription.SetAttribute("providerVersion", "1");
-                //UnityEngine.Debug.Log("Finished setting attributes for General Scene Description");
+                var generalSceneDescription = xdoc.CreateElement("GeneralSceneDescription");
+                generalSceneDescription.SetAttribute("verMajor", version[0]);
+                generalSceneDescription.SetAttribute("verMinor", version[1]);
+                generalSceneDescription.SetAttribute("verPatch", version[2]);
+                generalSceneDescription.SetAttribute("provider", "VR Stage Lighting");
+                generalSceneDescription.SetAttribute("providerVersion", "1");
                
-                var UserData = xdoc.CreateElement("UserData");
-                var Scene = xdoc.CreateElement("Scene");
-                var Layers = xdoc.CreateElement("Layers");
-                var Layer = xdoc.CreateElement("Layer");
+                var userData = xdoc.CreateElement("UserData");
+                var scene = xdoc.CreateElement("Scene");
+                var layers = xdoc.CreateElement("Layers");
+                var layer = xdoc.CreateElement("Layer");
 
-                Layer.SetAttribute("name", "VRSL Main");
-                Layer.SetAttribute("uuid", Guid.NewGuid().ToString());
-                var ChildList = xdoc.CreateElement("ChildList");
+                layer.SetAttribute("name", "VRSL Main");
+                layer.SetAttribute("uuid", Guid.NewGuid().ToString());
+                var childList = xdoc.CreateElement("ChildList");
             
-                foreach(JSONDMXFixtureData fixture in data)
+                foreach(var fixture in fixtureData)
                 {
-                    XmlElement f = GenerateFixtureElement(xdoc, fixture);
-                    ChildList.AppendChild(f);
+                    var f = GenerateFixtureElement(xdoc, fixture);
+                    childList.AppendChild(f);
                 }
                 
-                Layer.AppendChild(ChildList);
-                Layers.AppendChild(Layer);
-                Scene.AppendChild(Layers);
+                layer.AppendChild(childList);
+                layers.AppendChild(layer);
+                scene.AppendChild(layers);
                 
-                GeneralSceneDescription.AppendChild(UserData);
-                GeneralSceneDescription.AppendChild(Scene);
+                generalSceneDescription.AppendChild(userData);
+                generalSceneDescription.AppendChild(scene);
                
-                xdoc.AppendChild(GeneralSceneDescription);
-                UnityEngine.Debug.Log("Appending Scene Description");
-                
-                // var buffer = new StringBuilder();
-                // var writer = XmlWriter.Create(buffer, new XmlWriterSettings { Indent = true, Encoding = Encoding.UTF8});
-                // xdoc.Save(writer);
-                // writer.Close();
-
-                // output = buffer.ToString();
-                //output = ToEncoding(xdoc,Encoding.UTF8);
+                xdoc.AppendChild(generalSceneDescription);
+                Debug.Log($"{Prefix}: Appending Scene Description");
 
                 var sb = new StringBuilder();
                 var sw = new StringWriterUtf8(sb);
@@ -691,18 +663,9 @@ namespace VRSL.EditorScripts
             }
             catch(Exception ex)
             {
-                // Get stack trace for the exception with source file information
-                var st = new StackTrace(ex, true);
-                // Get the top stack frame
-                var frame = st.GetFrame(0);
-                // Get the line number from the stack frame
-                var line = frame.GetFileLineNumber();
-                UnityEngine.Debug.LogError("Error At Line: " + line.ToString());
-                throw;
+                Debug.LogException(ex);
             }
 
-            //string output = "";
-            //doc.Save
             return output;
         }
 
@@ -711,252 +674,230 @@ namespace VRSL.EditorScripts
             return source?.IndexOf(toCheck, comp) >= 0;
         }
 
-        private string FixtureDefinitionXML(string name, string[] channels)
+        private string FixtureDefinitionXML(string fixtureName, string[] channels)
         {
-            string output = "";
+            string output = string.Empty;
+            
             try
             {
                 var xdoc = new XmlDocument();
                 XmlNode docNode = xdoc.CreateXmlDeclaration("1.0", null, "no");
                 xdoc.AppendChild(docNode);
 
-                XmlElement GDTF = xdoc.CreateElement("GDTF");
-                GDTF.SetAttribute("DataVersion", "1.1");
-                XmlElement FixtureType = xdoc.CreateElement("FixtureType");
-                FixtureType.SetAttribute("Name", name);
-                FixtureType.SetAttribute("ShortName", name);
-                FixtureType.SetAttribute("LongName", name);
-                FixtureType.SetAttribute("Manufacturer", "VR Stage Lighting");
-                FixtureType.SetAttribute("FixtureTypeID", System.Guid.NewGuid().ToString());
-                FixtureType.SetAttribute("RefFT", "");
+                var gdtf = xdoc.CreateElement("GDTF");
+                gdtf.SetAttribute("DataVersion", "1.1");
+                var fixtureType = xdoc.CreateElement("FixtureType");
+                fixtureType.SetAttribute("Name", fixtureName);
+                fixtureType.SetAttribute("ShortName", fixtureName);
+                fixtureType.SetAttribute("LongName", fixtureName);
+                fixtureType.SetAttribute("Manufacturer", "VR Stage Lighting");
+                fixtureType.SetAttribute("FixtureTypeID", Guid.NewGuid().ToString());
+                fixtureType.SetAttribute("RefFT", "");
                 
-                XmlElement AttributeDefinitions = xdoc.CreateElement("AttributeDefinitions");
-                XmlElement FeatureGroups = xdoc.CreateElement("FeatureGroups");
-                bool hasMovement = false;
-                bool hasRGB = false;
-                bool hasDimmer = false;
-                bool hasStrobe = false;
-                bool hasZoom = false;
-                bool hasGobo = false;
-                bool hasLaserBeam = false;
-                bool hasFog = false;
-                StringComparison comp = StringComparison.OrdinalIgnoreCase;
+                var attributeDefinitions = xdoc.CreateElement("AttributeDefinitions");
+                var featureGroups = xdoc.CreateElement("FeatureGroups");
+                var hasMovement = false;
+                var hasRGB = false;
+                var hasDimmer = false;
+                var hasStrobe = false;
+                var hasZoom = false;
+                var hasGobo = false;
+                var hasLaserBeam = false;
+                var hasFog = false;
+                var comp = StringComparison.OrdinalIgnoreCase;
                 
-                for(int i = 0; i < channels.Length; i++)
+                foreach (var c in channels)
                 {
-                    string c = channels[i];
-                    if(!hasMovement)
+                    if(!hasMovement && (CapContains(c,"pan",comp) || CapContains(c,"tilt",comp) || CapContains(c,"movement",comp) || CapContains(c,"rotate",comp)))
                     {
-                        if(CapContains(c,"pan",comp) || CapContains(c,"tilt",comp) || CapContains(c,"movement",comp) || CapContains(c,"rotate",comp))
-                        {
-                            hasMovement = true;
-                            continue;
-                        }
+                        hasMovement = true;
+                        continue;
                     }
-                    if(!hasRGB)
+                    if(!hasRGB && (CapContains(c,"red",comp) || CapContains(c,"green",comp) || CapContains(c,"blue",comp) || CapContains(c,"gradient",comp) || CapContains(c,"colour",comp) || CapContains(c,"color",comp)))
                     {
-                        if(CapContains(c,"red",comp) || CapContains(c,"green",comp) || CapContains(c,"blue",comp) || CapContains(c,"gradient",comp) || CapContains(c,"colour",comp) || CapContains(c,"color",comp))
-                        {
-                            hasRGB = true;
-                            continue;
-                        }
+                        hasRGB = true;
+                        continue;
                     }
-                    if(!hasDimmer)
+                    if(!hasDimmer && (CapContains(c,"dimmer",comp) || CapContains(c,"intensity",comp) || CapContains(c,"power",comp)))
                     {
-                        if(CapContains(c,"dimmer",comp) || CapContains(c,"intensity",comp) || CapContains(c,"power",comp))
-                        {
-                            hasDimmer = true;
-                            continue;
-                        }
+                        hasDimmer = true;
+                        continue;
                     }
-                    if(!hasStrobe)
+                    if(!hasStrobe && (CapContains(c,"strobe",comp) || CapContains(c,"shutter",comp) || CapContains(c,"flash",comp)))
                     {
-                        if(CapContains(c,"strobe",comp) || CapContains(c,"shutter",comp) || CapContains(c,"flash",comp))
-                        {
-                            hasStrobe = true;
-                            continue;
-                        }
+                        hasStrobe = true;
+                        continue;
                     }
-                    if(!hasZoom)
+                    if(!hasZoom && (CapContains(c,"zoom",comp) || CapContains(c,"focus",comp) || CapContains(c,"cone",comp)))
                     {
-                        if(CapContains(c,"zoom",comp) || CapContains(c,"focus",comp) || CapContains(c,"cone",comp))
-                        {
-                            hasZoom = true;
-                            continue;
-                        }
+                        hasZoom = true;
+                        continue;
                     }
-                    if(!hasGobo)
+                    if(!hasGobo && (CapContains(c,"gobo",comp) || CapContains(c,"cookie",comp)))
                     {
-                        if(CapContains(c,"gobo",comp) || CapContains(c,"cookie",comp))
-                        {
-                            hasGobo = true;
-                            continue;
-                        }
+                        hasGobo = true;
+                        continue;
                     }
-                    if(!hasLaserBeam)
+                    if(!hasLaserBeam && (CapContains(c,"laser",comp) || CapContains(c,"beam",comp)))
                     {
-                        if(CapContains(c,"laser",comp) || CapContains(c,"beam",comp))
-                        {
-                            hasLaserBeam = true;
-                            continue;
-                        }
+                        hasLaserBeam = true;
+                        continue;
                     }
-                    if(!hasFog)
+                    if(!hasFog && (CapContains(c,"fog",comp) || CapContains(c,"c02",comp)))
                     {
-                        if(CapContains(c,"fog",comp) || CapContains(c,"c02",comp))
-                        {
-                            hasFog = true;
-                            continue;
-                        }
+                        hasFog = true;
                     }
                 }
 
-                if(hasMovement)
+                if (hasMovement)
                 {
-                    XmlElement FeatureGroup_Movement = xdoc.CreateElement("FeatureGroup");
-                    FeatureGroup_Movement.SetAttribute("Name", "Position");
-                    FeatureGroup_Movement.SetAttribute("Pretty", "Position");
-                    XmlElement Feature_PT = xdoc.CreateElement("Feature");    
-                    Feature_PT.SetAttribute("Name", "PanTilt");
+                    var featureGroupMovement = xdoc.CreateElement("FeatureGroup");
+                    featureGroupMovement.SetAttribute("Name", "Position");
+                    featureGroupMovement.SetAttribute("Pretty", "Position");
+                    
+                    var featurePt = xdoc.CreateElement("Feature");    
+                    featurePt.SetAttribute("Name", "PanTilt");
 
-                    XmlElement Feature_Rotate = xdoc.CreateElement("Feature");    
-                    Feature_Rotate.SetAttribute("Name", "Rotate");
+                    var featureRotate = xdoc.CreateElement("Feature");    
+                    featureRotate.SetAttribute("Name", "Rotate");
 
-                    FeatureGroup_Movement.AppendChild(Feature_PT);
-                    FeatureGroup_Movement.AppendChild(Feature_Rotate);
+                    featureGroupMovement.AppendChild(featurePt);
+                    featureGroupMovement.AppendChild(featureRotate);
 
-                    FeatureGroups.AppendChild(FeatureGroup_Movement);
+                    featureGroups.AppendChild(featureGroupMovement);
                 }
                 if(hasRGB)
                 {
-                    XmlElement FeatureGroup_RGB = xdoc.CreateElement("FeatureGroup");
-                    FeatureGroup_RGB.SetAttribute("Name", "Color");
-                    FeatureGroup_RGB.SetAttribute("Pretty", "Color");        
+                    var featureGroupRGB = xdoc.CreateElement("FeatureGroup");
+                    featureGroupRGB.SetAttribute("Name", "Color");
+                    featureGroupRGB.SetAttribute("Pretty", "Color");        
 
-                    XmlElement Feature_RGB = xdoc.CreateElement("Feature");    
-                    Feature_RGB.SetAttribute("Name", "RGB");
-                    XmlElement Feature_Color = xdoc.CreateElement("Feature");    
-                    Feature_Color.SetAttribute("Name", "Color");
-                    FeatureGroup_RGB.AppendChild(Feature_RGB);
-                    FeatureGroup_RGB.AppendChild(Feature_Color);   
+                    var featureRGB = xdoc.CreateElement("Feature");    
+                    featureRGB.SetAttribute("Name", "RGB");
+                    var featureColor = xdoc.CreateElement("Feature");    
+                    featureColor.SetAttribute("Name", "Color");
+                    featureGroupRGB.AppendChild(featureRGB);
+                    featureGroupRGB.AppendChild(featureColor);   
 
-                    FeatureGroups.AppendChild(FeatureGroup_RGB);      
+                    featureGroups.AppendChild(featureGroupRGB);      
                 }
-                if(hasDimmer)
+                if (hasDimmer)
                 {
-                    XmlElement FeatureGroup_Dimmer = xdoc.CreateElement("FeatureGroup");
-                    FeatureGroup_Dimmer.SetAttribute("Name", "Dimmer");
-                    FeatureGroup_Dimmer.SetAttribute("Pretty", "Dimmer");  
+                    var featureGroupDimmer = xdoc.CreateElement("FeatureGroup");
+                    featureGroupDimmer.SetAttribute("Name", "Dimmer");
+                    featureGroupDimmer.SetAttribute("Pretty", "Dimmer");  
 
-                    XmlElement Feature_Dimmer = xdoc.CreateElement("Feature");    
-                    Feature_Dimmer.SetAttribute("Name", "Dimmer");
-                    FeatureGroup_Dimmer.AppendChild(Feature_Dimmer); 
+                    var featureDimmer = xdoc.CreateElement("Feature");    
+                    featureDimmer.SetAttribute("Name", "Dimmer");
+                    featureGroupDimmer.AppendChild(featureDimmer); 
 
-                    FeatureGroups.AppendChild(FeatureGroup_Dimmer);                      
+                    featureGroups.AppendChild(featureGroupDimmer);                      
                 }
-                if(hasStrobe)
+                if (hasStrobe)
                 {
-                    XmlElement FeatureGroup_Strobe = xdoc.CreateElement("FeatureGroup");
-                    FeatureGroup_Strobe.SetAttribute("Name", "Shutter");
-                    FeatureGroup_Strobe.SetAttribute("Pretty", "Shutter");     
+                    var featureGroupStrobe = xdoc.CreateElement("FeatureGroup");
+                    featureGroupStrobe.SetAttribute("Name", "Shutter");
+                    featureGroupStrobe.SetAttribute("Pretty", "Shutter");     
 
-                    XmlElement Feature_Strobe = xdoc.CreateElement("Feature");    
-                    Feature_Strobe.SetAttribute("Name", "Shutter");
-                    FeatureGroup_Strobe.AppendChild(Feature_Strobe); 
+                    var featureStrobe = xdoc.CreateElement("Feature");    
+                    featureStrobe.SetAttribute("Name", "Shutter");
+                    featureGroupStrobe.AppendChild(featureStrobe); 
 
-                    FeatureGroups.AppendChild(FeatureGroup_Strobe);                          
+                    featureGroups.AppendChild(featureGroupStrobe);                          
                 }
-                if(hasZoom)
+                if (hasZoom)
                 {
-                    XmlElement FeatureGroup_Zoom = xdoc.CreateElement("FeatureGroup");
-                    FeatureGroup_Zoom.SetAttribute("Name", "Focus");
-                    FeatureGroup_Zoom.SetAttribute("Pretty", "Focus");
+                    var featureGroupZoom = xdoc.CreateElement("FeatureGroup");
+                    featureGroupZoom.SetAttribute("Name", "Focus");
+                    featureGroupZoom.SetAttribute("Pretty", "Focus");
 
-                    XmlElement Feature_Zoom = xdoc.CreateElement("Feature");    
-                    Feature_Zoom.SetAttribute("Name", "Focus");
-                    FeatureGroup_Zoom.AppendChild(Feature_Zoom);  
+                    var featureZoom = xdoc.CreateElement("Feature");    
+                    featureZoom.SetAttribute("Name", "Focus");
+                    featureGroupZoom.AppendChild(featureZoom);  
 
-                    FeatureGroups.AppendChild(FeatureGroup_Zoom);                            
+                    featureGroups.AppendChild(featureGroupZoom);                            
                 }
-                if(hasGobo)
+                if (hasGobo)
                 {
-                    XmlElement FeatureGroup_Gobo= xdoc.CreateElement("FeatureGroup");
-                    FeatureGroup_Gobo.SetAttribute("Name", "Gobo");
-                    FeatureGroup_Gobo.SetAttribute("Pretty", "Gobo");     
+                    var featureGroupGobo = xdoc.CreateElement("FeatureGroup");
+                    featureGroupGobo.SetAttribute("Name", "Gobo");
+                    featureGroupGobo.SetAttribute("Pretty", "Gobo");     
 
-                    XmlElement Feature_Gobo = xdoc.CreateElement("Feature");    
-                    Feature_Gobo.SetAttribute("Name", "Gobo");
-                    FeatureGroup_Gobo.AppendChild(Feature_Gobo);   
+                    var featureGobo = xdoc.CreateElement("Feature");    
+                    featureGobo.SetAttribute("Name", "Gobo");
+                    featureGroupGobo.AppendChild(featureGobo);   
 
-                    FeatureGroups.AppendChild(FeatureGroup_Gobo);                       
+                    featureGroups.AppendChild(featureGroupGobo);                       
                 }
-                if(hasLaserBeam)
+                if (hasLaserBeam)
                 {
-                    XmlElement FeatureGroup_Laser= xdoc.CreateElement("FeatureGroup");
-                    FeatureGroup_Laser.SetAttribute("Name", "Laser");
-                    FeatureGroup_Laser.SetAttribute("Pretty", "Laser"); 
+                    var featureGroupLaser= xdoc.CreateElement("FeatureGroup");
+                    featureGroupLaser.SetAttribute("Name", "Laser");
+                    featureGroupLaser.SetAttribute("Pretty", "Laser"); 
 
-                    XmlElement Feature_Laser = xdoc.CreateElement("Feature");    
-                    Feature_Laser.SetAttribute("Name", "Laser");
-                    FeatureGroup_Laser.AppendChild(Feature_Laser);
+                    var featureLaser = xdoc.CreateElement("Feature");    
+                    featureLaser.SetAttribute("Name", "Laser");
+                    featureGroupLaser.AppendChild(featureLaser);
 
-                    FeatureGroups.AppendChild(FeatureGroup_Laser);  
+                    featureGroups.AppendChild(featureGroupLaser);  
+                }
+                if (hasFog)
+                {
+                    var featureGroupFog = xdoc.CreateElement("FeatureGroup");
+                    featureGroupFog.SetAttribute("Name", "Fog");
+                    featureGroupFog.SetAttribute("Pretty", "Fog");     
+
+                    var featureFog = xdoc.CreateElement("Feature");    
+                    featureFog.SetAttribute("Name", "Fog");
+                    featureGroupFog.AppendChild(featureFog);  
+
+                    featureGroups.AppendChild(featureGroupFog);               
+                }
+
+                var featureGroupControl = xdoc.CreateElement("FeatureGroup");
+                featureGroupControl.SetAttribute("Name", "Control");
+                featureGroupControl.SetAttribute("Pretty", "Control");
                 
-                }
-                if(hasFog)
-                {
-                    XmlElement FeatureGroup_Fog = xdoc.CreateElement("FeatureGroup");
-                    FeatureGroup_Fog.SetAttribute("Name", "Fog");
-                    FeatureGroup_Fog.SetAttribute("Pretty", "Fog");     
+                var featureControl = xdoc.CreateElement("Feature");    
+                featureControl.SetAttribute("Name", "Control");
+                featureGroupControl.AppendChild(featureControl);
 
-                    XmlElement Feature_Fog = xdoc.CreateElement("Feature");    
-                    Feature_Fog.SetAttribute("Name", "Fog");
-                    FeatureGroup_Fog.AppendChild(Feature_Fog);  
+                featureGroups.AppendChild(featureGroupControl);   
 
-                    FeatureGroups.AppendChild(FeatureGroup_Fog);               
-                }
-
-                XmlElement FeatureGroup_Control = xdoc.CreateElement("FeatureGroup");
-                FeatureGroup_Control.SetAttribute("Name", "Control");
-                FeatureGroup_Control.SetAttribute("Pretty", "Control");
-                XmlElement Feature_Control = xdoc.CreateElement("Feature");    
-                Feature_Control.SetAttribute("Name", "Control");
-                FeatureGroup_Control.AppendChild(Feature_Control);
-
-                FeatureGroups.AppendChild(FeatureGroup_Control);   
-
-                XmlElement FeatureGroup_Other = xdoc.CreateElement("FeatureGroup");
-                FeatureGroup_Other.SetAttribute("Name", "FeatureGroup");
-                FeatureGroup_Other.SetAttribute("Pretty", "FeatureGroup"); 
-                XmlElement Feature_Other = xdoc.CreateElement("Feature");    
-                Feature_Other.SetAttribute("Name", "Feature");
-                FeatureGroup_Other.AppendChild(Feature_Other);
-
-                FeatureGroups.AppendChild(FeatureGroup_Other);   
-
-                int numOfGobos = 8;
+                var featureGroupOther = xdoc.CreateElement("FeatureGroup");
+                featureGroupOther.SetAttribute("Name", "FeatureGroup");
+                featureGroupOther.SetAttribute("Pretty", "FeatureGroup");
                 
-                AttributeDefinitions.AppendChild(FeatureGroups);
+                var featureOther = xdoc.CreateElement("Feature");    
+                featureOther.SetAttribute("Name", "Feature");
+                featureGroupOther.AppendChild(featureOther);
 
-//////////////////////////////////////////////////////////////////////
-                XmlElement Attributes = xdoc.CreateElement("Attributes");
-                bool hasFinePan = false;
-                int panChan = 0;
-                int finePanChan = 0;
-                bool hasFineTilt = false;
-                int tiltChan = 0;
-                int fineTiltChan = 0;
-                bool hasFineRotate = false;
-                int rotateChan = 0;
-                int fineRotateChan = 0;
-                for(int i = 0; i < channels.Length; i++)
+                featureGroups.AppendChild(featureGroupOther);   
+
+                var numOfGobos = 8;
+                
+                attributeDefinitions.AppendChild(featureGroups);
+
+                #region Attributes
+                var attributes = xdoc.CreateElement("Attributes");
+                var hasFinePan = false;
+                var panChan = 0;
+                var finePanChan = 0;
+                var hasFineTilt = false;
+                var tiltChan = 0;
+                var fineTiltChan = 0;
+                var hasFineRotate = false;
+                var rotateChan = 0;
+                var fineRotateChan = 0;
+                
+                for(var i = 0; i < channels.Length; i++)
                 {
-                    string c = channels[i];
-                    if(CapContains(c,"pan",comp) || CapContains(c,"tilt",comp) || CapContains(c,"rotate",comp))
+                    var c = channels[i];
+                    if (CapContains(c,"pan",comp) || CapContains(c,"tilt",comp) || CapContains(c,"rotate",comp))
                     {
-                        if(CapContains(c,"pan",comp))
+                        if (CapContains(c,"pan",comp))
                         {
-                            if(CapContains(c,"fine",comp))
+                            if (CapContains(c,"fine",comp))
                             {
                                 hasFinePan = true; 
                                 finePanChan = i; 
@@ -993,288 +934,288 @@ namespace VRSL.EditorScripts
                                 rotateChan = i; 
                             }
                         }
-                        XmlElement Attribute = xdoc.CreateElement("Attribute");
-                        Attribute.SetAttribute("Name", c);
-                        Attribute.SetAttribute("Pretty", c);
-                        Attribute.SetAttribute("PhysicalUnit", "Angle");
+                        var attribute = xdoc.CreateElement("Attribute");
+                        attribute.SetAttribute("Name", c);
+                        attribute.SetAttribute("Pretty", c);
+                        attribute.SetAttribute("PhysicalUnit", "Angle");
                         if(CapContains(c,"pan",comp) || CapContains(c,"tilt",comp))
                         {
-                            Attribute.SetAttribute("Feature", "Position.PanTilt");
+                            attribute.SetAttribute("Feature", "Position.PanTilt");
                         }
                         else
                         {
-                            Attribute.SetAttribute("Feature", "Position.Rotate");
+                            attribute.SetAttribute("Feature", "Position.Rotate");
                         }
-                        Attributes.AppendChild(Attribute);
+                        attributes.AppendChild(attribute);
                         continue;
                     }
                     else if(CapContains(c,"red",comp) || CapContains(c,"green",comp) || CapContains(c,"blue",comp) || CapContains(c,"gradient",comp) || CapContains(c,"colour",comp) || CapContains(c,"color",comp))
                     {
-                        XmlElement Attribute = xdoc.CreateElement("Attribute");
-                        Attribute.SetAttribute("Name", c);
-                        Attribute.SetAttribute("Pretty", c);
-                        Attribute.SetAttribute("PhysicalUnit", "None");
+                        var attribute = xdoc.CreateElement("Attribute");
+                        attribute.SetAttribute("Name", c);
+                        attribute.SetAttribute("Pretty", c);
+                        attribute.SetAttribute("PhysicalUnit", "None");
                         if(CapContains(c,"red",comp) || CapContains(c,"green",comp) || CapContains(c,"blue",comp))
                         {
-                            Attribute.SetAttribute("Feature", "Color.RGB");
+                            attribute.SetAttribute("Feature", "Color.RGB");
                         }
                         else
                         {
-                            Attribute.SetAttribute("Feature", "Color.Color");
+                            attribute.SetAttribute("Feature", "Color.Color");
                         }
-                        Attributes.AppendChild(Attribute);
+                        attributes.AppendChild(attribute);
                         continue;
                     }
                     else if(CapContains(c,"dimmer",comp) || CapContains(c,"intensity",comp) || CapContains(c,"power",comp))
                     {
-                        XmlElement Attribute = xdoc.CreateElement("Attribute");
-                        Attribute.SetAttribute("Name", c);
-                        Attribute.SetAttribute("Pretty", c);
-                        Attribute.SetAttribute("PhysicalUnit", "None");
-                        Attribute.SetAttribute("Feature", "Dimmer.Dimmer");
-                        Attributes.AppendChild(Attribute);
+                        var attribute = xdoc.CreateElement("Attribute");
+                        attribute.SetAttribute("Name", c);
+                        attribute.SetAttribute("Pretty", c);
+                        attribute.SetAttribute("PhysicalUnit", "None");
+                        attribute.SetAttribute("Feature", "Dimmer.Dimmer");
+                        attributes.AppendChild(attribute);
                         continue;
                     }
                     else if(CapContains(c,"strobe",comp) || CapContains(c,"shutter",comp) || CapContains(c,"flash",comp))
                     {
-                        XmlElement Attribute = xdoc.CreateElement("Attribute");
-                        Attribute.SetAttribute("Name", c);
-                        Attribute.SetAttribute("Pretty", c);
-                        Attribute.SetAttribute("PhysicalUnit", "None");
-                        Attribute.SetAttribute("Feature", "Shutter.Shutter");
-                        Attributes.AppendChild(Attribute);
+                        var attribute = xdoc.CreateElement("Attribute");
+                        attribute.SetAttribute("Name", c);
+                        attribute.SetAttribute("Pretty", c);
+                        attribute.SetAttribute("PhysicalUnit", "None");
+                        attribute.SetAttribute("Feature", "Shutter.Shutter");
+                        attributes.AppendChild(attribute);
                         continue;
                     }
                     else if(CapContains(c,"zoom",comp) || CapContains(c,"focus",comp) || CapContains(c,"cone",comp))
                     {
-                        XmlElement Attribute = xdoc.CreateElement("Attribute");
-                        Attribute.SetAttribute("Name", c);
-                        Attribute.SetAttribute("Pretty", c);
-                        Attribute.SetAttribute("PhysicalUnit", "None");
-                        Attribute.SetAttribute("Feature", "Focus.Focus");
-                        Attributes.AppendChild(Attribute);
+                        var attribute = xdoc.CreateElement("Attribute");
+                        attribute.SetAttribute("Name", c);
+                        attribute.SetAttribute("Pretty", c);
+                        attribute.SetAttribute("PhysicalUnit", "None");
+                        attribute.SetAttribute("Feature", "Focus.Focus");
+                        attributes.AppendChild(attribute);
                         continue;
                     }
                     else if(CapContains(c,"gobo",comp) || CapContains(c,"cookie",comp))
                     {
-                        XmlElement Attribute = xdoc.CreateElement("Attribute");
-                        Attribute.SetAttribute("Name", c);
-                        Attribute.SetAttribute("Pretty", c);
-                        Attribute.SetAttribute("PhysicalUnit", "None");
-                        Attribute.SetAttribute("Feature", "Gobo.Gobo");
-                        Attributes.AppendChild(Attribute);
+                        var attribute = xdoc.CreateElement("Attribute");
+                        attribute.SetAttribute("Name", c);
+                        attribute.SetAttribute("Pretty", c);
+                        attribute.SetAttribute("PhysicalUnit", "None");
+                        attribute.SetAttribute("Feature", "Gobo.Gobo");
+                        attributes.AppendChild(attribute);
                         continue;
                     }
                     else if(CapContains(c,"laser",comp) || CapContains(c,"beam",comp))
                     {
-                        XmlElement Attribute = xdoc.CreateElement("Attribute");
-                        Attribute.SetAttribute("Name", c);
-                        Attribute.SetAttribute("Pretty", c);
-                        Attribute.SetAttribute("PhysicalUnit", "None");
-                        Attribute.SetAttribute("Feature", "Laser.Laser");
-                        Attributes.AppendChild(Attribute);
+                        var attribute = xdoc.CreateElement("Attribute");
+                        attribute.SetAttribute("Name", c);
+                        attribute.SetAttribute("Pretty", c);
+                        attribute.SetAttribute("PhysicalUnit", "None");
+                        attribute.SetAttribute("Feature", "Laser.Laser");
+                        attributes.AppendChild(attribute);
                         continue;
                     }
                     else if(CapContains(c,"fog",comp) || CapContains(c,"c02",comp))
                     {
-                        XmlElement Attribute = xdoc.CreateElement("Attribute");
-                        Attribute.SetAttribute("Name", c);
-                        Attribute.SetAttribute("Pretty", c);
-                        Attribute.SetAttribute("PhysicalUnit", "None");
-                        Attribute.SetAttribute("Feature", "Fog.Fog");
-                        Attributes.AppendChild(Attribute);
+                        var attribute = xdoc.CreateElement("Attribute");
+                        attribute.SetAttribute("Name", c);
+                        attribute.SetAttribute("Pretty", c);
+                        attribute.SetAttribute("PhysicalUnit", "None");
+                        attribute.SetAttribute("Feature", "Fog.Fog");
+                        attributes.AppendChild(attribute);
                         continue;
                     }
                     else
                     {
-                        XmlElement Attribute = xdoc.CreateElement("Attribute");
-                        Attribute.SetAttribute("Name", c);
-                        Attribute.SetAttribute("Pretty", c);
-                        Attribute.SetAttribute("PhysicalUnit", "None");
-                        Attribute.SetAttribute("Feature", "Control.Control");
-                        Attributes.AppendChild(Attribute);
+                        var attribute = xdoc.CreateElement("Attribute");
+                        attribute.SetAttribute("Name", c);
+                        attribute.SetAttribute("Pretty", c);
+                        attribute.SetAttribute("PhysicalUnit", "None");
+                        attribute.SetAttribute("Feature", "Control.Control");
+                        attributes.AppendChild(attribute);
                         continue;                        
                     }
                 }
-                AttributeDefinitions.AppendChild(Attributes);
-//////////////////////////////////////////////////////////////////////
+                attributeDefinitions.AppendChild(attributes);
+                #endregion
 
-                XmlElement DMXModes = xdoc.CreateElement("DMXModes");
+                var dmxModes = xdoc.CreateElement("DMXModes");
 
-                XmlElement Models = xdoc.CreateElement("Models");
-                XmlElement Model = xdoc.CreateElement("Model");
-                Model.SetAttribute("Name", "Base");
-                Models.AppendChild(Model);
+                var models = xdoc.CreateElement("Models");
+                var model = xdoc.CreateElement("Model");
+                model.SetAttribute("Name", "Base");
+                models.AppendChild(model);
 
-                XmlElement Geometries = xdoc.CreateElement("Geometries");
-                XmlElement Geometry = xdoc.CreateElement("Geometry");
-                Geometry.SetAttribute("Model", "Base");
-                Geometry.SetAttribute("Name", "Base");
-                Geometry.SetAttribute("Position", "{1,0,0,0}{0,1,0,0}{0,0,1,0}{0,0,0,1}");
+                var geometries = xdoc.CreateElement("Geometries");
+                var geometry = xdoc.CreateElement("Geometry");
+                geometry.SetAttribute("Model", "Base");
+                geometry.SetAttribute("Name", "Base");
+                geometry.SetAttribute("Position", "{1,0,0,0}{0,1,0,0}{0,0,1,0}{0,0,0,1}");
 
-                Geometries.AppendChild(Geometry);
+                geometries.AppendChild(geometry);
 
-                FixtureType.AppendChild(AttributeDefinitions);
+                fixtureType.AppendChild(attributeDefinitions);
 
-                if(hasGobo)
+                if (hasGobo)
                 {
-                    XmlElement Wheels = xdoc.CreateElement("Wheels");
-                    XmlElement GoboWheel = xdoc.CreateElement("Wheel");
-                    GoboWheel.SetAttribute("Name", "GoboWheel");
-                    string slotName = "Open";
-                    for(int i = 0; i < numOfGobos; i++)
+                    var wheels = xdoc.CreateElement("Wheels");
+                    var goboWheel = xdoc.CreateElement("Wheel");
+                    goboWheel.SetAttribute("Name", "GoboWheel");
+                    var slotName = "Open";
+                    
+                    for(var i = 0; i < numOfGobos; i++)
                     {
-                        XmlElement Slot = xdoc.CreateElement("Slot");
+                        var slot = xdoc.CreateElement("Slot");
                         if(i > 0)
                         {
                             slotName = "Gobo " + i;
                         }
-                        Slot.SetAttribute("Name", slotName);
-                        GoboWheel.AppendChild(Slot);  
+                        slot.SetAttribute("Name", slotName);
+                        goboWheel.AppendChild(slot);  
                     }
-                    Wheels.AppendChild(GoboWheel);  
-                    FixtureType.AppendChild(Wheels);
+                    wheels.AppendChild(goboWheel);  
+                    fixtureType.AppendChild(wheels);
                 }
 
-
-                FixtureType.AppendChild(Models);
-                FixtureType.AppendChild(Geometries);
+                fixtureType.AppendChild(models);
+                fixtureType.AppendChild(geometries);
                 
-                XmlElement DMXMode = xdoc.CreateElement("DMXMode");
-                DMXMode.SetAttribute("Description", "Default Channel Mode");
-                DMXMode.SetAttribute("Geometry", "Base");
-                DMXMode.SetAttribute("Name", "Default");
+                var dmxMode = xdoc.CreateElement("DMXMode");
+                dmxMode.SetAttribute("Description", "Default Channel Mode");
+                dmxMode.SetAttribute("Geometry", "Base");
+                dmxMode.SetAttribute("Name", "Default");
 
-                XmlElement DMXChannels = xdoc.CreateElement("DMXChannels");
+                var dmxChannels = xdoc.CreateElement("DMXChannels");
                 
-                //int fineOffset = 0;
-
-                for(int i = 0; i < channels.Length; i++)
+                for(var i = 0; i < channels.Length; i++)
                 {
-                    string highlight = "None";
-                    string c = channels[i];
-                    int chan = (i + 1);
-                    bool fineCheck = false;
-                    XmlElement DMXChannel = xdoc.CreateElement("DMXChannel");
-                    if(CapContains(c,"pan",comp))
+                    var highlight = "None";
+                    var channelName = channels[i];
+                    var channel = i + 1;
+                    var fineCheck = false;
+                    var dmxChannel = xdoc.CreateElement("DMXChannel");
+                    if (CapContains(channelName,"pan",comp))
                     {
-                        if(CapContains(c,"fine",comp)){continue;}
-                        DMXChannel.SetAttribute("DMXBreak", "1");
-                        DMXChannel.SetAttribute("Geometry", "Base");
-                        if(hasFinePan)
+                        if (CapContains(channelName, "fine", comp))
                         {
-                            int offset = Mathf.Abs(finePanChan - panChan);
-                            offset = offset * ( finePanChan < panChan ? -1 : 1);
-                            DMXChannel.SetAttribute("Offset", (chan).ToString() + "," + (chan + offset).ToString());
-                            //fineOffset++;
+                            continue;
+                        }
+                        dmxChannel.SetAttribute("DMXBreak", "1");
+                        dmxChannel.SetAttribute("Geometry", "Base");
+                        if (hasFinePan)
+                        {
+                            var offset = Mathf.Abs(finePanChan - panChan);
+                            offset *= finePanChan < panChan ? -1 : 1;
+                            dmxChannel.SetAttribute("Offset", channel + "," + (channel + offset));
                             fineCheck = true;
                         }
                         else
                         {
-                            DMXChannel.SetAttribute("Offset", (chan).ToString());
+                            dmxChannel.SetAttribute("Offset", channel.ToString());
                         }
                     }
-                    else if(CapContains(c,"tilt",comp))
+                    else if (CapContains(channelName,"tilt",comp))
                     {
-                        if(CapContains(c,"fine",comp)){continue;}
-                        DMXChannel.SetAttribute("DMXBreak", "1");
-                        DMXChannel.SetAttribute("Geometry", "Base");
-                        if(hasFineTilt)
+                        if (CapContains(channelName, "fine", comp))
                         {
-                            int offset = Mathf.Abs(fineTiltChan - tiltChan);
-                            offset = offset * ( fineTiltChan < tiltChan ? -1 : 1);
-                            DMXChannel.SetAttribute("Offset", (chan).ToString() + "," + (chan + offset).ToString());
-                           // fineOffset++;
+                            continue;
+                        }
+                        dmxChannel.SetAttribute("DMXBreak", "1");
+                        dmxChannel.SetAttribute("Geometry", "Base");
+                        if (hasFineTilt)
+                        {
+                            var offset = Mathf.Abs(fineTiltChan - tiltChan);
+                            offset *= fineTiltChan < tiltChan ? -1 : 1;
+                            dmxChannel.SetAttribute("Offset", channel + "," + (channel + offset));
                             fineCheck = true;
                         }
                         else
                         {
-                            DMXChannel.SetAttribute("Offset", (chan).ToString());
+                            dmxChannel.SetAttribute("Offset", (channel).ToString());
                         }
                     }
-                    else if(CapContains(c,"rotate",comp))
+                    else if (CapContains(channelName,"rotate",comp))
                     {
-                        if(CapContains(c,"fine",comp)){continue;}
-                        DMXChannel.SetAttribute("DMXBreak", "1");
-                        DMXChannel.SetAttribute("Geometry", "Base");
-                        if(hasFineRotate)
+                        if (CapContains(channelName, "fine", comp))
                         {
-                            int offset = Mathf.Abs(fineRotateChan - rotateChan);
-                            offset = offset * ( fineRotateChan < rotateChan ? -1 : 1);
-                            DMXChannel.SetAttribute("Offset", (chan).ToString() + "," + (chan + offset).ToString());
-                            //fineOffset++;
+                            continue;
+                        }
+                        dmxChannel.SetAttribute("DMXBreak", "1");
+                        dmxChannel.SetAttribute("Geometry", "Base");
+                        if (hasFineRotate)
+                        {
+                            var offset = Mathf.Abs(fineRotateChan - rotateChan);
+                            offset *= fineRotateChan < rotateChan ? -1 : 1;
+                            dmxChannel.SetAttribute("Offset", channel + "," + (channel + offset));
                             fineCheck = true;
                         }
                         else
                         {
-                            DMXChannel.SetAttribute("Offset", (chan).ToString());
+                            dmxChannel.SetAttribute("Offset", channel.ToString());
                         }
                     }
                     else
                     {
-                        DMXChannel.SetAttribute("DMXBreak", "1");
-                        DMXChannel.SetAttribute("Geometry", "Base");
-                        DMXChannel.SetAttribute("Offset", (chan).ToString());
+                        dmxChannel.SetAttribute("DMXBreak", "1");
+                        dmxChannel.SetAttribute("Geometry", "Base");
+                        dmxChannel.SetAttribute("Offset", channel.ToString());
                     }
-                    if(CapContains(c,"red",comp) || CapContains(c,"green",comp) || CapContains(c,"blue",comp) || CapContains(c,"dim",comp) || CapContains(c,"dimmer",comp) || CapContains(c,"intensity",comp))
+                    if (CapContains(channelName,"red",comp) || CapContains(channelName,"green",comp) || CapContains(channelName,"blue",comp) || CapContains(channelName,"dim",comp) || CapContains(channelName,"dimmer",comp) || CapContains(channelName,"intensity",comp))
                     {
                         highlight = "255/1";
                     }
-                    string master = "None";
-                    if(CapContains(c,"dim",comp) || CapContains(c,"dimmer",comp))
+                    
+                    var master = "None";
+                    if (CapContains(channelName,"dim",comp) || CapContains(channelName,"dimmer",comp))
                     {
                         master = "Grand";
                     }
-                    string dmxFrom =  fineCheck ? "0/2" : "0/1";
-                    DMXChannel.SetAttribute("Highlight", highlight);
                     
-                    XmlElement LogicalChannel = xdoc.CreateElement("LogicalChannel");
-                    LogicalChannel.SetAttribute("Attribute", c);
-                    LogicalChannel.SetAttribute("Master", master);
+                    var dmxFrom =  fineCheck ? "0/2" : "0/1";
+                    dmxChannel.SetAttribute("Highlight", highlight);
+                    
+                    var logicalChannel = xdoc.CreateElement("LogicalChannel");
+                    logicalChannel.SetAttribute("Attribute", channelName);
+                    logicalChannel.SetAttribute("Master", master);
 
-                    XmlElement ChannelFunction = xdoc.CreateElement("ChannelFunction");
-                    ChannelFunction.SetAttribute("Attribute", c);
-                    ChannelFunction.SetAttribute("DMXFrom", dmxFrom);
-                    ChannelFunction.SetAttribute("Name", c);
-                    if((CapContains(c,"gobo",comp) || CapContains(c,"cookie",comp)) && CapContains(c,"select",comp))
+                    var channelFunction = xdoc.CreateElement("ChannelFunction");
+                    channelFunction.SetAttribute("Attribute", channelName);
+                    channelFunction.SetAttribute("DMXFrom", dmxFrom);
+                    channelFunction.SetAttribute("Name", channelName);
+                    if ((CapContains(channelName,"gobo",comp) || CapContains(channelName,"cookie",comp)) && CapContains(channelName,"select",comp))
                     {   
-                       ChannelFunction.SetAttribute("Wheel", "GoboWheel");
-                       string goboName = "Open";
-                       int fromVal = 0;
-                       for(int j = 0; j < numOfGobos; j++)
+                       channelFunction.SetAttribute("Wheel", "GoboWheel");
+                       var goboName = "Open";
+                       var fromVal = 0;
+                       for(var j = 0; j < numOfGobos; j++)
                        {
-                            XmlElement ChannelSet = xdoc.CreateElement("ChannelSet"); 
-                            if(j > 0)
+                            var channelSet = xdoc.CreateElement("ChannelSet"); 
+                            if (j > 0)
                             {
-                                goboName = "Gobo " + j.ToString();
-                                fromVal = fromVal + Mathf.FloorToInt(255 / numOfGobos);
+                                goboName = "Gobo " + j;
+                                fromVal += Mathf.FloorToInt(255 / numOfGobos);
                             }
-                            ChannelSet.SetAttribute("Name", goboName);
-                            ChannelSet.SetAttribute("DMXFrom", fromVal.ToString() + "/1");
-                            ChannelSet.SetAttribute("PhysicalFrom", "0");
-                            ChannelSet.SetAttribute("PhysicalTo", "0");
-                            ChannelSet.SetAttribute("WheelSlotIndex", (j+1).ToString());
-                            ChannelFunction.AppendChild(ChannelSet);
+                            channelSet.SetAttribute("Name", goboName);
+                            channelSet.SetAttribute("DMXFrom", fromVal + "/1");
+                            channelSet.SetAttribute("PhysicalFrom", "0");
+                            channelSet.SetAttribute("PhysicalTo", "0");
+                            channelSet.SetAttribute("WheelSlotIndex", (j+1).ToString());
+                            channelFunction.AppendChild(channelSet);
                        }
                     }
 
-                    LogicalChannel.AppendChild(ChannelFunction);
-                    DMXChannel.AppendChild(LogicalChannel);
-                    DMXChannels.AppendChild(DMXChannel);
+                    logicalChannel.AppendChild(channelFunction);
+                    dmxChannel.AppendChild(logicalChannel);
+                    dmxChannels.AppendChild(dmxChannel);
                 }
 
-                DMXMode.AppendChild(DMXChannels);
-                DMXModes.AppendChild(DMXMode);
-                FixtureType.AppendChild(DMXModes);
-                GDTF.AppendChild(FixtureType);
-                xdoc.AppendChild(GDTF);
+                dmxMode.AppendChild(dmxChannels);
+                dmxModes.AppendChild(dmxMode);
+                fixtureType.AppendChild(dmxModes);
+                gdtf.AppendChild(fixtureType);
+                xdoc.AppendChild(gdtf);
 
-                // var buffer = new StringBuilder();
-                // var writer = XmlWriter.Create(buffer, new XmlWriterSettings { Indent = true, Encoding = Encoding.UTF8});
-                // xdoc.Save(writer);
-                // writer.Close();
-                
-               // output = ToEncoding(xdoc,Encoding.UTF8);
                 var sb = new StringBuilder();
                 var sw = new StringWriterUtf8(sb);
                 xdoc.Save(sw);
@@ -1282,80 +1223,76 @@ namespace VRSL.EditorScripts
             }
             catch(Exception ex)
             {
-                // Get stack trace for the exception with source file information
-                var st = new StackTrace(ex, true);
-                // Get the top stack frame
-                var frame = st.GetFrame(0);
-                // Get the line number from the stack frame
-                var line = frame.GetFileLineNumber();
-                UnityEngine.Debug.LogError("Error At Line: " + line.ToString());
-                throw;
+                Debug.LogException(ex);
             }
             return output;
         }
         
         public void ToMVRFile()
         {
-            if(CheckForLocalPanel())
+            if (!CheckForLocalPanel()) return;
+            
+            var fixDefAsset = (VRSL_FixtureDefinitions) AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(_panel.fixtureDefGUID), typeof(VRSL_FixtureDefinitions));
+            var jsonFixtureData = new JSONDMXFixtureData[data.Length];
+            var definitions = fixDefAsset.GetNames();
+            for(var i = 0; i < jsonFixtureData.Length; i++)
             {
-
-                VRSL_FixtureDefinitions fixDefAsset = (VRSL_FixtureDefinitions) AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(panel.fixtureDefGUID), typeof(VRSL_FixtureDefinitions));
-                JSONDMXFixtureData[] jsonFixtureData = new JSONDMXFixtureData[data.Length];
-                string[] definitions = fixDefAsset.GetNames();
-                for(int i = 0; i < jsonFixtureData.Length; i++)
-                {
-                    jsonFixtureData[i] = new JSONDMXFixtureData(data[i], definitions, fixDefAsset.GetChannelDefinition(data[i].fixtureDefintion));
-                }
+                jsonFixtureData[i] = new JSONDMXFixtureData(data[i], definitions, fixDefAsset.GetChannelDefinition(data[i].fixtureDefintion));
+            }
                 
-                string assetPath = AssetDatabase.GetAssetPath(this);
-                string filePath = Path.Combine(Directory.GetCurrentDirectory(), assetPath);
-                string targetString = this.name + ".asset";
-                string newString = this.name + ".mvr";   
-                filePath = filePath.Replace("/", "\\");
-                filePath = filePath.Replace(targetString, newString);    
-                using (var fileStream = new FileStream(filePath, FileMode.CreateNew))
+            var assetPath = AssetDatabase.GetAssetPath(this);
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), assetPath);
+            var targetString = name + ".asset";
+            var newString = name + ".mvr";
+            filePath = filePath.Replace("/", "\\");
+            filePath = filePath.Replace(targetString, newString);
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+                Debug.LogWarning($"{Prefix}: File '{filePath}' already exists, overwriting.");
+            }
+            using (var fileStream = new FileStream(filePath, FileMode.CreateNew))
+            {
+                using (var archive = new ZipArchive(fileStream, ZipArchiveMode.Create, true))
                 {
-                    using (var archive = new ZipArchive(fileStream, ZipArchiveMode.Create, true))
+                    //CREATE SCENE DESCRIPTION ////////////////////////////////////////
+                    var sceneDescriptionBytes = Encoding.ASCII.GetBytes(GeneralSceneDescriptionXML(jsonFixtureData));
+                    var sceneDescriptionName = "GeneralSceneDescription.xml";
+                    var sceneDescriptionEntry = archive.CreateEntry(sceneDescriptionName, System.IO.Compression.CompressionLevel.NoCompression);
+                    using (var zipStream = sceneDescriptionEntry.Open())
                     {
-                        //CREATE SCENE DESCRIPTION ////////////////////////////////////////
-                        var sceneDescriptionBytes = Encoding.ASCII.GetBytes(GeneralSceneDescriptionXML(jsonFixtureData));
-                        var sceneDescriptionName = "GeneralSceneDescription.xml";
-                        var sceneDescriptionEntry = archive.CreateEntry(sceneDescriptionName, System.IO.Compression.CompressionLevel.NoCompression);
-                        using (var zipStream = sceneDescriptionEntry.Open())
-                        {
-                            zipStream.Write(sceneDescriptionBytes, 0, sceneDescriptionBytes.Length);
-                        }
-                        /////////////////////////////////////////////////////////////////
-                        for(int i = 0; i < fixDefAsset.definitions.Length; i++)
-                        {
-                            var defName = fixDefAsset.definitions[i].name + ".gdtf";
-                            var fixDefEntry = archive.CreateEntry(defName, System.IO.Compression.CompressionLevel.NoCompression);
+                        zipStream.Write(sceneDescriptionBytes, 0, sceneDescriptionBytes.Length);
+                    }
+                    /////////////////////////////////////////////////////////////////
+                    for(var i = 0; i < fixDefAsset.definitions.Length; i++)
+                    {
+                        var defName = fixDefAsset.definitions[i].name + ".gdtf";
+                        var fixDefEntry = archive.CreateEntry(defName, System.IO.Compression.CompressionLevel.NoCompression);
                             
-                            using (var memoryStream = new MemoryStream())
+                        using (var memoryStream = new MemoryStream())
+                        {
+                            using (var defArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
                             {
-                                using (var defArchive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+                                var descriptionBytes = Encoding.ASCII.GetBytes(FixtureDefinitionXML(fixDefAsset.definitions[i].name, fixDefAsset.definitions[i].channelNames));
+                                var descriptionEntry = defArchive.CreateEntry("description.xml", System.IO.Compression.CompressionLevel.NoCompression);
+                                using (var fixDefZipStream = descriptionEntry.Open())
                                 {
-                                    var descriptionBytes = Encoding.ASCII.GetBytes(FixtureDefinitionXML(fixDefAsset.definitions[i].name, fixDefAsset.definitions[i].channelNames));
-                                    var descriptionEntry = defArchive.CreateEntry("description.xml", System.IO.Compression.CompressionLevel.NoCompression);
-                                    using (var fixDefZipStream = descriptionEntry.Open())
-                                    {
-                                        fixDefZipStream.Write(descriptionBytes, 0, descriptionBytes.Length);
-                                    } 
-                                    using (var zipStream = fixDefEntry.Open())
-                                    {
-                                        defArchive.Dispose();
-                                        zipStream.Write(memoryStream.ToArray(), 0, memoryStream.ToArray().Length);
-                                    }
+                                    fixDefZipStream.Write(descriptionBytes, 0, descriptionBytes.Length);
+                                } 
+                                using (var zipStream = fixDefEntry.Open())
+                                {
+                                    defArchive.Dispose();
+                                    zipStream.Write(memoryStream.ToArray(), 0, memoryStream.ToArray().Length);
                                 }
-
-                                memoryStream.Dispose();
                             }
+
+                            memoryStream.Dispose();
                         }
                     }
                 }
-                AssetDatabase.Refresh();
-                UnityEngine.Debug.Log("Sucessfully Exported MVR File");         
             }
+            AssetDatabase.Refresh();
+            Debug.Log($"{Prefix}: Successfully Exported MVR File");
         }
     }
 }
