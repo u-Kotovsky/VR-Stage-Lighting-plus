@@ -26,7 +26,7 @@ Currently supported packages:
 ---
 
 ## Dependencies
--  [u-Kotovsky/LUTBeams](https://u-kotovsky.github.io/LUTBeams/) [Get thru VPM](https://u-kotovsky.github.io/LUTBeams/) 
+-  [u-Kotovsky/LUTBeams](https://github.com/u-Kotovsky/LUTBeams) [Get thru VPM](https://u-kotovsky.github.io/LUTBeams/) 
 
 ---
 
