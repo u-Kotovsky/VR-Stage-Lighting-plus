@@ -19,6 +19,17 @@ new UI panel that fits VideoTXL style (very much based on VideoTXL)
 
 ---
 
+## Supported packages
+Currently supported packages:
+ - [u-Kotovsky/VRSL-GPUReadBack](https://github.com/u-Kotovsky/VRSL-GPUReadBack) [Get thru VPM](https://u-kotovsky.github.io/VRSL-GPUReadBack/)
+
+---
+
+## Dependencies
+-  [u-Kotovsky/LUTBeams](https://u-kotovsky.github.io/LUTBeams/) [Get thru VPM](https://u-kotovsky.github.io/LUTBeams/) 
+
+---
+
 ## Setup
 - Download & put `Packages/com.acchosen.vr-stage-lighting` into your projects `Packages` folder and it should work **for now**
  - Make sure you do not have original VRSL installed in order for this to work.
