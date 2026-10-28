@@ -6,7 +6,8 @@ Shader "LUTBeam/VRSL Spotlight"
         [NoScaleOffset] _GoboLUT ("LUT Texture", 2DArray) = "white" {}
 
         [Header(Shape)]
-        _Zoom ("_Zoom", Range(0, 2.0)) = 0.1
+        _ZoomX ("_ZoomX", Range(0, 120.0)) = 0.1
+        _ZoomY ("_ZoomY", Range(0, 120.0)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _NearRadiusX ("_NearRadiusX", Range(0,1)) = 0.1
         _NearRadiusY ("_NearRadiusY", Range(0,1)) = 0.1
@@ -102,7 +103,8 @@ Shader "LUTBeam/VRSL Spotlight"
             float _NearRadiusX;
             float _NearRadiusY;
             float _FarZ;
-            float _Zoom;
+            float _ZoomX;
+            float _ZoomY;
             float _Gobo;
 
             float _GoboIntensity;
@@ -115,12 +117,12 @@ Shader "LUTBeam/VRSL Spotlight"
                 return (dmxAlive * getDMXGoboSelection(getDMXChannel()) - 1) + ((1 - dmxAlive) * _Gobo);
             }
             
-
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
                 return _GoboTex.SampleLevel(samp, float3(uv, getGobo()), mip).rrr;
             }
+            
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
             float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
@@ -133,13 +135,16 @@ Shader "LUTBeam/VRSL Spotlight"
             float3 LUTBeamCallbackTransform(float3 vertex)
             {
                 uint dmx = getDMXChannel();
-                float goboSpin = getGoboSpinSpeed(dmx);
+                float goboSpin = getGoboSpinSpeed(dmx); // TODO: gobo spin
                 float tilt = GetTiltValue(dmx) - 90;
                 float pan = GetPanValue(dmx);
+                
+                vertex = vertex + float3(0, 0, _Offset);
                 
                 return calculateRotations(float4(0,0,1,0), float4(vertex,0), 0, pan, tilt).xyz;
             }
 
+            //#define LUTBEAM_FOCUS 1
             #include "Packages/com.torvid21.lutbeam/Runtime/LUTBeam.cginc"
         
             #pragma vertex vert
@@ -169,25 +174,24 @@ Shader "LUTBeam/VRSL Spotlight"
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
                 
-                BeamSettings settings = DefaultBeamSettings();
-                //settings.zoomX = _Zoom;
-                //settings.zoomY = _Zoom;
-                settings.farz = _FarZ;
-                settings.nearSizeX = _NearRadiusX;
-                settings.nearSizeY = _NearRadiusY;
-                //settings.color = _Color;
-                settings.brightnessVolume = _BeamIntensity;
-                settings.brightnessGobo = _GoboIntensity;
-                settings.beamFalloff = _BeamFalloff;
-
                 uint dmx = getDMXChannel();
-                half zoom = isDMX() ? getValueAtCoords(dmx + 4, _Udon_DMXGridRenderTexture) : _Zoom;
-                half dimmer = getValueAtCoords(dmx + 5, _Udon_DMXGridRenderTexture);
-                float4 color = isDMX() ? GetDMXColor(dmx) * dimmer : 1.;
+                half zoom = isDMX() ? getValueAtCoords(dmx + 4, _Udon_DMXGridRenderTexture) : .5;
+                half dimmer = isDMX() ? getValueAtCoords(dmx + 5, _Udon_DMXGridRenderTexture) : 1.;
+                half strobe = GetStrobeOutput(dmx);
+                float3 color = GetDMXColor(dmx);
+                
+                
+                float3 finalColor = dimmer * color * strobe;
+                finalColor = isDMX() ? finalColor : float3(1,1,1);
+                finalColor *= getGlobalIntensity() * getFinalIntensity();
+                half coneWidth = getConeWidth();
+                half coneLength = getConeLength();
                 
                 // simulate dimming that happens when the gobo is zoomed out
                 float zoomFade = lerp(1, 0.1, 1-pow(1-saturate(zoom*0.5), 5));
                 
+                zoom *= 75;
+                zoom += 10;
                 
                 // LUTBeamSimple.shader
                 //float ex = settings.nearSizeX*10 + tan(radians(max(settings.zoomX/2, 1))) * settings.farz;
@@ -195,9 +199,16 @@ Shader "LUTBeam/VRSL Spotlight"
                 //float minWidth = 0.05;
                 //settings.color *= 2 / pow(ex * ey + minWidth, 0.7);
                 
-                settings.zoomX = zoom;
-                settings.zoomY = zoom;
-                settings.color = color * zoomFade;
+                BeamSettings settings = DefaultBeamSettings();
+                settings.zoomX = zoom;//*coneWidth;
+                settings.zoomY = zoom;//*coneWidth;
+                settings.farz = _FarZ*coneLength;
+                settings.nearSizeX = _NearRadiusX;
+                settings.nearSizeY = _NearRadiusY;
+                settings.color = finalColor * zoomFade;
+                settings.brightnessVolume = _BeamIntensity;
+                settings.brightnessGobo = _GoboIntensity;
+                settings.beamFalloff = _BeamFalloff;
                 
                 // make sure you feed in v.vertex from the unity default cube here directly without modifying it
                 // otherwise things may go wroooonngggg :)

@@ -14,6 +14,8 @@ Material:
   m_ValidKeywords: []
   m_InvalidKeywords:
   - _ENABLEAUDIOLINK_ON
+  - _ENABLEDMX_ON
+  - _ENABLESTROBE_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
@@ -55,8 +57,8 @@ Material:
     - _DMXChannel: 0
     - _DMXMotionChannel: -1
     - _EnableAudioLink: 0
-    - _EnableDMX: 0
-    - _EnableStrobe: 0
+    - _EnableDMX: 1
+    - _EnableStrobe: 1
     - _FadeDist: 1
     - _FadeMult: 1
     - _Falloff: 0
@@ -86,12 +88,21 @@ Material:
     - _RedMultiplier: 1
     - _SpinMult: 4
     - _SpinSpeed: 0.1
+    - _StencilCompareFunction: 6
+    - _StencilFailOp: 0
+    - _StencilPassOp: 0
+    - _StencilReadMask: 255
+    - _StencilRef: 142
+    - _StencilWriteMask: 255
+    - _StencilZFailOp: 0
     - _Tilt: 0
     - _TiltInvert: 0
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
     - _Zoom: 0.29
+    - _ZoomX: 45
+    - _ZoomY: 45
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _FixtureRotationOrigin: {r: 0, g: 0, b: 0, a: 0}
