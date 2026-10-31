@@ -1,8 +1,10 @@
 #if !COMPILER_UDONSHARP && UNITY_EDITOR
 using System.Linq;
-using UdonSharpEditor;
 using UnityEditor;
 using UnityEngine;
+#if UDONSHARP
+using UdonSharpEditor;
+#endif
 
 namespace VRSL.EditorScripts
 {

@@ -314,7 +314,7 @@ namespace VRSL.EditorScripts
                 _panel = go.GetUdonSharpComponent<VRSL_LocalUIControlPanel>();
                 #pragma warning restore 0618
 #else
-                panel = go.GetComponent<VRSL_LocalUIControlPanel>();
+                _panel = go.GetComponent<VRSL_LocalUIControlPanel>();
 #endif
                 if (_panel != null)
                 {

@@ -47,7 +47,7 @@ namespace VRSL.EditorScripts
                 _panel =  go.GetUdonSharpComponent<VRSL_LocalUIControlPanel>();
                 #pragma warning restore 0618
                 #else
-                panel =  go.GetComponent<VRSL_LocalUIControlPanel>();
+                _panel =  go.GetComponent<VRSL_LocalUIControlPanel>();
                 #endif
                 
                 if (_panel != null)
@@ -100,7 +100,7 @@ namespace VRSL.EditorScripts
                     _panel.ApplyProxyModifications();
                     #pragma warning restore 0618 //suppressing obsoletion warnings
 #else
-                    panel.fixtureSaveFile = so.FindProperty("fixtureSaveFile").stringValue;
+                    _panel.fixtureSaveFile = so.FindProperty("fixtureSaveFile").stringValue;
 #endif
 
                     //asset = (VRSL_DMXPatchSettings) AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(panel.fixtureSaveFile), typeof(VRSL_DMXPatchSettings));
@@ -140,7 +140,7 @@ namespace VRSL.EditorScripts
                     _panel.ApplyProxyModifications();
                     #pragma warning restore 0618 //suppressing obsoletion warnings
 #else
-                    panel.fixtureSaveFile = so.FindProperty("fixtureSaveFile").stringValue;
+                    _panel.fixtureSaveFile = so.FindProperty("fixtureSaveFile").stringValue;
 #endif
                     SavePatchData();
                 }

@@ -1,8 +1,10 @@
 #if UNITY_EDITOR && !COMPILER_UDONSHARP
 using System;
-using UdonSharpEditor;
 using UnityEditor;
 using UnityEngine;
+#if UDONSHARP
+using UdonSharpEditor;
+#endif
 
 namespace VRSL.EditorScripts
 {
