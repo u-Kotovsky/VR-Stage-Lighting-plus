@@ -11,7 +11,7 @@ public class VRSLStyles : MonoBehaviour
 {
     public static readonly Texture Logo = Resources.Load("VRStageLighting-Logo") as Texture;
     //public static string ver = "VR Stage Lighting ver:" + " <b><color=#6a15ce> 2.4.1</color></b>";
-    private const string PackagePath = "Packages/com.acchosen.vrsl-gpureadback/package.json";
+    private const string PackagePath = "Packages/com.acchosen.vr-stage-lighting/package.json";
     private static Package _package = VRSLPackageUtility.ReadPackage(PackagePath);
     
     public static void DepthPassWarning()
