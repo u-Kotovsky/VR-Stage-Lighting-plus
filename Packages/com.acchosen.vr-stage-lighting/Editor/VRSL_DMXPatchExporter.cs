@@ -64,38 +64,39 @@ namespace VRSL.EditorScripts
             CheckForLocalPanel();
             if (!_hasLocalPanel)
             {
-                Debug.LogWarning($"{Prefix}: Please make sure there is a VRSL-LocalUIControlPanel in your scene before attempting to save."); 
+                Debug.LogError($"{Prefix}: Please make sure there is a VRSL-LocalUIControlPanel in your scene before attempting to save."); 
                 return;
             }
             
+            // Saves patch data to a filePath in _panel
             if (_panel.fixtureSaveFile == "NONE")
             {
+                // Create new patch data file
                 try
                 {
                     var asset = ScriptableObject.CreateInstance<VRSL_DMXPatchSettings>();
                     asset.SetDmxFixtureData();
                     var name = $"VRSL DMX Patch Data_{SceneManager.GetActiveScene().name}.asset";
                     var parentDirectory = "VRSL DMX Patch Folder";
-                    if(AssetDatabase.IsValidFolder("Assets/" + parentDirectory) == false)
+                    if (!AssetDatabase.IsValidFolder("Assets/" + parentDirectory))
                     {
                         AssetDatabase.CreateFolder("Assets", parentDirectory);
                     }
-                    string path = "Assets/" + parentDirectory + "/" + name;
+                    string path = $"Assets/{parentDirectory}/{name}";
                     AssetDatabase.CreateAsset(asset, path);
                     //AssetDatabase.SaveAssets();
-
                     //EditorUtility.FocusProjectWindow();
-
                     //Selection.activeObject = asset;
 
                     var so = new SerializedObject(_panel);
                     so.FindProperty(nameof(_panel.fixtureSaveFile)).stringValue = AssetDatabase.GUIDFromAssetPath(path).ToString();
                     so.ApplyModifiedProperties();
+                    // Why are we doing this?
 #if UDONSHARP
                     #pragma warning disable 0618 //suppressing obsoletion warnings
                     _panel.UpdateProxy();
                     #pragma warning restore 0618 //suppressing obsoletion warnings
-                    _panel.fixtureSaveFile = so.FindProperty("fixtureSaveFile").stringValue;
+                    _panel.fixtureSaveFile = so.FindProperty(nameof(_panel.fixtureSaveFile)).stringValue;
                     #pragma warning disable 0618 //suppressing obsoletion warnings
                     _panel.ApplyProxyModifications();
                     #pragma warning restore 0618 //suppressing obsoletion warnings
@@ -116,6 +117,7 @@ namespace VRSL.EditorScripts
             }
             else
             {
+                // Update existing patch data file
                 try
                 {
                     var asset = (VRSL_DMXPatchSettings) AssetDatabase.LoadAssetAtPath(
@@ -162,7 +164,7 @@ namespace VRSL.EditorScripts
                 return;
             }
             
-            if(_panel.fixtureSaveFile != "NONE")
+            if (_panel.fixtureSaveFile != "NONE")
             {
                 try
                 {
