@@ -11,9 +11,9 @@ namespace VRSL.EditorScripts
 {
     public class VRSLFixtureCalculator : EditorWindow
     {
+        private const string Prefix = "VRSL Fixture Calculator";
         private static int _fixtureCount;
         private static VRSL_LocalUIControlPanel _controlPanel;
-        private static VRSL_FixtureDefinitions _fixtureDefinitions;
         private static readonly List<string> UniqueFixtureDefinitions = new();
         
         private static VRSLFixtureCalculator _window;
@@ -51,7 +51,7 @@ namespace VRSL.EditorScripts
         
         private void OnGUI()
         {
-            EditorGUILayout.LabelField("Yip Yap VRSL Fixture Calculator");
+            EditorGUILayout.LabelField("VRSL Fixture Calculator", EditorStyles.boldLabel);
             EditorGUILayout.LabelField("Fixture count: " + _fixtureCount.ToString());
             EditorGUILayout.LabelField("Next free channel: " + GetNextAvailableChannel());
             EditorGUILayout.LabelField("Fixture types used: " + string.Join(", ", UniqueFixtureDefinitions.ToArray()));
@@ -92,6 +92,7 @@ namespace VRSL.EditorScripts
                 {
                     EditorGUILayout.LabelField("There are no selected fixtures.");
                 }
+                
                 so.ApplyModifiedProperties();
             }
             else
@@ -107,23 +108,22 @@ namespace VRSL.EditorScripts
             for (var i = 0; i < selectedFixtures.Length; i++)
             {
                 var fixture = selectedFixtures[i];
-                if (fixture == null)
-                {
-                    continue;
-                }
+                if (fixture == null) continue;
+                
+                var channelWidth = FixtureManager.GetFixtureInfoByGuid(fixture.fixtureInfoGuid).GetChannelWidth();
                 
                 var so2 = new SerializedObject(fixture);
-                var def = _fixtureDefinitions.definitions[fixture.fixtureDefintion];
                 var universe = so2.FindProperty(nameof(fixture.dmxUniverse));
                 var channel = so2.FindProperty(nameof(fixture.dmxChannel));
                 var globalChannel = so2.FindProperty(nameof(fixture.globalChannelIndex));
                 
                 fixture.GetUniverseAndChannel(lastFreeId, out int uni, out int ch);
 
-                if (ch + def.channelNames.Length >= 512)
+                if (ch + channelWidth >= 512)
                 {
-                    // Some LD programs do not like bounds.
-                    Debug.Log("Fix bounds at " + i);
+                    // Some LD programs do not like universe bounds so we have to put fixture on "new universe" instead.
+                    // TODO: add an option to ignore that
+                    Debug.LogWarning($"{Prefix}: Fix universe bounds at " + i);
                     uni++;
                     ch = 1;
                     lastFreeId = fixture.GetGlobalChannel(uni, ch);
@@ -138,77 +138,27 @@ namespace VRSL.EditorScripts
                 //fixture.GlobalChannelIndex = lastFreeId;
                 //fixture.SetLocalChannelFromGlobal(lastFreeId);
 
-                var channelCount = GetChannelCount(fixture);
-                lastFreeId += channelCount;
-                Debug.Log($"[VRSL Fixtures] Assigned '{fixture.GlobalChannelIndex}', channel count: '{channelCount}', last free id: '{lastFreeId}'");
+                lastFreeId += channelWidth;
+                Debug.Log($"{Prefix} Assigned '{fixture.GlobalChannelIndex}', channel count: '{channelWidth}', last free id: '{lastFreeId}'");
             }
-        }
-
-        public static int GetChannelCount(VRStageLighting_DMX_Static fixture)
-        {
-            if (_controlPanel == null) _controlPanel = FindObjectOfType<VRSL_LocalUIControlPanel>();
-            if (_controlPanel == null)
-            {
-                throw new Exception("Fail, control panel is null");
-            }
-            
-            if (_fixtureDefinitions == null) _fixtureDefinitions = VRStageLighting_DMX_Static_Editor.GetFixtureOptions(_controlPanel.fixtureDefGUID);
-            if (_fixtureDefinitions == null)
-            {
-                throw new Exception("Fail, fixture def is null");
-            }
-            
-            var definition = _fixtureDefinitions.definitions[fixture.fixtureDefintion];
-            return definition.channelNames.Length;
         }
 
         public static void SetNextFreeChannel(VRStageLighting_DMX_Static fixtureToFit)
         {
-            if (_controlPanel == null) _controlPanel = FindObjectOfType<VRSL_LocalUIControlPanel>();
-            if (_controlPanel == null)
-            {
-                throw new Exception("Fail, control panel is null");
-            }
-            
-            if (_fixtureDefinitions == null) _fixtureDefinitions = VRStageLighting_DMX_Static_Editor.GetFixtureOptions(_controlPanel.fixtureDefGUID);
-            if (_fixtureDefinitions == null)
-            {
-                throw new Exception("Fail, fixture def is null");
-            }
-            
-            var definition = _fixtureDefinitions.definitions[fixtureToFit.fixtureDefintion];
-            var channel = NextFreeChannel(definition.channelNames.Length);
+            // TODO: use serialized object for this
+            var fixtureInfo = FixtureManager.GetFixtureInfoByGuid(fixtureToFit.fixtureInfoGuid);
+            var channel = NextFreeChannel(fixtureInfo.GetChannelWidth());
             fixtureToFit.GlobalChannelIndex = channel;
         }
 
         public static int NextFreeChannel(VRStageLighting_DMX_Static fixtureToFit)
         {
-            if (_controlPanel == null) _controlPanel = FindObjectOfType<VRSL_LocalUIControlPanel>();
-            if (_controlPanel == null)
-            {
-                throw new Exception("Fail, control panel is null");
-            }
-            
-            if (_fixtureDefinitions == null) _fixtureDefinitions = VRStageLighting_DMX_Static_Editor.GetFixtureOptions(_controlPanel.fixtureDefGUID);
-            if (_fixtureDefinitions == null)
-            {
-                throw new Exception("Fail, fixture def is null");
-            }
-            
-            var definition = _fixtureDefinitions.definitions[fixtureToFit.fixtureDefintion];
-            return NextFreeChannel(definition.channelNames.Length);
+            var fixtureInfo = FixtureManager.GetFixtureInfoByGuid(fixtureToFit.fixtureInfoGuid);
+            return NextFreeChannel(fixtureInfo.GetChannelWidth());
         }
 
-        public static int NextFreeChannel(int width = 0)
+        public static int NextFreeChannel(int width = 0) // width - the fixture to fit in
         {
-            if (_controlPanel == null) 
-                _controlPanel = FindObjectOfType<VRSL_LocalUIControlPanel>();
-            if (_controlPanel == null)
-            {
-                _fixtureCount = 0;
-                return 0;
-            }
-            
             var fixtures = FindObjectsByType<VRStageLighting_DMX_Static>(FindObjectsSortMode.None);
             if (fixtures == null)
             {
@@ -217,7 +167,8 @@ namespace VRSL.EditorScripts
             }
 
             _fixtureCount = fixtures.Length;
-            _fixtureDefinitions = VRStageLighting_DMX_Static_Editor.GetFixtureOptions(_controlPanel.fixtureDefGUID);
+
+            var fixtureInfos = FixtureManager.GetInstance().Fixtures;
 
             var busyChannels = new List<(int, int)>();
             var startOfFreeChannelSpace = 0;
@@ -226,15 +177,15 @@ namespace VRSL.EditorScripts
             
             foreach (var fixture in fixtures)
             {
-                var definition = _fixtureDefinitions.definitions[fixture.fixtureDefintion];
+                var fixtureInfo = fixtureInfos[FixtureManager.GetFixtureIndexByGuid(fixture.fixtureInfoGuid)];
 
-                if (!UniqueFixtureDefinitions.Contains(definition.name))
+                if (!UniqueFixtureDefinitions.Contains(fixtureInfo.GetGuid()))
                 {
-                    UniqueFixtureDefinitions.Add(definition.name);
+                    UniqueFixtureDefinitions.Add(fixtureInfo.GetGuid());
                 }
 
                 var globalChannel = fixture.GlobalChannelIndex;
-                var channelCount = definition.channelNames.Length;
+                var channelCount = fixtureInfo.GetChannelWidth();
                 var endChannel = globalChannel + channelCount;
                 
                 busyChannels.Add((globalChannel, channelCount));

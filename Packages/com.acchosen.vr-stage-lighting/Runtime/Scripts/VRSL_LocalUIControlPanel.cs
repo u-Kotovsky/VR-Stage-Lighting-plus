@@ -364,7 +364,6 @@ namespace VRSL
             _SetBloomIntensity();
             _CheckDMX();
             _CheckAudioLink();
-            _CheckkExtendedUniverses();
             _ForceUpdateVideoSampleTexture();
             _SetVolumetricQualityMode();
             _SetBlinderProjectionQualityMode();
@@ -738,40 +737,27 @@ namespace VRSL
             {
                 material.SetInt("_PotatoMode", VolumetricNoise ? 0 : 1);
                 material.SetInt("_UseDepthLight", RequireDepthLight ? 1 : 0);
-                if(material.HasProperty("_UseDepthLight"))
+                ApplyKeywordIfPropertyExists(material, PropertyToID("_UseDepthLight"), "_USE_DEPTH_LIGHT");
+                ApplyKeywordIfPropertyExists(material, PropertyToID("_MAGIC_NOISE_ON_MED"), "_MAGIC_NOISE_ON_MED");
+                ApplyKeywordIfPropertyExists(material, PropertyToID("_MAGIC_NOISE_ON_HIGH"), "_MAGIC_NOISE_ON_HIGH");
+                ApplyKeywordIfPropertyExists(material, PropertyToID("_PotatoMode"), "_POTATO_MODE_ON");
+            }
+            
+            foreach(var material in projectionMaterials)
+            {
+                material.SetInt("_UseDepthLight", RequireDepthLight ? 1 : 0);
+            }
+            
+            foreach(var material in fixtureMaterials)
+            {
+                material.SetInt("_UseDepthLight", RequireDepthLight ? 1 : 0);
+                /*if (material.HasProperty("_UseDepthLight"))
                 {
                     SetKeyword(material, "_USE_DEPTH_LIGHT", Mathf.FloorToInt(material.GetInt("_UseDepthLight")) == 1);
-                }
-                if(material.HasProperty("_MAGIC_NOISE_ON_MED"))
-                {
-                    SetKeyword(material, "_MAGIC_NOISE_ON_MED", Mathf.FloorToInt(material.GetInt("_MAGIC_NOISE_ON_MED")) == 1);
-                }
-                if(material.HasProperty("_MAGIC_NOISE_ON_HIGH"))
-                {
-                    SetKeyword(material, "_MAGIC_NOISE_ON_HIGH", Mathf.FloorToInt(material.GetInt("_MAGIC_NOISE_ON_HIGH")) == 1);
-                }
-                if(material.HasProperty("_PotatoMode"))
-                {
-                    SetKeyword(material, "_POTATO_MODE_ON", Mathf.FloorToInt(material.GetInt("_PotatoMode")) == 1);
-                }
-            }
-            foreach(var mat in projectionMaterials)
-            {
-                mat.SetInt("_UseDepthLight", RequireDepthLight ? 1 : 0);
-            }
-            if(fixtureMaterials != null)
-            {
-                foreach(var mat in fixtureMaterials)
-                {
-                    if(mat)
-                    {
-                        mat.SetInt("_UseDepthLight", RequireDepthLight ? 1 : 0);
-                        if(mat.HasProperty("_UseDepthLight"))
-                        {
-                            SetKeyword(mat, "_USE_DEPTH_LIGHT", Mathf.FloorToInt(mat.GetInt("_UseDepthLight")) == 1 ? true : false);
-                        }
-                    }
-                }
+                }*/
+                // Why there Mathf.FloorToInt??? We are reading integer either way. WTF!
+                //ApplyKeywordIfPropertyExists(material, PropertyToID("_UseDepthLight"), "_USE_DEPTH_LIGHT", material.GetInt("_UseDepthLight"));
+                ApplyKeywordIfPropertyExists(material, PropertyToID("_UseDepthLight"), "_USE_DEPTH_LIGHT");
             }
         }
         
@@ -968,18 +954,6 @@ namespace VRSL
             }
         }
         #endregion
-        
-        public void _CheckkExtendedUniverses()
-        {
-            foreach(var customRenderTexture in DMX_CRTS_Horizontal)
-            {
-                customRenderTexture.material.SetInt(_nineUniverseMode, 0);
-            }
-            foreach(var customRenderTexture in DMX_CRTS_Vertical)
-            {
-                customRenderTexture.material.SetInt(_nineUniverseMode, 0);
-            }
-        }
 
         private void ApplyIfPropertyExists(Material material, int nameId, Texture texture)
         {
@@ -989,12 +963,52 @@ namespace VRSL
             }
         }
 
+        #region Apply Keyword Helpers
+        private void ApplyKeywordIfPropertyExists(Material material, int propertyId, string keyword)
+        {
+            ApplyKeywordIfPropertyExists(material, propertyId, keyword, material.GetInt(propertyId));
+        }
+        
+        private void ApplyKeywordIfPropertyExists(Material material, int propertyId, string keyword, int status)
+        {
+            ApplyKeywordIfPropertyExists(material, propertyId, keyword, status == 1);
+        }
+        
+        private void ApplyKeywordIfPropertyExists(Material material, int propertyId, string keyword, byte status)
+        {
+            ApplyKeywordIfPropertyExists(material, propertyId, keyword, status == 1);
+        }
+        
+        private void ApplyKeywordIfPropertyExists(Material material, int propertyId, string keyword, bool status)
+        {
+            if (material.HasProperty(propertyId))
+            {
+                SetKeyword(material, keyword, status);
+            }
+        }
+        
+        /// <summary>
+        /// Set keyword status on material
+        /// </summary>
+        /// <param name="material"></param>
+        /// <param name="keyword"></param>
+        /// <param name="status"></param>
+        private void SetKeyword(Material material, string keyword, bool status)
+        {
+            if (status)
+            {
+                material.EnableKeyword(keyword);
+            } 
+            else 
+            {
+                material.DisableKeyword(keyword);
+            }
+        }
+        #endregion
+
         public void _ForceUpdateVideoSampleTexture()
         {
-            if(videoSampleTargetTexture == null)
-            {
-                return;
-            }
+            if (videoSampleTargetTexture == null) return;
             
             foreach(var material in laserMaterials)
             {
@@ -1018,6 +1032,7 @@ namespace VRSL
             }
         }
         
+        #region SetIntensity
         public void _SetFinalIntensity()
         {
             fixtureIntensityMax = masterSlider.value;
@@ -1025,12 +1040,15 @@ namespace VRSL
             projectionIntensityMax = masterSlider.value;
             discoballIntensityMax = masterSlider.value;
             laserIntensityMax = masterSlider.value;
+            
             _SetFixtureIntensity();
             _SetVolumetricIntensity();
             _SetProjectionIntensity();
             _SetDiscoBallIntensity();
             _SetLaserIntensity();
+            
             var text = Mathf.Round(masterSlider.value * 100.0f).ToString();
+            
             SetTextSafe(masterSliderText, text);
             SetTextSafe(masterSliderTextPro, text);
         }
@@ -1039,12 +1057,12 @@ namespace VRSL
         {
             foreach(var material in fixtureMaterials)
             {
-                if(material != null)
-                {
-                    material.SetFloat(_universalIntensity, Mathf.Lerp(0.0f, fixtureIntensityMax, fixtureSlider.value));
-                }
+                if (material == null) continue;
+                
+                material.SetFloat(_universalIntensity, Mathf.Lerp(0.0f, fixtureIntensityMax, fixtureSlider.value));
             }
             var text = Mathf.Round(fixtureSlider.value * 100.0f).ToString();
+            
             SetTextSafe(fixtureSliderText, text);
             SetTextSafe(fixtureSliderTextPro, text);
         }
@@ -1053,12 +1071,13 @@ namespace VRSL
         {
             foreach(var material in volumetricMaterials)
             {
-                if(material != null)
-                {
-                    material.SetFloat(_universalIntensity, Mathf.Lerp(0.0f, volumetricIntensityMax, volumetricSlider.value));
-                }
+                if (material == null) continue;
+                
+                material.SetFloat(_universalIntensity, Mathf.Lerp(0.0f, volumetricIntensityMax, volumetricSlider.value));
             }
+            
             var text = Mathf.Round(volumetricSlider.value * 100.0f).ToString();
+            
             SetTextSafe(volumetricSliderText, text);
             SetTextSafe(volumetricSliderTextPro, text);
         }
@@ -1067,12 +1086,13 @@ namespace VRSL
         {
             foreach(var material in projectionMaterials)
             {
-                if(material != null)
-                {
-                    material.SetFloat(_universalIntensity, Mathf.Lerp(0.0f, projectionIntensityMax, projectionSlider.value));
-                }
+                if (material == null) continue;
+                
+                material.SetFloat(_universalIntensity, Mathf.Lerp(0.0f, projectionIntensityMax, projectionSlider.value));
             }
+            
             var text = Mathf.Round(projectionSlider.value * 100.0f).ToString();
+            
             SetTextSafe(projectionSliderText, text);
             SetTextSafe(projectionSliderTextPro, text);
         }
@@ -1081,12 +1101,13 @@ namespace VRSL
         {
             foreach(var material in discoBallMaterials)
             {
-                if(material != null)
-                {
-                    material.SetFloat(_universalIntensity, Mathf.Lerp(0.0f, discoballIntensityMax, discoBallSlider.value));
-                }
+                if (material == null) continue;
+                
+                material.SetFloat(_universalIntensity, Mathf.Lerp(0.0f, discoballIntensityMax, discoBallSlider.value));
             }
+            
             var text = Mathf.Round(discoBallSlider.value * 100.0f).ToString();
+            
             SetTextSafe(discoBallSliderText, text);
             SetTextSafe(discoBallSliderTextPro, text);
         }
@@ -1095,22 +1116,25 @@ namespace VRSL
         {
             foreach(var material in laserMaterials)
             {
-                if(material != null)
-                {
-                    material.SetFloat(_universalIntensity, Mathf.Lerp(0.0f, laserIntensityMax, laserSlider.value));
-                }
+                if (material == null) continue;
+                
+                material.SetFloat(_universalIntensity, Mathf.Lerp(0.0f, laserIntensityMax, laserSlider.value));
             }
+            
             var text = Mathf.Round(laserSlider.value * 100.0f).ToString();
+            
             SetTextSafe(laserSliderText, text);
             SetTextSafe(laserSliderTextPro, text);
         }
         
         public void _SetBloomIntensity()
         {
-            if(bloomAnimator != null)
+            if (bloomAnimator != null)
             {
                 bloomAnimator.SetFloat("BloomIntensity", bloomSlider.value);
+                
                 var text = Mathf.Round(bloomSlider.value * 100.0f).ToString();
+                
                 SetTextSafe(bloomSliderText, text);
                 SetTextSafe(bloomSliderTextPro, text);
             }
@@ -1119,25 +1143,14 @@ namespace VRSL
                 bloomSlider.gameObject.SetActive(false);
             }
         }
-
-        private void SetKeyword(Material mat, string keyword, bool status)
-        {
-            if (status)
-            {
-                mat.EnableKeyword(keyword);
-            } 
-            else 
-            {
-                mat.DisableKeyword(keyword);
-            }
-        }
+        #endregion
 
         private void SetVolumetricQuality()
         {
             foreach(var material in volumetricMaterials)
             {
-                if(material == null) continue;
-                if(volumetricQuality == VolumetricQualityModes.High)
+                if (material == null) continue;
+                if (volumetricQuality == VolumetricQualityModes.High)
                 {
                     material.SetOverrideTag("RenderType", "Transparent");
                     material.DisableKeyword("_ALPHATEST_ON");  
@@ -1145,28 +1158,13 @@ namespace VRSL
                     material.SetInt("_BlendDst", 1);
                     material.SetInt("_ZWrite", 0);
                     material.SetInt("_AlphaToCoverage", 0);
-                    material.SetInt("_HQMode", 1);
                     material.SetInt("_RenderMode", 0);
-                    if(material.HasProperty("_MAGIC_NOISE_ON_MED"))
-                    {
-                        SetKeyword(material, "_MAGIC_NOISE_ON_MED", (Mathf.FloorToInt(material.GetInt("_MAGIC_NOISE_ON_MED"))) == 1 ? true : false);
-                    }
-                    if(material.HasProperty("_MAGIC_NOISE_ON_HIGH"))
-                    {
-                        SetKeyword(material, "_MAGIC_NOISE_ON_HIGH", (Mathf.FloorToInt(material.GetInt("_MAGIC_NOISE_ON_HIGH"))) == 1 ? true : false);
-                    }
-                    if(material.HasProperty("_UseDepthLight"))
-                    {
-                        SetKeyword(material, "_USE_DEPTH_LIGHT", (Mathf.FloorToInt(material.GetInt("_UseDepthLight"))) == 1 ? true : false);
-                    }
-                    if(material.HasProperty("_PotatoMode"))
-                    {
-                        SetKeyword(material, "_POTATO_MODE_ON", (Mathf.FloorToInt(material.GetInt("_PotatoMode"))) == 1 ? true : false);
-                    }
-                    if(material.HasProperty("_HQMode"))
-                    {
-                        SetKeyword(material, "_HQ_MODE", (Mathf.FloorToInt(material.GetInt("_HQMode"))) == 1 ? true : false);
-                    }
+                    material.SetInt("_HQMode", 1);
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_MAGIC_NOISE_ON_MED"), "_MAGIC_NOISE_ON_MED");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_MAGIC_NOISE_ON_HIGH"), "_MAGIC_NOISE_ON_HIGH");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_UseDepthLight"), "_USE_DEPTH_LIGHT");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_PotatoMode"), "_POTATO_MODE_ON");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_HQMode"), "_HQ_MODE");
                     //SetKeyword(target, "_2D_NOISE_ON", (Mathf.FloorToInt(target.GetInt("_2D_NOISE_ON"))) == 1 ? true : false);
                     material.renderQueue = 3002;
                 }
@@ -1178,28 +1176,13 @@ namespace VRSL
                     material.SetInt("_BlendDst", 1);
                     material.SetInt("_ZWrite", 0);
                     material.SetInt("_AlphaToCoverage", 0);
-                    material.SetInt("_HQMode", 0);
                     material.SetInt("_RenderMode", 1);
-                    if(material.HasProperty("_MAGIC_NOISE_ON_MED"))
-                    {
-                        SetKeyword(material, "_MAGIC_NOISE_ON_MED", (Mathf.FloorToInt(material.GetInt("_MAGIC_NOISE_ON_MED"))) == 1);
-                    }
-                    if(material.HasProperty("_MAGIC_NOISE_ON_HIGH"))
-                    {
-                        SetKeyword(material, "_MAGIC_NOISE_ON_HIGH", (Mathf.FloorToInt(material.GetInt("_MAGIC_NOISE_ON_HIGH"))) == 1);
-                    }
-                    if(material.HasProperty("_UseDepthLight"))
-                    {
-                        SetKeyword(material, "_USE_DEPTH_LIGHT", (Mathf.FloorToInt(material.GetInt("_UseDepthLight"))) == 1);
-                    }
-                    if(material.HasProperty("_PotatoMode"))
-                    {
-                        SetKeyword(material, "_POTATO_MODE_ON", (Mathf.FloorToInt(material.GetInt("_PotatoMode"))) == 1);
-                    }
-                    if(material.HasProperty("_HQMode"))
-                    {
-                        SetKeyword(material, "_HQ_MODE", (Mathf.FloorToInt(material.GetInt("_HQMode"))) == 1);
-                    }
+                    material.SetInt("_HQMode", 0);
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_MAGIC_NOISE_ON_MED"), "_MAGIC_NOISE_ON_MED");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_MAGIC_NOISE_ON_HIGH"), "_MAGIC_NOISE_ON_HIGH");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_UseDepthLight"), "_USE_DEPTH_LIGHT");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_PotatoMode"), "_POTATO_MODE_ON");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_HQMode"), "_HQ_MODE");
                     //SetKeyword(target, "_2D_NOISE_ON", (Mathf.FloorToInt(target.GetInt("_2D_NOISE_ON"))) == 1 ? true : false);
                     material.renderQueue = 3002;
                 }
@@ -1211,29 +1194,13 @@ namespace VRSL
                     material.SetInt("_BlendDst", 0);
                     material.SetInt("_ZWrite", 1);
                     material.SetInt("_AlphaToCoverage", 1);
-                    material.SetInt("_HQMode", 0);
                     material.SetInt("_RenderMode", 2);
-                    if(material.HasProperty("_MAGIC_NOISE_ON_MED"))
-                    {
-                        SetKeyword(material, "_MAGIC_NOISE_ON_MED", (Mathf.FloorToInt(material.GetInt("_MAGIC_NOISE_ON_MED"))) == 1);
-                    }
-                    if(material.HasProperty("_MAGIC_NOISE_ON_HIGH"))
-                    {
-                        SetKeyword(material, "_MAGIC_NOISE_ON_HIGH", (Mathf.FloorToInt(material.GetInt("_MAGIC_NOISE_ON_HIGH"))) == 1);
-                    }
-                    if(material.HasProperty("_UseDepthLight"))
-                    {
-                        SetKeyword(material, "_USE_DEPTH_LIGHT", (Mathf.FloorToInt(material.GetInt("_UseDepthLight"))) == 1);
-                    }
-                    if(material.HasProperty("_PotatoMode"))
-                    {
-                        SetKeyword(material, "_POTATO_MODE_ON", (Mathf.FloorToInt(material.GetInt("_PotatoMode"))) == 1);
-                    }
-                    if(material.HasProperty("_HQMode"))
-                    {
-                        SetKeyword(material, "_HQ_MODE", (Mathf.FloorToInt(material.GetInt("_HQMode"))) == 1);
-                        
-                    }
+                    material.SetInt("_HQMode", 0);
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_MAGIC_NOISE_ON_MED"), "_MAGIC_NOISE_ON_MED");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_MAGIC_NOISE_ON_HIGH"), "_MAGIC_NOISE_ON_HIGH");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_UseDepthLight"), "_USE_DEPTH_LIGHT");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_PotatoMode"), "_POTATO_MODE_ON");
+                    ApplyKeywordIfPropertyExists(material, PropertyToID("_HQMode"), "_HQ_MODE");
                     //SetKeyword(target, "_2D_NOISE_ON", (Mathf.FloorToInt(target.GetInt("_2D_NOISE_ON"))) == 1 ? true : false);
                     material.renderQueue = 2452;
                 }
@@ -1244,10 +1211,10 @@ namespace VRSL
         {
             foreach(var material in projectionMaterials)
             {
-                if(material == null) continue;
-                if(material.name.Contains("Blinder"))
+                if (material == null) continue;
+                if (material.name.Contains("Blinder"))
                 {
-                    if(blinderProjectionQuality == DefaultQualityModes.High) 
+                    if (blinderProjectionQuality == DefaultQualityModes.High) 
                     {
                         material.SetOverrideTag("RenderType", "Transparent");
                         material.DisableKeyword("_ALPHATEST_ON");  
@@ -1277,8 +1244,8 @@ namespace VRSL
         {
             foreach(var material in projectionMaterials)
             {
-                if(material == null) continue;
-                if(material.name.Contains("Par"))
+                if (material == null) continue;
+                if (material.name.Contains("Par"))
                 {
                     if(parProjectionQuality == DefaultQualityModes.High) 
                     {
@@ -1310,8 +1277,8 @@ namespace VRSL
         {
             foreach(var material in projectionMaterials)
             {
-                if(material == null) continue;
-                if(material.name.Contains("Par") == false && material.name.Contains("Blinder")==false)
+                if (material == null) continue;
+                if (!material.name.Contains("Par") && !material.name.Contains("Blinder"))
                 {
                     if(otherProjectionQuality == DefaultQualityModes.High) 
                     {
@@ -1343,8 +1310,8 @@ namespace VRSL
         {
             foreach(var material in discoBallMaterials)
             {
-                if(material == null) continue;
-                if(discoballQuality == DefaultQualityModes.High) 
+                if (material == null) continue;
+                if (discoballQuality == DefaultQualityModes.High) 
                 {
                     material.SetOverrideTag("RenderType", "Transparent");
                     material.DisableKeyword("_ALPHATEST_ON");  
@@ -1373,8 +1340,8 @@ namespace VRSL
         {
             foreach(var material in fixtureMaterials)
             {
-                if(material == null) continue;
-                if(material.name.Contains("Flare"))
+                if (material == null) continue;
+                if (material.name.Contains("Flare"))
                 {
                     if(lensFlareQuality == DefaultQualityModes.High) 
                     {
@@ -1429,32 +1396,26 @@ namespace VRSL
             foreach(var obj in sceneObjects)
             {
                 var meshRenderer = obj.GetComponent<MeshRenderer>();
-                if(meshRenderer != null)
+                if (meshRenderer == null) continue;
+                if (obj.name.Contains("Fixture") && (obj.name.Contains("Lamp") || obj.name.Contains("Mesh")))
                 {
-                    if(obj.name.Contains("Fixture") && (obj.name.Contains("Lamp") || obj.name.Contains("Mesh")))
+                    if (!freshFixtureMats.Contains(meshRenderer.sharedMaterial) && (meshRenderer.sharedMaterial.shader.FindPropertyIndex("_Band") != -1 || meshRenderer.sharedMaterial.shader.FindPropertyIndex("_DMXChannel") != -1))
                     {
-                        if(!freshFixtureMats.Contains(meshRenderer.sharedMaterial) && ((meshRenderer.sharedMaterial.shader.FindPropertyIndex("_Band") != -1) || meshRenderer.sharedMaterial.shader.FindPropertyIndex("_DMXChannel") != -1))
-                        {
-                            freshFixtureMats.Add(meshRenderer.sharedMaterial);
-                        }
+                        freshFixtureMats.Add(meshRenderer.sharedMaterial);
                     }
-                    else if(obj.name.Contains("Volumetric") && ((meshRenderer.sharedMaterial.shader.FindPropertyIndex("_Band") != -1) || meshRenderer.sharedMaterial.shader.FindPropertyIndex("_DMXChannel") != -1))
+                }
+                else if (obj.name.Contains("Volumetric") && (meshRenderer.sharedMaterial.shader.FindPropertyIndex("_Band") != -1 || meshRenderer.sharedMaterial.shader.FindPropertyIndex("_DMXChannel") != -1))
+                {
+                    if (!freshVolumetricMats.Contains(meshRenderer.sharedMaterial))
                     {
-                        if(!freshVolumetricMats.Contains(meshRenderer.sharedMaterial))
-                        {
-                            freshVolumetricMats.Add(meshRenderer.sharedMaterial);
-                        }
+                        freshVolumetricMats.Add(meshRenderer.sharedMaterial);
                     }
-                    else if (obj.name.Contains("Projection") && ((meshRenderer.sharedMaterial.shader.FindPropertyIndex("_Band") != -1) || meshRenderer.sharedMaterial.shader.FindPropertyIndex("_DMXChannel") != -1))
+                }
+                else if (obj.name.Contains("Projection") && (meshRenderer.sharedMaterial.shader.FindPropertyIndex("_Band") != -1 || meshRenderer.sharedMaterial.shader.FindPropertyIndex("_DMXChannel") != -1))
+                {
+                    if (!freshProjectionMats.Contains(meshRenderer.sharedMaterial))
                     {
-                        if(!freshProjectionMats.Contains(meshRenderer.sharedMaterial))
-                        {
-                            freshProjectionMats.Add(meshRenderer.sharedMaterial);
-                        }
-                    }
-                    else
-                    {
-                        continue;
+                        freshProjectionMats.Add(meshRenderer.sharedMaterial);
                     }
                 }
             }
@@ -1462,7 +1423,8 @@ namespace VRSL
             fixtureMaterials = freshFixtureMats.ToArray();
             volumetricMaterials = freshVolumetricMats.ToArray();
             projectionMaterials = freshProjectionMats.ToArray();
-            if(PrefabUtility.IsPartOfAnyPrefab(this))
+            
+            if (PrefabUtility.IsPartOfAnyPrefab(this))
             {
                 PrefabUtility.RecordPrefabInstancePropertyModifications(this);
             }
@@ -1474,25 +1436,11 @@ namespace VRSL
     [CustomEditor(typeof(VRSL_LocalUIControlPanel))]
     public class VRSL_LocalUIControlPanel_Editor : Editor
     {
-        public static Texture logo;
-        //public static string ver = "VR Stage Lighting ver:" + " <b><color=#6a15ce> 2.1</color></b>";
         SerializedProperty audioLinkLasers, audiolinkLights, dmxLights, isUsingDMX,isUsingAudioLink, fixtureDefGUID, volumetricMeshQuality;
 
-        static string GetVersion()
-        {
-            var path = Application.dataPath;
-            path = path.Replace("Assets","");
-            path += "Packages"  + "\\" + "com.acchosen.vr-stage-lighting" + "\\" + "Runtime" + "\\"  + "VERSION.txt";
-
-            var reader = new StreamReader(path); 
-            var versionNum = reader.ReadToEnd();
-            var ver = "VR Stage Lighting ver:" + " <b><color=#b33cff>" + versionNum + "</color></b>";
-            return ver;
-        }
 
         public void OnEnable() 
         {
-            logo = Resources.Load("VRStageLighting-Logo") as Texture;
             audioLinkLasers = serializedObject.FindProperty("audioLinkLasers");
             audiolinkLights = serializedObject.FindProperty("audiolinkLights");
             dmxLights = serializedObject.FindProperty("dmxLights");
@@ -1541,7 +1489,7 @@ namespace VRSL
             style.alignment = TextAnchor.MiddleCenter;
             var rect = GUILayoutUtility.GetRect(300f, 140f, style);
             //GUILayout.Label(logo,style, GUILayout.MaxWidth(500), GUILayout.MaxHeight(200));
-            GUI.Box(rect, logo,style);
+            //GUI.Box(rect, logo,style);
             //GUILayout.Label(logo);
             //GUILayout.FlexibleSpace();
             //GUILayout.EndArea();
@@ -1582,7 +1530,7 @@ namespace VRSL
             EditorGUI.BeginChangeCheck();
             serializedObject.Update();
             DrawLogo();
-            ShurikenHeaderCentered(GetVersion());
+            //ShurikenHeaderCentered(GetVersion());
             EditorGUILayout.Space();
             VRSL_LocalUIControlPanel controlPanel = (VRSL_LocalUIControlPanel)target;
             if (GUILayout.Button(new GUIContent("Force Update Target AudioLink Sample Texture",
