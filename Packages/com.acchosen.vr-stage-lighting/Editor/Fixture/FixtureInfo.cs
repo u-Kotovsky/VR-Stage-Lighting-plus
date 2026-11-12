@@ -19,19 +19,12 @@ namespace VRSL.EditorScripts
 
         public string GetGuid()
         {
-            string guid;
-            long localId;
-                
-            if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(this, out guid, out localId))
+            if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(this, out string guid, out long localId))
             {
                 return guid;
             }
-            else
-            {
-                throw new Exception("Failed to get Guid");
-            }
 
-            return null;
+            throw new Exception("Failed to get Guid");
         }
 
         public int GetChannelWidth()
