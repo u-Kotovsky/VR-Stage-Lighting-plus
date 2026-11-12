@@ -33,6 +33,21 @@ namespace VRSL.EditorScripts
 
             return null;
         }
+
+        public int GetChannelWidth()
+        {
+            var count = 0;
+            
+            foreach (var fixtureParameterInfo in Parameters)
+            {
+                count++;
+                if (fixtureParameterInfo.fine) count++;
+                if (fixtureParameterInfo.ultra) count++;
+                if (fixtureParameterInfo.uber) count++;
+            }
+            
+            return count;
+        }
     }
 
     [Serializable]
