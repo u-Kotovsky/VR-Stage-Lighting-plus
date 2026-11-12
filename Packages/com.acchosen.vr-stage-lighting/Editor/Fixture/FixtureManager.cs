@@ -55,6 +55,35 @@ namespace VRSL.EditorScripts
             return instance.Fixtures.Select(instanceFixture => instanceFixture.name).ToList();
         }
 
+        /// <summary>
+        /// Get full list of DMX channels (including coarse, fine, ultra, uber. (If used))
+        /// </summary>
+        /// <param name="fixtureInfo"></param>
+        /// <returns></returns>
+        public static List<string> GetFixtureParameterNamesWithQuality(FixtureInfo fixtureInfo)
+        {
+            var channelNames = new List<string>();
+            
+            foreach (var fixtureInfoParameter in fixtureInfo.Parameters)
+            {
+                if (fixtureInfoParameter.fine || fixtureInfoParameter.ultra || fixtureInfoParameter.uber)
+                {
+                    // We have fine or ultra or uber here
+                    channelNames.Add(fixtureInfoParameter.name + " Coarse");
+                    if (fixtureInfoParameter.fine) channelNames.Add(fixtureInfoParameter.name + " Fine");
+                    if (fixtureInfoParameter.ultra) channelNames.Add(fixtureInfoParameter.name + " Ultra");
+                    if (fixtureInfoParameter.uber) channelNames.Add(fixtureInfoParameter.name + " Uber");
+                }
+                else
+                {
+                    // Just a channel name
+                    channelNames.Add(fixtureInfoParameter.name);
+                }
+            }
+
+            return channelNames;
+        }
+
         public static int GetFixtureIndexByGuid(string searchGuid)
         {
             var index = -1;
