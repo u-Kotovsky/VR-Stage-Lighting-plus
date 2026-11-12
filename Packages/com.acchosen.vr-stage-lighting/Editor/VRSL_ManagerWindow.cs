@@ -1109,7 +1109,7 @@ namespace VRSL.EditorScripts
                             fixture.ResetChanges(closeMenus);
                         }
                     }
-                    fixture.light._SetProps();
+                    fixture.light._ResetProps();
                     if(Application.isPlaying)
                     {
                         fixture.light._UpdateInstancedProperties();

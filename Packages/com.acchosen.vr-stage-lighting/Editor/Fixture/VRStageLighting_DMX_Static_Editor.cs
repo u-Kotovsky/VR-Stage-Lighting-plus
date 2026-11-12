@@ -16,6 +16,7 @@ namespace VRSL.EditorScripts
         private const string DisplayVersionText = "VR Stage Lighting: <b><color=white>{0}</color></b>"; // 6a15ce is hard for eye to read.
         private const string PackagePath = "Packages/com.acchosen.vr-stage-lighting/package.json";
         private readonly Package _package = VRSLPackageUtility.ReadPackage(PackagePath);
+        private const string Prefix = "[VRSL Fixture]";
 
         private BitArray _foldouts = GetBitArray(16, true);
         
@@ -38,22 +39,7 @@ namespace VRSL.EditorScripts
         public void OnEnable()
         {
             EditorApplication.hierarchyChanged += HierarchyChanged;
-            SceneView.duringSceneGui += OnSceneGUI;
             GetPanel();
-        }
-
-        private void OnSceneGUI(SceneView sceneView) { }
-        
-        public static VRSL_FixtureDefinitions GetFixtureOptions(string fixtureDefGuid)
-        {
-            var fixDefAsset = (VRSL_FixtureDefinitions)AssetDatabase.LoadAssetAtPath(
-                AssetDatabase.GUIDToAssetPath(fixtureDefGuid), typeof(VRSL_FixtureDefinitions));
-            return fixDefAsset;
-        }
-
-        public static string[] GetFixtureOptionNames(string fixtureDefGuid)
-        {
-            return GetFixtureOptions(fixtureDefGuid).GetNames();
         }
 
         public void GetPanel()
@@ -61,17 +47,11 @@ namespace VRSL.EditorScripts
             var component = FindObjectOfType<VRSL_LocalUIControlPanel>();
 
             _panel = component;
-            
-            if (_panel != null)
-            {
-                _fixDefinitionNames = GetFixtureOptionNames(_panel.fixtureDefGUID);
-            }
         }
 
         private void OnDisable()
         {
             EditorApplication.hierarchyChanged -= HierarchyChanged;
-            SceneView.duringSceneGui -= OnSceneGUI;
         }
 
         private void HierarchyChanged()
@@ -84,13 +64,13 @@ namespace VRSL.EditorScripts
         {
             if (fixture == null)
             {
-                Debug.LogError($"fixture is null");
+                Debug.LogError($"{Prefix}: fixture is null");
                 return;
             }
             
             if (fixture.objRenderers == null || fixture.objRenderers.Length == 0)
             {
-                Debug.LogError($"There are no object renderers in fixture {fixture.gameObject.name}");
+                Debug.LogError($"{Prefix}: There are no object renderers in fixture {fixture.gameObject.name}");
                 return;
             }
             
@@ -98,7 +78,7 @@ namespace VRSL.EditorScripts
 
             if (!isEmpty)
             {
-                fixture._SetProps();
+                fixture._ResetProps();
                 
                 if (Application.isPlaying)
                 {
@@ -123,52 +103,43 @@ namespace VRSL.EditorScripts
             EditorGUI.BeginChangeCheck();
 
             #region DMX Settings
-            
             _foldouts[0] = EditorGUILayout.BeginFoldoutHeaderGroup(_foldouts[0], "DMX Settings");
             if (_foldouts[0])
             {
                 serializedObject.FindProperty(nameof(fixture.enableDMXChannels)).boolValue =
                     EditorGUILayout.Toggle(
-                        new GUIContent("Enable DMX",
-                            "The industry standard DMX Channel this fixture begins on. Most standard VRSL fixtures are 13 channels"),
+                        new GUIContent("Enable DMX", "The industry standard DMX Channel this fixture begins on. Most standard VRSL fixtures are 13 channels"),
                         fixture.enableDMXChannels);
 
                 if (serializedObject.FindProperty(nameof(fixture.enableDMXChannels)).boolValue && _panel != null)
                 {
                     #region Fixture Info
-
-                    var fixtureInfoGuidProperty =
-                        serializedObject.FindProperty(nameof(VRStageLighting_DMX_Static.fixtureInfoGuid));
+                    var fixtureInfoGuidProperty = serializedObject.FindProperty(nameof(VRStageLighting_DMX_Static.fixtureInfoGuid));
                     var fixtureInfos = FixtureManager.GetInstance().Fixtures;
-
                     bool validFixtureInfo = true;
                     if (fixtureInfoGuidProperty.stringValue.Equals(string.Empty) && fixtureInfos != null &&
                         fixtureInfos.Count > 0)
                     {
-                        Debug.LogError(
-                            $"Fixture '{fixture.name}' had an empty GUID '{fixtureInfoGuidProperty.stringValue}'. Sets to default first available!");
+                        Debug.LogError($"{Prefix}: Fixture '{fixture.name}' had an empty GUID '{fixtureInfoGuidProperty.stringValue}'. Sets to default first available!");
                         fixtureInfoGuidProperty.stringValue = fixtureInfos[0].GetGuid();
                         serializedObject.ApplyModifiedProperties();
                     }
                     else if (fixtureInfos == null || fixtureInfos.Count == 0)
                     {
-                        Debug.LogError(
-                            $"Fixture '{fixture.name}' had an empty GUID. No available fixture infos are available!");
+                        Debug.LogError($"{Prefix}: Fixture '{fixture.name}' had an empty GUID. No available fixture infos are available!");
                         validFixtureInfo = false;
                     }
 
                     if (validFixtureInfo)
                     {
-                        var fixtureInfoIndex =
-                            FixtureManager.GetFixtureIndexByGuid(fixtureInfoGuidProperty.stringValue);
+                        var fixtureInfoIndex = FixtureManager.GetFixtureIndexByGuid(fixtureInfoGuidProperty.stringValue);
                         var fixtureInfoNames = FixtureManager.GetAllFixtureInfoNames().ToArray();
-                        var newIndex = EditorGUILayout.Popup("Fixture Type (new)", fixtureInfoIndex, fixtureInfoNames);
+                        var newIndex = EditorGUILayout.Popup("Fixture Type", fixtureInfoIndex, fixtureInfoNames);
                         var newGuid = fixtureInfos[newIndex].GetGuid();
 
                         if (!fixtureInfoGuidProperty.stringValue.Equals(newGuid))
                         {
-                            Debug.Log(
-                                $"Fixture Info GUids don't match, updating fixture! '{fixtureInfoGuidProperty.stringValue}' -> '{newGuid}'");
+                            Debug.LogWarning($"{Prefix}: Fixture Info GUids don't match, updating fixture! '{fixtureInfoGuidProperty.stringValue}' -> '{newGuid}'");
                             fixtureInfoGuidProperty.stringValue = newGuid;
                             serializedObject.ApplyModifiedProperties();
                         }
@@ -180,24 +151,17 @@ namespace VRSL.EditorScripts
 
                     #endregion
 
-                    serializedObject.FindProperty(nameof(fixture.fixtureDefintion)).intValue =
-                        EditorGUILayout.Popup("Fixture Type (obsolete)",
-                            serializedObject.FindProperty(nameof(fixture.fixtureDefintion)).intValue,
-                            _fixDefinitionNames);
                     serializedObject.FindProperty(nameof(fixture.fixtureID)).intValue =
                         EditorGUILayout.IntField(
-                            new GUIContent("Fixture ID",
-                                "The ID number for this fixture. This is mostly for organizational purposes and is entirely optional. Most DMX software have an ID attached to each fixture to run the fixtures through commands more easily, and it is recommended to have those IDs lined up here as well for the sake simplicity. This ID is public and can also be used for Udon scripting as well."),
+                            new GUIContent("Fixture ID", "The ID number for this fixture. This is mostly for organizational purposes and is entirely optional. Most DMX software have an ID attached to each fixture to run the fixtures through commands more easily, and it is recommended to have those IDs lined up here as well for the sake simplicity. This ID is public and can also be used for Udon scripting as well."),
                             fixture.fixtureID);
                     serializedObject.FindProperty(nameof(fixture.dmxChannel)).intValue =
                         EditorGUILayout.IntSlider(
-                            new GUIContent("DMX Channel",
-                                "The industry standard DMX Channel this fixture begins on. Most standard VRSL fixtures are 13 channels"),
+                            new GUIContent("DMX Channel", "The industry standard DMX Channel this fixture begins on. Most standard VRSL fixtures are 13 channels"),
                             fixture.dmxChannel, 1, 512);
                     serializedObject.FindProperty(nameof(fixture.dmxUniverse)).intValue =
                         EditorGUILayout.IntSlider(
-                            new GUIContent("Universe",
-                                "The industry standard Artnet Universe. Use this to choose which universe to read the DMX Channel from."),
+                            new GUIContent("Universe", "The industry standard Artnet Universe. Use this to choose which universe to read the DMX Channel from."),
                             fixture.dmxUniverse, 1, VRSL_LocalUIControlPanel.MaxUniverseCount);
 
                     EditorGUILayout.BeginHorizontal();
@@ -226,16 +190,14 @@ namespace VRSL.EditorScripts
                         EditorGUI.indentLevel++;
                         serializedObject.FindProperty(nameof(VRStageLighting_DMX_Static.dmxTranslateChannel)).intValue =
                             EditorGUILayout.IntSlider(
-                                new GUIContent("DMX translate channel",
-                                    "Starting channel for XYZ positioning through DMX512"),
+                                new GUIContent("DMX translate channel", "Starting channel for XYZ positioning through DMX512"),
                                 fixture.dmxTranslateChannel, 0, VRSL_LocalUIControlPanel.MaxUniverseCount * 512);
                         EditorGUI.indentLevel--;
                     }
 
                     serializedObject.FindProperty(nameof(fixture.legacyGoboRange)).boolValue =
                         EditorGUILayout.Toggle(
-                            new GUIContent("Legacy Gobo Range",
-                                "Use Only the first 6 gobos instead of all. This is for legacy content where only 6 gobos were originally supported and the channel range was different."),
+                            new GUIContent("Legacy Gobo Range", "Use Only the first 6 gobos instead of all. This is for legacy content where only 6 gobos were originally supported and the channel range was different."),
                             fixture.legacyGoboRange);
                 }
             }

@@ -87,7 +87,7 @@ namespace VRSL.EditorScripts
                     {
                         foreach(VRStageLighting_DMX_Static fixture in dmxLights)
                         {
-                            fixture._SetProps();
+                            fixture._ResetProps();
                             if(Application.isPlaying)
                             {
                                 fixture._UpdateInstancedProperties();
