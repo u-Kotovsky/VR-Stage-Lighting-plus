@@ -315,7 +315,6 @@ MonoBehaviour:
   enableDmxTranslate: 0
   dmxTranslateChannel: 0
   Channel: 0
-  legacyGoboRange: 0
   globalIntensity: 1
   finalIntensity: 1
   finalIntensityComponentMode: 0
