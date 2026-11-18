@@ -482,11 +482,6 @@ namespace VRSL
                 component.SetPropertyBlock(_SetFinalIntensityComponents(propertyBlock, component));
             }
         }
-        
-        public string _DMXChannelToString()
-        {
-            return "DMX Channel: " + calculatedDMXChannel + "  Universe: " + calculatedDMXUniverse + "  shader: " + RawDmxConversion();
-        }
 
 #if UNITY_EDITOR && !COMPILER_UDONSHARP
         private void OnValidate()
