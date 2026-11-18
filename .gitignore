@@ -81,8 +81,7 @@ bakery_times.log
 # Audio Link ???
 .audiolink_pipeline
 
-# We are a single-package only repository, gonna throw anything but VRSL in the window!
+# Ignore anything BUT this
+# I went through hell to get it
 /Packages/*
-
-# Exclude main package from ignore
-!/Packages/com.acchosen.vr-stage-lighting/*
+!/Packages/com.acchosen.vr-stage-lighting/
