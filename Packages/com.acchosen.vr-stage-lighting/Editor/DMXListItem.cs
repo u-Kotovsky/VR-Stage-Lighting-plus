@@ -94,13 +94,13 @@ namespace VRSL.EditorScripts
                 if (closeMenus)
                 {
                     var so = new SerializedObject(light);
-                    so.FindProperty("foldout").boolValue = false;
+                    so.FindProperty(nameof(light.foldout)).boolValue = false;
                     so.ApplyModifiedProperties();
                 }
             }
             catch (ArgumentException e)
             {
-                e.GetType();
+                Debug.LogException(e);
             }
 #if UDONSHARP
 #pragma warning disable 0618 //suppressing obsoletion warnings
@@ -206,7 +206,7 @@ namespace VRSL.EditorScripts
             }
             catch (Exception e)
             {
-                e.GetType();
+                Debug.LogException(e);
             }
         }
     }
