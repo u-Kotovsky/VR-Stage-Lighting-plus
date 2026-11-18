@@ -56,7 +56,6 @@ namespace VRSL
         private readonly int _maximumSmoothnessDmx = Shader.PropertyToID("_MaximumSmoothnessDMX");
         private readonly int _minimumSmoothnessDmx = Shader.PropertyToID("_MinimumSmoothnessDMX");
         private readonly int _samplingTexture = Shader.PropertyToID("_SamplingTexture");
-        private readonly int _nineUniverseMode = Shader.PropertyToID("_NineUniverseMode");
         private readonly int _parameterMap = Shader.PropertyToID("_ParameterMap");
         
         public Texture videoSampleTargetTexture;
