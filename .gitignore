@@ -25,6 +25,12 @@
 # Visual Studio cache directory
 .vs/
 
+# Visual Studio Code cache directory
+.vscode/
+
+# Jet Brains Rider cache directory
+.idea/
+
 # Gradle cache directory
 .gradle/
 
@@ -60,18 +66,23 @@ sysinfo.txt
 # Crashlytics generated file
 crashlytics-build.properties
 
-.idea/.idea.vpm-package-maker/.idea
-Assets/PackageMakerWindowData.asset*
-.idea
-.vscode
-
+# Bakery baking log file
 bakery_times.log
 
-Thry/Config.json
-Thry/persistent_data
-Thry/preset_cache.txt
+# Thry local settings
+/[Tt]hry/
 
-ClientSimStorage
-UserSettings
-Packages
+# VRChat local data storage
+/[Cc]lient[Ss]im[Ss]torage/
+
+# Unity user settings
+/[Uu]ser[Ss]ettings/
+
+# Audio Link ???
 .audiolink_pipeline
+
+# We are a single-package only repository, gonna throw anything but VRSL in the window!
+/Packages/*
+
+# Exclude main package from ignore
+!/Packages/com.acchosen.vr-stage-lighting/*
