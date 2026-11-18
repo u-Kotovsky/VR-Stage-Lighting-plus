@@ -188,7 +188,6 @@ half _ClippingThreshold, _RenderTextureMultiplier;
 UNITY_INSTANCING_BUFFER_START(Props)
     #ifdef VRSL_DMX
         UNITY_DEFINE_INSTANCED_PROP(uint, _DMXChannel)
-        UNITY_DEFINE_INSTANCED_PROP(uint, _NineUniverseMode)
         UNITY_DEFINE_INSTANCED_PROP(uint, _EnableDMX)
         UNITY_DEFINE_INSTANCED_PROP(uint, _LegacyGoboRange)
     #endif

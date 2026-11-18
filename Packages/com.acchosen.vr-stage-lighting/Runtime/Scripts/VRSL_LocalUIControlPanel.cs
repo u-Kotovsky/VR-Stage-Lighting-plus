@@ -181,7 +181,6 @@ namespace VRSL
 
         [HideInInspector]
         public bool useLegacyStaticLights;
-        public bool useExtendedUniverses;
         
         //public bool adjustInGameInterpolation;
         public bool sperateInGameInterpolationSpeed = true;

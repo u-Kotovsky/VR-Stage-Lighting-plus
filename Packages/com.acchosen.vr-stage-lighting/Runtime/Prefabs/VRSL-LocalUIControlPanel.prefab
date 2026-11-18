@@ -7930,7 +7930,6 @@ MonoBehaviour:
   panRangeTarget: 360
   tiltRangeTarget: -180
   useLegacyStaticLights: 0
-  useExtendedUniverses: 0
   sperateInGameInterpolationSpeed: 1
   inGameInterpolationModifier: 1.55
   outputDebugLogs: 0
@@ -7958,6 +7957,7 @@ MonoBehaviour:
   interactText: Use
   interactTextGO: {fileID: 0}
   proximity: 2
+  OutlineRenderers: []
   SynchronizePosition: 0
   AllowCollisionOwnershipTransfer: 0
   Reliable: 0

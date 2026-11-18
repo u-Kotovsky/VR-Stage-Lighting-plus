@@ -15,11 +15,6 @@ uint getDMXChannel()
     return (uint) round(UNITY_ACCESS_INSTANCED_PROP(Props, _DMXChannel));  
 }
 
-uint getNineUniverseMode()
-{
-    return (uint) UNITY_ACCESS_INSTANCED_PROP(Props, _NineUniverseMode);
-}
-
 #ifndef LASER
 uint checkPanInvertY()
 {
@@ -51,73 +46,6 @@ half getValueAtCoordsRaw(uint DMXChannel, TEXTURE2D_PARAM(tex, _DecodedTexture))
 {
     return getValueAtCoords(DMXChannel, TEXTURE2D_PARAM(tex, _DecodedTexture))
 }
-
-//function for getting the value on the DMX Grid in the bottom right corner configuration
-/*half getValueAtCoords(uint DMXChannel, TEXTURE2D_PARAM(tex, samplerTex))
-{
-    uint universe = ceil(((int) DMXChannel)/512.0);
-    int targetColor = getTargetRGBValue(universe);
-    
-    universe-=1;
-    DMXChannel = targetColor > 0 ? DMXChannel - (((universe - (universe % 3)) * 512)) - (targetColor * 24) : DMXChannel;
-
-    uint x = DMXChannel % 13; // starts at 1 ends at 13
-    x = x == 0.0 ? 13.0 : x;
-    half y = DMXChannel / 13.0; // starts at 1 // doubles as sector
-    y = frac(y)== 0.00000 ? y - 1 : y;
-    if(x == 13.0) //for the 13th channel of each sector... Go down a sector for these DMX Channel Ranges...
-    {
-        //I don't know why, but we need this for some reason otherwise the 13th channel gets shifted around improperly.
-        //I"m not sure how to express these exception ranges mathematically. Doing so would be much more cleaner though.
-        y = DMXChannel >= 90 && DMXChannel <= 101 ? y - 1 : y;
-        y = DMXChannel >= 160 && DMXChannel <= 205 ? y - 1 : y;
-        y = DMXChannel >= 326 && DMXChannel <= 404 ? y - 1 : y;
-        y = DMXChannel >= 676 && DMXChannel <= 819 ? y - 1 : y;
-        y = DMXChannel >= 1339 ? y - 1 : y;
-    }
-    
-    float2 xyUV = _EnableCompatibilityMode == 1 ? LegacyRead(x-1.0,y) : IndustryRead(x,(y + 1.0));
-        
-    float4 uvcoords = float4(xyUV.x, xyUV.y, 0, 0);
-    half4 c = SAMPLE_TEXTURE2D_LOD(tex, samplerTex, xyUV, 0);
-    half value = 0.0;
-    
-    if(getNineUniverseMode() && _EnableCompatibilityMode != 1)
-    {
-        value = c.r;
-        value = IF(targetColor > 0, c.g, value);
-        value = IF(targetColor > 1, c.b, value);
-    }
-    else
-    {
-        half3 cRGB = half3(c.r, c.g, c.b);
-        value = Luminance(cRGB);
-    }
-    return value;
-}
-
-half getValueAtCoordsRaw(uint DMXChannel, TEXTURE2D_PARAM(tex, samplerTex))
-{
-    uint universe = ceil(((int) DMXChannel)/512.0);
-    int targetColor = getTargetRGBValue(universe);
-
-    universe-=1;
-    DMXChannel = targetColor > 0 ? DMXChannel - (((universe - (universe % 3)) * 512)) - (targetColor * 24) : DMXChannel;
-
-    uint x = DMXChannel % 13; // starts at 1 ends at 13
-    x = x == 0.0 ? 13.0 : x;
-    half y = DMXChannel / 13.0; // starts at 1 // doubles as sector
-    y = frac(y)== 0.00000 ? y - 1 : y;
-    
-    float2 xyUV = _EnableCompatibilityMode == 1 ? LegacyRead(x-1.0,y) : IndustryRead(x,(y + 1.0));
-
-    float4 uvcoords = float4(xyUV.x, xyUV.y, 0,0);
-    float4 c = SAMPLE_TEXTURE2D_LOD(tex, samplerTex, xyUV, 0);
-    half value = c.r;
-    value = IF(targetColor > 0, c.g, value);
-    value = IF(targetColor > 1, c.b, value);
-    return value;
-}*/
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

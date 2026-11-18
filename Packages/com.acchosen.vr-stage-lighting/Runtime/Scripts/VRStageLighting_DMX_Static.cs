@@ -410,7 +410,6 @@ namespace VRSL
             props.SetInt("_DMXChannel", RawDmxConversion());
             props.SetInt("_EnableDMXTranslateChannel", enableDmxTranslate ? 1 : 0);
             props.SetInt("_DMXTranslateChannel", dmxTranslateChannel);
-            props.SetInt("_NineUniverseMode", 0);
             props.SetInt("_PanInvert", invertPan ? 1 : 0);
             props.SetInt("_TiltInvert", invertTilt ? 1 : 0);
             props.SetInt("_LegacyGoboRange", legacyGoboRange ? 1 : 0);
@@ -452,7 +451,6 @@ namespace VRSL
             props.SetInt("_DMXChannel", RawDmxConversion());
             props.SetInt("_EnableDMXTranslateChannel", enableDmxTranslate ? 1 : 0);
             props.SetInt("_DMXTranslateChannel", dmxTranslateChannel);
-            props.SetInt("_NineUniverseMode", 0);
             props.SetInt("_PanInvert", invertPan ? 1 : 0);
             props.SetInt("_TiltInvert", invertTilt ? 1 : 0);
             props.SetInt("_LegacyGoboRange", legacyGoboRange ? 1 : 0);

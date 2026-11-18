@@ -1991,7 +1991,6 @@ namespace VRSL.EditorScripts
     #endif
                 panel.DMXMode = so.FindProperty(nameof(panel.DMXMode)).intValue;
                 panel.fixtureGizmos = so.FindProperty(nameof(panel.fixtureGizmos)).intValue;
-                panel.useExtendedUniverses = so.FindProperty(nameof(panel.useExtendedUniverses)).boolValue;
     #if UDONSHARP
                 #pragma warning disable 0618 //suppressing obsoletion warnings
                 panel.ApplyProxyModifications();

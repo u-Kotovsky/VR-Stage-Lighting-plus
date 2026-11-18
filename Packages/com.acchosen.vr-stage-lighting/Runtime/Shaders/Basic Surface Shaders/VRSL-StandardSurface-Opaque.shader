@@ -4,7 +4,6 @@
     {
          [Toggle] _EnableDMX ("Enable Stream DMX/DMX Control", Int) = 0
         _DMXChannel ("DMX Fixture Number/Sector (Per 13 Channels)", Int) = 0 
-        [HideInInspector][Toggle] _NineUniverseMode ("Extended Universe Mode", Int) = 0
         [Toggle] _UseRawGrid("Use Raw Grid For Light Intensity", Int) = 0
 		//[NoScaleOffset] _Udon_DMXGridRenderTexture("DMX Grid Render Texture (RAW Unsmoothed)", 2D) = "white" {}
 		//[NoScaleOffset] _Udon_DMXGridRenderTextureMovement("DMX Grid Render Texture (To Control Lights)", 2D) = "white" {}

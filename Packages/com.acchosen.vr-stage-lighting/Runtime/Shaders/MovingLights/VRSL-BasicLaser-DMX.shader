@@ -94,7 +94,6 @@
 
             UNITY_INSTANCING_BUFFER_START(Props)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _DMXChannel)
-                UNITY_DEFINE_INSTANCED_PROP(uint, _NineUniverseMode)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _EnableColorTextureSample)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _LaserCount)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _EnableDMX)
@@ -430,7 +429,6 @@
 
             UNITY_INSTANCING_BUFFER_START(Props)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _DMXChannel)
-                UNITY_DEFINE_INSTANCED_PROP(uint, _NineUniverseMode)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _EnableColorTextureSample)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _LaserCount)
                 UNITY_DEFINE_INSTANCED_PROP(uint, _EnableDMX)
