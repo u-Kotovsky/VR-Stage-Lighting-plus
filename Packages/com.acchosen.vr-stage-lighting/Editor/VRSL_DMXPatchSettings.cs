@@ -209,7 +209,6 @@ namespace VRSL.EditorScripts
                         so.FindProperty(nameof(fixture.dmxChannel)).intValue = data[dmxID].dmxChannel;
                         so.FindProperty(nameof(fixture.dmxUniverse)).intValue = data[dmxID].dmxUniverse;
                         so.FindProperty(nameof(fixture.Channel)).intValue = data[dmxID].Channel;
-                        so.FindProperty(nameof(fixture.legacyGoboRange)).boolValue = data[dmxID].legacyGoboRange;
                         so.FindProperty(nameof(fixture.globalIntensity)).floatValue = data[dmxID].globalIntensity;
                         so.FindProperty(nameof(fixture.finalIntensity)).floatValue = data[dmxID].finalIntensity;
                         so.FindProperty(nameof(fixture.lightColorTint)).colorValue = data[dmxID].lightColorTint;
@@ -255,7 +254,6 @@ namespace VRSL.EditorScripts
                         fixture.dmxChannel = data[dmxID].dmxChannel;
                         fixture.dmxUniverse = data[dmxID].dmxUniverse;
                         fixture.Channel = data[dmxID].Channel;
-                        fixture.legacyGoboRange = data[dmxID].legacyGoboRange;
                         fixture.globalIntensity = data[dmxID].globalIntensity;
                         fixture.finalIntensity = data[dmxID].finalIntensity;
                         fixture.lightColorTint = data[dmxID].lightColorTint;

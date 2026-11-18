@@ -25,8 +25,6 @@ namespace VRSL.EditorScripts
         public int P_dmxUniverse;
         private int Z_Channel;
         public int P_Channel;
-        private bool Z_legacyGoboRange;
-        public bool P_legacyGoboRange;
         private float Z_globalIntensity;
         public float P_globalIntensity;
         private float Z_finalIntensity;
@@ -71,7 +69,6 @@ namespace VRSL.EditorScripts
             Z_dmxChannel = P_dmxChannel = this.light.dmxChannel;
             Z_dmxUniverse = P_dmxUniverse = this.light.dmxUniverse;
             Z_Channel = P_Channel = this.light.Channel;
-            Z_legacyGoboRange = P_legacyGoboRange = this.light.legacyGoboRange;
             Z_globalIntensity = P_globalIntensity = this.light.globalIntensity;
             Z_finalIntensity = P_finalIntensity = this.light.finalIntensity;
             Z_lightColorTint = P_lightColorTint = this.light.lightColorTint;
@@ -115,7 +112,6 @@ namespace VRSL.EditorScripts
             light.dmxChannel = P_dmxChannel = Z_dmxChannel;
             light.dmxUniverse = P_dmxUniverse = Z_dmxUniverse;
             light.Channel = P_Channel = Z_Channel;
-            light.legacyGoboRange = P_legacyGoboRange = Z_legacyGoboRange;
             light.globalIntensity = P_globalIntensity = Z_globalIntensity;
             light.finalIntensity = P_finalIntensity = Z_finalIntensity;
             light.lightColorTint = P_lightColorTint = Z_lightColorTint;
@@ -147,28 +143,28 @@ namespace VRSL.EditorScripts
             try
             {
                 var so = new SerializedObject(light);
-                so.FindProperty("enableDMXChannels").boolValue = P_enableDMXChannels;
-                so.FindProperty("fixtureID").intValue = P_fixtureID;
-                so.FindProperty("dmxChannel").intValue = P_dmxChannel;
-                so.FindProperty("Channel").intValue = P_Channel;
-                so.FindProperty("legacyGoboRange").boolValue = P_legacyGoboRange;
-                so.FindProperty("globalIntensity").floatValue = P_globalIntensity;
-                so.FindProperty("finalIntensity").floatValue = P_finalIntensity;
-                so.FindProperty("lightColorTint").colorValue = P_lightColorTint;
-                so.FindProperty("invertPan").boolValue = P_invertPan;
-                so.FindProperty("invertTilt").boolValue = P_invertTilt;
-                so.FindProperty("isUpsideDown").boolValue = P_isUpsideDown;
-                so.FindProperty("enableAutoSpin").boolValue = P_enableAutoSpin;
-                so.FindProperty("enableStrobe").boolValue = P_enableStrobe;
-                so.FindProperty("tiltOffsetBlue").floatValue = P_tiltOffsetBlue;
-                so.FindProperty("panOffsetBlueGreen").floatValue = P_panOffsetBlueGreen;
-                so.FindProperty("selectGOBO").intValue = P_selectGOBO;
-                so.FindProperty("coneWidth").floatValue = P_coneWidth;
-                so.FindProperty("coneLength").floatValue = P_coneLength;
-                so.FindProperty("maxConeLength").floatValue = P_maxConeLength;
-                so.FindProperty("maxMinPan").floatValue = P_maxMinPan;
-                so.FindProperty("maxMinTilt").floatValue = P_maxMinTilt;
-                so.FindProperty("foldout").boolValue = foldout;
+                // TODO use direct nameof(property)
+                so.FindProperty(nameof(light.enableDMXChannels)).boolValue = P_enableDMXChannels;
+                so.FindProperty(nameof(light.fixtureID)).intValue = P_fixtureID;
+                so.FindProperty(nameof(light.dmxChannel)).intValue = P_dmxChannel;
+                so.FindProperty(nameof(light.Channel)).intValue = P_Channel;
+                so.FindProperty(nameof(light.globalIntensity)).floatValue = P_globalIntensity;
+                so.FindProperty(nameof(light.finalIntensity)).floatValue = P_finalIntensity;
+                so.FindProperty(nameof(light.lightColorTint)).colorValue = P_lightColorTint;
+                so.FindProperty(nameof(light.invertPan)).boolValue = P_invertPan;
+                so.FindProperty(nameof(light.invertTilt)).boolValue = P_invertTilt;
+                so.FindProperty(nameof(light.isUpsideDown)).boolValue = P_isUpsideDown;
+                so.FindProperty(nameof(light.enableAutoSpin)).boolValue = P_enableAutoSpin;
+                so.FindProperty(nameof(light.enableStrobe)).boolValue = P_enableStrobe;
+                so.FindProperty(nameof(light.tiltOffsetBlue)).floatValue = P_tiltOffsetBlue;
+                so.FindProperty(nameof(light.panOffsetBlueGreen)).floatValue = P_panOffsetBlueGreen;
+                so.FindProperty(nameof(light.selectGOBO)).intValue = P_selectGOBO;
+                so.FindProperty(nameof(light.coneWidth)).floatValue = P_coneWidth;
+                so.FindProperty(nameof(light.coneLength)).floatValue = P_coneLength;
+                so.FindProperty(nameof(light.maxConeLength)).floatValue = P_maxConeLength;
+                so.FindProperty(nameof(light.maxMinPan)).floatValue = P_maxMinPan;
+                so.FindProperty(nameof(light.maxMinTilt)).floatValue = P_maxMinTilt;
+                so.FindProperty(nameof(light.foldout)).boolValue = foldout;
                 so.ApplyModifiedProperties();
 
 #if UDONSHARP
@@ -181,7 +177,6 @@ namespace VRSL.EditorScripts
                 light.dmxChannel = Z_dmxChannel = P_dmxChannel;
                 light.dmxUniverse = Z_dmxUniverse = P_dmxUniverse;
                 light.Channel = Z_Channel = P_Channel;
-                light.legacyGoboRange = Z_legacyGoboRange = P_legacyGoboRange;
                 light.globalIntensity = Z_globalIntensity = P_globalIntensity;
                 light.finalIntensity = Z_finalIntensity = P_finalIntensity;
                 light.lightColorTint = Z_lightColorTint = P_lightColorTint;

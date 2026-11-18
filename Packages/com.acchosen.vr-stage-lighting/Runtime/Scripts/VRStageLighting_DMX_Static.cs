@@ -3,18 +3,6 @@ using UnityEngine;
 
 #if UDONSHARP
 using UdonSharp;
-using VRC.SDKBase;
-using VRC.Udon;
-#endif
-
-#if UNITY_EDITOR && !COMPILER_UDONSHARP
-using UnityEditor;
-
-#if UDONSHARP
-using UdonSharpEditor;
-using VRC.Udon.Common;
-using VRC.Udon.Common.Interfaces;
-#endif
 #endif
 
 namespace VRSL
@@ -78,7 +66,6 @@ namespace VRSL
         
         [Range(0.0f, 12.0f)]
         public int Channel;
-        public bool legacyGoboRange;
         #endregion
         
         #region General Settings
@@ -365,23 +352,28 @@ namespace VRSL
             props = new MaterialPropertyBlock();
         }
 
-        private int RawDmxConversion() // UNIVERSE.CHANNEL into GLOBAL_CHANNEL
+        /// <summary>
+        /// Returns GlobalChannelIndex, from dmxUniverse.dmxChannel
+        /// </summary>
+        /// <returns></returns>
+        private int RawDmxConversion()
         {
             calculatedDMXChannel = dmxChannel;
             calculatedDMXUniverse = dmxUniverse;
             return Mathf.Abs(dmxChannel + ((dmxUniverse - 1) * 512)) - 1;
         }
 
-        private MaterialPropertyBlock _SetFinalIntensityComponents(MaterialPropertyBlock props, MeshRenderer renderer)
+        private MaterialPropertyBlock _SetFinalIntensityComponents(MaterialPropertyBlock props, MeshRenderer meshRenderer)
         {
             if (!finalIntensityComponentMode) return props;
             
-            if (renderer.gameObject.name.ToLower().Contains("volume") || 
-               renderer.gameObject.name.ToLower().Contains("flare"))
+            var objNameLower = meshRenderer.gameObject.name.ToLower();
+            if (objNameLower.Contains("volume") || 
+                objNameLower.Contains("flare"))
             {
                 props.SetFloat("_FinalIntensity", finalIntensityVolumetric);
             }
-            else if(renderer.gameObject.name.ToLower().Contains("project"))
+            else if(objNameLower.Contains("project"))
             {
                 props.SetFloat("_FinalIntensity", finalIntensityProjection);
             }
@@ -393,9 +385,12 @@ namespace VRSL
             return props;
         }
         
-        public void _UpdateInstancedProperties() // Runtime
+        /// <summary>
+        /// Initialize instanced properties as active fixture
+        /// </summary>
+        public void _UpdateInstancedProperties()
         {
-            if(props == null)
+            if (props == null)
             {
                 if (objRenderers == null || objRenderers.Length == 0)
                 {
@@ -412,7 +407,6 @@ namespace VRSL
             props.SetInt("_DMXTranslateChannel", dmxTranslateChannel);
             props.SetInt("_PanInvert", invertPan ? 1 : 0);
             props.SetInt("_TiltInvert", invertTilt ? 1 : 0);
-            props.SetInt("_LegacyGoboRange", legacyGoboRange ? 1 : 0);
             props.SetInt("_EnableStrobe", enableStrobe ? 1 : 0);
             props.SetInt("_EnableSpin", enableAutoSpin ? 1 : 0);
             props.SetInt("_ProjectionSelection", selectGOBO);
@@ -453,7 +447,6 @@ namespace VRSL
             props.SetInt("_DMXTranslateChannel", dmxTranslateChannel);
             props.SetInt("_PanInvert", invertPan ? 1 : 0);
             props.SetInt("_TiltInvert", invertTilt ? 1 : 0);
-            props.SetInt("_LegacyGoboRange", legacyGoboRange ? 1 : 0);
             props.SetInt("_EnableStrobe", 0);
             props.SetInt("_EnableSpin", enableAutoSpin ? 1 : 0);
             props.SetInt("_ProjectionSelection", selectGOBO);

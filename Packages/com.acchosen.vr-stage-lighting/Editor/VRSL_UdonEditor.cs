@@ -1,25 +1,10 @@
 ﻿using UnityEngine;
 
-#if UDONSHARP
-using UdonSharp;
-using VRC.SDKBase;
-using VRC.Udon;
+#if UNITY_EDITOR && !COMPILER_UDONSHARP
+using UnityEditor;
 #endif
 
 #if UNITY_EDITOR && !COMPILER_UDONSHARP
-using UnityEditor;
-using System.IO;
-
-#if UDONSHARP
-using UdonSharpEditor;
-using VRC.Udon.Common;
-using VRC.Udon.Common.Interfaces;
-#endif
-
-#endif
-
-
-    #if UNITY_EDITOR && !COMPILER_UDONSHARP
 namespace VRSL.EditorScripts
 {
     [CanEditMultipleObjects]

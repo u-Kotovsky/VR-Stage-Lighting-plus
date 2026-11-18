@@ -13,16 +13,9 @@ namespace VRSL.EditorScripts
     [CanEditMultipleObjects]
     public class VRStageLighting_DMX_Static_Editor : VRSL_UdonEditor
     {
-        private const string DisplayVersionText = "VR Stage Lighting: <b><color=white>{0}</color></b>"; // 6a15ce is hard for eye to read.
-        private const string PackagePath = "Packages/com.acchosen.vr-stage-lighting/package.json";
-        private readonly Package _package = VRSLPackageUtility.ReadPackage(PackagePath);
         private const string Prefix = "[VRSL Fixture]";
-
-        private BitArray _foldouts = GetBitArray(16, true);
-        
+        private readonly BitArray _foldouts = GetBitArray(16, true);
         private VRSL_LocalUIControlPanel _panel;
-
-        private string[] _fixDefinitionNames = new string[1];
 
         private static BitArray GetBitArray(int size, bool value = false)
         {
@@ -42,24 +35,25 @@ namespace VRSL.EditorScripts
             GetPanel();
         }
 
+        private void OnDisable()
+        {
+            EditorApplication.hierarchyChanged -= HierarchyChanged;
+        }
+        
+        private void HierarchyChanged()
+        {
+            var fixture = (VRStageLighting_DMX_Static)target;
+            
+            UpdateSettings(fixture);
+        }
+        
         public void GetPanel()
         {
             var component = FindObjectOfType<VRSL_LocalUIControlPanel>();
 
             _panel = component;
         }
-
-        private void OnDisable()
-        {
-            EditorApplication.hierarchyChanged -= HierarchyChanged;
-        }
-
-        private void HierarchyChanged()
-        {
-            var fixture = (VRStageLighting_DMX_Static)target;
-            UpdateSettings(fixture);
-        }
-
+        
         private void UpdateSettings(VRStageLighting_DMX_Static fixture)
         {
             if (fixture == null)
@@ -116,6 +110,10 @@ namespace VRSL.EditorScripts
                     #region Fixture Info
                     var fixtureInfoGuidProperty = serializedObject.FindProperty(nameof(VRStageLighting_DMX_Static.fixtureInfoGuid));
                     var fixtureInfos = FixtureManager.GetInstance().Fixtures;
+                    
+                    // Validate fixture (mostly safe check if fixture is from old VRSL just so it doesn't throw any errors.)
+                    // TODO: add "Upgrade button" 
+                    // TODO: upgrade fixture from old version (pre-2.9)
                     bool validFixtureInfo = true;
                     if (fixtureInfoGuidProperty.stringValue.Equals(string.Empty) && fixtureInfos != null &&
                         fixtureInfos.Count > 0)
@@ -164,6 +162,7 @@ namespace VRSL.EditorScripts
                             new GUIContent("Universe", "The industry standard Artnet Universe. Use this to choose which universe to read the DMX Channel from."),
                             fixture.dmxUniverse, 1, VRSL_LocalUIControlPanel.MaxUniverseCount);
 
+                    // Set next available channel shortcut
                     EditorGUILayout.BeginHorizontal();
                     GUI.enabled = false;
                     EditorGUILayout.IntField("Next available channel", VRSLFixtureCalculator.NextFreeChannel(fixture));
@@ -173,36 +172,30 @@ namespace VRSL.EditorScripts
                     {
                         VRSLFixtureCalculator.SetNextFreeChannel(fixture);
                     }
-
                     EditorGUILayout.EndHorizontal();
 
                     GUI.enabled = false;
                     EditorGUILayout.IntField("Current channel", fixture.GlobalChannelIndex);
                     GUI.enabled = true;
 
+                    // Experimental XYZ translate through DMX.
                     var enableDmxTranslate =
-                        serializedObject.FindProperty(nameof(VRStageLighting_DMX_Static.enableDmxTranslate));
+                        serializedObject.FindProperty(nameof(fixture.enableDmxTranslate));
                     enableDmxTranslate.boolValue = EditorGUILayout.Toggle(
                         new GUIContent("DMX Translate", "Enable XYZ positioning through DMX512"),
                         fixture.enableDmxTranslate);
                     if (enableDmxTranslate.boolValue)
                     {
                         EditorGUI.indentLevel++;
-                        serializedObject.FindProperty(nameof(VRStageLighting_DMX_Static.dmxTranslateChannel)).intValue =
+                        serializedObject.FindProperty(nameof(fixture.dmxTranslateChannel)).intValue =
                             EditorGUILayout.IntSlider(
                                 new GUIContent("DMX translate channel", "Starting channel for XYZ positioning through DMX512"),
                                 fixture.dmxTranslateChannel, 0, VRSL_LocalUIControlPanel.MaxUniverseCount * 512);
                         EditorGUI.indentLevel--;
                     }
-
-                    serializedObject.FindProperty(nameof(fixture.legacyGoboRange)).boolValue =
-                        EditorGUILayout.Toggle(
-                            new GUIContent("Legacy Gobo Range", "Use Only the first 6 gobos instead of all. This is for legacy content where only 6 gobos were originally supported and the channel range was different."),
-                            fixture.legacyGoboRange);
                 }
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
-            
             #endregion
             
             EditorGUILayout.Space();

@@ -3,7 +3,7 @@ using System;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
-using System.IO;
+using VRSL.EditorScripts;
 
 // Based on Morioh's toon shader GUI.
 // This code is based off synqark's arktoon-shaders and Xiexe. 
@@ -17,25 +17,21 @@ using System.IO;
 
 public class VRSLInspector : ShaderGUI
 {
-    BindingFlags bindingFlags = BindingFlags.Public |
-                                BindingFlags.NonPublic |
-                                BindingFlags.Instance |
-                                BindingFlags.Static;
+    private const string DisplayVersionText = "VR Stage Lighting: <b><color=white>{0}</color></b>"; // 6a15ce is hard for eye to read.
+    private const string PackagePath = "Packages/com.acchosen.vr-stage-lighting/package.json";
+    private readonly Package _package = VRSLPackageUtility.ReadPackage(PackagePath);
+
+    protected void DrawCenteredInfo()
+    {
+        VRSLStyles.ShurikenHeaderCentered($"UnityEditor: {Application.unityVersion}, {DisplayVersionText.Replace("{0}", _package.version)}");
+    }
+    
+    private BindingFlags bindingFlags = BindingFlags.Public |
+                                        BindingFlags.NonPublic |
+                                        BindingFlags.Instance |
+                                        BindingFlags.Static;
 
     MaterialProperty _LightingModel = null;
-    
-    // MaterialProperty _AreaLitToggle = null;
-	// MaterialProperty _AreaLitStrength = null;
-	// MaterialProperty _AreaLitRoughnessMult = null;
-    // MaterialProperty _OcclusionUVSet = null;
-	// MaterialProperty _AreaLitOcclusion = null;
-    // MaterialProperty _AreaLitMask = null;
-    // MaterialProperty _LightMesh = null;
-    // MaterialProperty _LightTex0 = null;
-    // MaterialProperty _LightTex1 = null;
-    // MaterialProperty _LightTex2 = null;
-    // MaterialProperty _LightTex3 = null;
-    // MaterialProperty _OpaqueLights = null;
 
     MaterialProperty _DMXTranslateChannel = null;
     MaterialProperty _EnableDMXTranslateChannel = null;
@@ -45,11 +41,7 @@ public class VRSLInspector : ShaderGUI
     MaterialProperty _SignalDetectionSensativity = null;
     MaterialProperty _EnableDMX = null;
     MaterialProperty _EnableExtraChannels = null;
-    // MaterialProperty _Udon_DMXGridRenderTextureMovement = null;
-    // MaterialProperty _Udon_DMXGridRenderTexture = null;
-    // MaterialProperty _Udon_DMXGridStrobeTimer = null;
-    // MaterialProperty _Udon_DMXGridSpinTimer = null;
-    MaterialProperty  _DMXTexture = null;
+    MaterialProperty _DMXTexture = null;
     MaterialProperty _UseRawGrid = null;
     MaterialProperty _EnableLegacyGlobalMovementSpeedChannel = null;
 
@@ -175,7 +167,6 @@ public class VRSLInspector : ShaderGUI
     MaterialProperty _ProjectionRange = null;
     MaterialProperty _ProjectionRangeOrigin = null;
     MaterialProperty _EnableSpin = null;
-    MaterialProperty _LegacyGoboRange = null;
     //MaterialProperty _BlendSrc = null;
     MaterialProperty _BlendDst = null;
     //MaterialProperty _BlendOp = null;
@@ -268,22 +259,22 @@ public class VRSLInspector : ShaderGUI
     //END Discoball Exclusives
 
     //Shader Type Identifiers
-    bool isDiscoBall = false;
-    bool isMoverLight = false;
-    bool isStaticLight = false;
-    bool isProjection = false;
-    bool isFixture = false;
-    bool isFlasher = false;
-    bool isVolumetric = false;
-    bool isDMXCompatible = false;
-    bool isLensFlare = false;
-    bool isSurfaceStatic = false;
-    bool isMultiChannelBar = false;
+    bool isDiscoBall;
+    bool isMoverLight;
+    bool isStaticLight;
+    bool isProjection;
+    bool isFixture;
+    bool isFlasher;
+    bool isVolumetric;
+    bool isDMXCompatible;
+    bool isLensFlare;
+    bool isSurfaceStatic;
+    bool isMultiChannelBar;
 
-    bool isRTShader = false;
-    bool isRTStrobe = false;
-    bool isRTSpin = false;
-    bool isAudioLink = false;
+    bool isRTShader;
+    bool isRTStrobe;
+    bool isRTSpin;
+    bool isAudioLink;
 
     //VolumetricQuality volumetricQuality = VolumetricQuality.Default;
 
@@ -309,7 +300,7 @@ public class VRSLInspector : ShaderGUI
         Material material = materialEditor.target as Material;
         Shader shader = material.shader;
 
-        //Establich Type Identifiers
+        //Establish Type Identifiers
         isDiscoBall = shader.name.Contains("Discoball");
         isMoverLight = shader.name.Contains("Mover");
         isStaticLight = shader.name.Contains("Static");
@@ -327,85 +318,88 @@ public class VRSLInspector : ShaderGUI
         isRTSpin = shader.name.Contains("Spinner");
         //END Type Identifiers
         
-        foreach(var property in GetType().GetFields(bindingFlags))  
+        foreach(var property in GetType().GetFields(bindingFlags))
         {
-            if (property.FieldType == typeof(MaterialProperty))
+            if (property.FieldType != typeof(MaterialProperty)) continue;
+            
+            try
             {
-                try{ property.SetValue(this, FindProperty(property.Name, props)); } catch {  }
-            } 
+                property.SetValue(this, FindProperty(property.Name, props));
+            }
+            catch
+            {
+                // ignored
+            }
         }
         
         //BEGIN GUI Stuff
         EditorGUI.BeginChangeCheck();
         {
-            VRSLStyles.DrawLogo();
-            VRSLStyles.ShurikenHeaderCentered(VRSLStyles.GetVersion());
+            DrawCenteredInfo();
             VRSLStyles.ShurikenHeaderCentered(GetShaderType());
             VRSLStyles.PartingLine();
             VRSLStyles.DepthPassWarning();
             GUILayout.Space(5);
-            if(isDiscoBall)
+            if (isDiscoBall)
             {
                 DiscoballGUI(materialEditor, props, material);
                 return;
             }
-            if(isMoverLight)
+            if (isMoverLight)
             {
-                if(isMoverLight && isFixture)
+                if (isMoverLight && isFixture)
                 {
                     MoverLightFixtureGUI(materialEditor, props, material);
                     return;
                 }
-                if(isMoverLight && isVolumetric)
+                if (isMoverLight && isVolumetric)
                 {
                     MoverLightVolumetricGUI(materialEditor, props, material);
                     return;
                 }
-                if(isMoverLight && isProjection)
+                if (isMoverLight && isProjection)
                 {
                     MoverLightProjectionGUI(materialEditor,props, material);
                     return;
                 }
             }
-            if(isLensFlare)
+            if (isLensFlare)
             {
-
                 LensFlareGUI(materialEditor,props, material);
                 return;
             }
-            if(isStaticLight)
+            if (isStaticLight)
             {
-                if(isStaticLight && isFlasher)
+                if (isStaticLight && isFlasher)
                 {
                     FlasherLightGUI(materialEditor,props, material);
                     return;
                 }
-                if(isStaticLight && isFixture)
+                if (isStaticLight && isFixture)
                 {
                     StaticLightFixtureGUI(materialEditor,props, material);
                     return;
                 }
-                if(isStaticLight && isProjection)
+                if (isStaticLight && isProjection)
                 {
                     StaticLightProjectionGUI(materialEditor,props, material);
                     return;
                 }
-                
             }
 
-            if(isSurfaceStatic)
+            if (isSurfaceStatic)
             {
                 SurfaceShaderStaticGUI(materialEditor,props, material);
                 return;
             }
-            if(isRTShader)
+            if (isRTShader)
             {
-                if(isRTStrobe && !isRTSpin)
+                if (isRTStrobe && !isRTSpin)
                 {
                     DMXStrobeGUI(materialEditor,props, material);
                     return;
                 }
-                else if(isRTSpin && !isRTStrobe)
+                else if (isRTSpin && !isRTStrobe)
                 {
                     DMXSpinnerGUI(materialEditor, props, material);
                     return;
@@ -422,10 +416,10 @@ public class VRSLInspector : ShaderGUI
 
     public void AudioLinkGUI(MaterialEditor matEditor, MaterialProperty[] props, Material target)
     {
-        if(isAudioLink)
+        if (isAudioLink)
         {
             showAudioLinkControls = VRSLStyles.ShurikenFoldout("AudioLink Settings", showAudioLinkControls);
-            if(showAudioLinkControls)
+            if (showAudioLinkControls)
             {
                 GUILayout.Space(5);
                 EditorGUI.indentLevel++;
@@ -436,7 +430,7 @@ public class VRSLInspector : ShaderGUI
                 matEditor.ShaderProperty(_NumBands, new GUIContent("Number of Bands", "The number of frequency bands the texture supports."));
                 matEditor.ShaderProperty(_Delay, new GUIContent("Delay", "How much delay between each sample"));
                 matEditor.ShaderProperty(_BandMultiplier, new GUIContent("Band Multiplier", "The frequency band to sample from"));
-                //if(!isDiscoBall)
+                //if (!isDiscoBall)
                 matEditor.ShaderProperty(_EnableColorChord, new GUIContent("Enable Color Chord", "Enables or disables Color Chord tinting. \nThis will tint the final color of the light after texture tinting."));
                 matEditor.ShaderProperty(_EnableThemeColorSampling, new GUIContent("Enable Theme Color Sampling", "Enables or disables AudioLink Theme Color Sampling. \nThis will tint the final color of the light after texture tinting."));
                 matEditor.ShaderProperty(_ThemeColorTarget, new GUIContent("Theme Color Target", "Choose which theme color to sample from."));
@@ -450,10 +444,10 @@ public class VRSLInspector : ShaderGUI
     {
         AudioLinkGUI(matEditor, props, target);
         
-        if(isDMXCompatible)
+        if (isDMXCompatible)
         {
             showDMXSettings = VRSLStyles.ShurikenFoldout("DMX Settings", showDMXSettings);
-            if(showDMXSettings && isDMXCompatible)
+            if (showDMXSettings && isDMXCompatible)
             {
                 GUILayout.Space(5);
                 EditorGUILayout.HelpBox("''Sector'' and ''Enable DMX'' are usually overridden by their corresponding Udon Script. \nAdjust these at your own risk.", MessageType.Info,true);
@@ -490,28 +484,24 @@ public class VRSLInspector : ShaderGUI
                     default:
                         break;
                 }
-                //matEditor.ShaderProperty(_LegacyGoboRange, new GUIContent("Enable Legacy Gobo Range", "Use Only the first 6 gobos instead of all. This is for legacy content where only 6 gobos were originally supported and the channel range was different."));
                 EditorGUI.indentLevel--;   
                 VRSLStyles.PartingLine();
                 EditorGUILayout.HelpBox("These are the render texture grids used to read DMX signals from a video panel.", MessageType.None,true);
                 EditorGUI.indentLevel++;
-                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Seperate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid", "The DMX Render Texture to read from for color and intensity. Slightly smoothed."),_Udon_DMXGridRenderTexture);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid Smoothed", "DMX Render Texture smoothed out by a custom render texture."),_Udon_DMXGridRenderTextureMovement);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Strobe Timer", "DMX Grid with strobe timings embedded."),_Udon_DMXGridStrobeTimer);
+                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Separate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
                 EditorGUI.indentLevel--;
                 GUILayout.Space(5);
             }
         }
         
         showGeneralControls = VRSLStyles.ShurikenFoldout("General Controls", showGeneralControls);
-        if(showGeneralControls)
+        if (showGeneralControls)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
             matEditor.ShaderProperty(_GlobalIntensity, new GUIContent("Global Intensity", "Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity."));
             EditorGUI.indentLevel++;  
-            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intesnity slider actually affects the output. Good for temporarily disabling animations that use the Global Intesnity property."));
+            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intensity slider actually affects the output. Good for temporarily disabling animations that use the Global Intensity property."));
             EditorGUI.indentLevel--;    
             matEditor.ShaderProperty(_FinalIntensity, new GUIContent("Final Intensity", "Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI."));
             matEditor.ShaderProperty(_UniversalIntensity, new GUIContent("Universal Intensity", "Sets the maximum brightness value of both Final and GLobal Intensity. Good for personalized settings of the max brightness of the shader by other users via UI. Is non-instanced."));
@@ -523,7 +513,7 @@ public class VRSLInspector : ShaderGUI
             matEditor.ShaderProperty(_FixtureMaxIntensity, new GUIContent("Lens Max Brightness", "General slider for adjusting the max brightness of the lens"));
             matEditor.ShaderProperty(_FixutreIntensityMultiplier, new GUIContent("Intensity Multipler (For Bloom Scaling)", ""));                
             matEditor.ShaderProperty(_CurveMod, new GUIContent("Light Intensity Curve Modifier", ""));
-        // matEditor.ShaderProperty(_FixutreIntensityMultiplier, new GUIContent ("Intensity Multiplier", "Multiplier for the lens brightness. Good for adjusting to increase bloom"));
+            // matEditor.ShaderProperty(_FixutreIntensityMultiplier, new GUIContent ("Intensity Multiplier", "Multiplier for the lens brightness. Good for adjusting to increase bloom"));
             matEditor.EnableInstancingField();
             matEditor.RenderQueueField();
             EditorGUI.indentLevel--;
@@ -531,74 +521,74 @@ public class VRSLInspector : ShaderGUI
         }
         
         showLensFlareControls = VRSLStyles.ShurikenFoldout("Lens Flare Settings", showLensFlareControls);
-        if(showLensFlareControls)
-            {
-                // if(isDMXCompatible)
-                // {
-                    matEditor.ShaderProperty(_RenderMode, new GUIContent("Render Mode", "Choose between a fully transparent shader, or one that is opaque with a dithering technique."));
-                    if(target.GetInt("_RenderMode") == 1) 
-                    {
-                        target.SetOverrideTag("RenderType", "Transparent");
-                        target.DisableKeyword("_ALPHATEST_ON");  
-                        //target.SetInt("_BlendSrc", 1);
-                        target.SetInt("_BlendDst", 1);
-                        target.SetInt("_ZWrite", 0);
-                        target.SetInt("_AlphaToCoverage", 0);
-                        target.SetInt("_HQMode", 0);
-                        target.renderQueue = 3200;
-                    }
-                    else
-                    {
-                        matEditor.ShaderProperty(_ClippingThreshold, new GUIContent("Alpha Clip Threshold", "Adjust the clipping threshold of the dither effect."));
-                       //matEditor.ShaderProperty(_AlphaProjectionIntensity, new GUIContent("Alpha Projection Intesnity", "Adjust the projection intensity for alphat2coverage mode."));
-                        target.SetOverrideTag("RenderType", "Opaque");
-                        target.EnableKeyword("_ALPHATEST_ON");
-                        //target.SetInt("_BlendSrc", 0);
-                        target.SetInt("_BlendDst", 0);
-                        target.SetInt("_ZWrite", 1);
-                        target.SetInt("_AlphaToCoverage", 1);
-                        target.SetInt("_HQMode", 0);
-                        target.renderQueue = 2450+200;
-                    }
-                // }
-                GUILayout.Space(5);
-                EditorGUI.indentLevel++;
-                matEditor.TexturePropertySingleLine(new GUIContent("Flare Texture", ""), _MainTex);
-                matEditor.TextureScaleOffsetProperty(_MainTex);
-                matEditor.ShaderProperty(_UseDepthLight, new GUIContent("Use Depth Light", "Enable/Disable the reliance of the depth light for this volumetric shader."));
-                SetKeyword(target, "_USE_DEPTH_LIGHT", (Mathf.FloorToInt(target.GetInt("_UseDepthLight"))) == 1 ? true : false);
-                matEditor.ShaderProperty(_FadeAmt, new GUIContent("Fade Strength", ""));
-                matEditor.ShaderProperty(_ColorSat, new GUIContent("Color Saturtation Strength", ""));
-                matEditor.ShaderProperty(_ScaleFactor, new GUIContent("Scale Factor", ""));
-                matEditor.ShaderProperty(_ReferenceDistance, new GUIContent("Reference Distance", ""));
+        if (showLensFlareControls)
+        {
+            // if (isDMXCompatible)
+            // {
+                matEditor.ShaderProperty(_RenderMode, new GUIContent("Render Mode", "Choose between a fully transparent shader, or one that is opaque with a dithering technique."));
+                if (target.GetInt("_RenderMode") == 1) 
+                {
+                    target.SetOverrideTag("RenderType", "Transparent");
+                    target.DisableKeyword("_ALPHATEST_ON");  
+                    //target.SetInt("_BlendSrc", 1);
+                    target.SetInt("_BlendDst", 1);
+                    target.SetInt("_ZWrite", 0);
+                    target.SetInt("_AlphaToCoverage", 0);
+                    target.SetInt("_HQMode", 0);
+                    target.renderQueue = 3200;
+                }
+                else
+                {
+                    matEditor.ShaderProperty(_ClippingThreshold, new GUIContent("Alpha Clip Threshold", "Adjust the clipping threshold of the dither effect."));
+                   //matEditor.ShaderProperty(_AlphaProjectionIntensity, new GUIContent("Alpha Projection Intensity", "Adjust the projection intensity for alphat2coverage mode."));
+                    target.SetOverrideTag("RenderType", "Opaque");
+                    target.EnableKeyword("_ALPHATEST_ON");
+                    //target.SetInt("_BlendSrc", 0);
+                    target.SetInt("_BlendDst", 0);
+                    target.SetInt("_ZWrite", 1);
+                    target.SetInt("_AlphaToCoverage", 1);
+                    target.SetInt("_HQMode", 0);
+                    target.renderQueue = 2450+200;
+                }
+            // }
+            GUILayout.Space(5);
+            EditorGUI.indentLevel++;
+            matEditor.TexturePropertySingleLine(new GUIContent("Flare Texture", ""), _MainTex);
+            matEditor.TextureScaleOffsetProperty(_MainTex);
+            matEditor.ShaderProperty(_UseDepthLight, new GUIContent("Use Depth Light", "Enable/Disable the reliance of the depth light for this volumetric shader."));
+            SetKeyword(target, "_USE_DEPTH_LIGHT", target.GetInt("_UseDepthLight") == 1);
+            matEditor.ShaderProperty(_FadeAmt, new GUIContent("Fade Strength", ""));
+            matEditor.ShaderProperty(_ColorSat, new GUIContent("Color Saturtation Strength", ""));
+            matEditor.ShaderProperty(_ScaleFactor, new GUIContent("Scale Factor", ""));
+            matEditor.ShaderProperty(_ReferenceDistance, new GUIContent("Reference Distance", ""));
 
-                matEditor.ShaderProperty(_RemoveTextureArtifact, new GUIContent("Remove Texture Artifacting", ""));
-                matEditor.ShaderProperty(_UsePreMultiplyAlpha, new GUIContent("UsePreMultiplyAlpha (recommend _BaseMap's alpha = 'From Gray Scale')", ""));
-                matEditor.ShaderProperty(_LightSourceViewSpaceRadius, new GUIContent("Light Source View Space Radius", ""));
-                matEditor.ShaderProperty(_DepthOcclusionTestZBias, new GUIContent("Depth OcclusionTest Z Bias", ""));
-                matEditor.ShaderProperty(_StartFadeinDistanceWorldUnit, new GUIContent("Start Fade in Distance World Unit", ""));
-                matEditor.ShaderProperty(_EndFadeinDistanceWorldUnit, new GUIContent("End Fade in Distance World Unit", ""));
-                matEditor.ShaderProperty(_ShouldDoFlicker, new GUIContent("Should Do Flicker", ""));
-                matEditor.ShaderProperty(_FlickerAnimSpeed, new GUIContent("Flicker Anim Speed", ""));
-                matEditor.ShaderProperty(_FlickResultIntensityLowestPoint, new GUIContent("Flick Result Intensity Lowest Point", ""));
-            }
+            matEditor.ShaderProperty(_RemoveTextureArtifact, new GUIContent("Remove Texture Artifacting", ""));
+            matEditor.ShaderProperty(_UsePreMultiplyAlpha, new GUIContent("UsePreMultiplyAlpha (recommend _BaseMap's alpha = 'From Gray Scale')", ""));
+            matEditor.ShaderProperty(_LightSourceViewSpaceRadius, new GUIContent("Light Source View Space Radius", ""));
+            matEditor.ShaderProperty(_DepthOcclusionTestZBias, new GUIContent("Depth OcclusionTest Z Bias", ""));
+            matEditor.ShaderProperty(_StartFadeinDistanceWorldUnit, new GUIContent("Start Fade in Distance World Unit", ""));
+            matEditor.ShaderProperty(_EndFadeinDistanceWorldUnit, new GUIContent("End Fade in Distance World Unit", ""));
+            matEditor.ShaderProperty(_ShouldDoFlicker, new GUIContent("Should Do Flicker", ""));
+            matEditor.ShaderProperty(_FlickerAnimSpeed, new GUIContent("Flicker Anim Speed", ""));
+            matEditor.ShaderProperty(_FlickResultIntensityLowestPoint, new GUIContent("Flick Result Intensity Lowest Point", ""));
+        }
     }
     public void SurfaceShaderStaticGUI(MaterialEditor matEditor, MaterialProperty[] props, Material target)
     {
         AudioLinkGUI(matEditor, props, target);
         
         //DMX CONTROLS
-        if(isDMXCompatible)
+        if (isDMXCompatible)
         {
             GUILayout.Space(5);
             EditorGUILayout.HelpBox("''Sector'' and ''Enable DMX'' are usually overridden by their corresponding Udon Script. \nAdjust these at your own risk.", MessageType.Info,true);
             EditorGUI.indentLevel++;
             matEditor.ShaderProperty(_EnableDMX, new GUIContent("Enable DMX", "Enables or Disables reading from the DMX Render Textures"));
             matEditor.ShaderProperty(_DMXChannel, new GUIContent("DMX Channel","Chooses the DMX Address to start this fixture at."));
-            if(isMultiChannelBar)
+            if (isMultiChannelBar)
             {
                 matEditor.ShaderProperty(_ChannelMode, new GUIContent("Channel Mode", "Choose between 15 and 49 channel mode."));
-                if(target.GetInt("_ChannelMode") == 1)
+                if (target.GetInt("_ChannelMode") == 1)
                 {
                     target.EnableKeyword("_CHANNEL_MODE");
                 }
@@ -640,28 +630,24 @@ public class VRSLInspector : ShaderGUI
                         break;
                 }
             }
-            //matEditor.ShaderProperty(_LegacyGoboRange, new GUIContent("Enable Legacy Gobo Range", "Use Only the first 6 gobos instead of all. This is for legacy content where only 6 gobos were originally supported and the channel range was different."));
             EditorGUI.indentLevel--;   
             VRSLStyles.PartingLine();
             EditorGUILayout.HelpBox("These are the render texture grids used to read DMX signals from a video panel.", MessageType.None,true);
             EditorGUI.indentLevel++;
-            matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Seperate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
+            matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Separate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
 
-            // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid", "The DMX Render Texture to read from for color and intensity. Slightly smoothed."),_Udon_DMXGridRenderTexture);
-            // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid Smoothed", "DMX Render Texture smoothed out by a custom render texture."),_Udon_DMXGridRenderTextureMovement);
-            // matEditor.TexturePropertySingleLine(new GUIContent("DMX Strobe Timer", "DMX Grid with strobe timings embedded."),_Udon_DMXGridStrobeTimer);
             EditorGUI.indentLevel--;
             GUILayout.Space(5);
         }
         
         showGeneralControls = VRSLStyles.ShurikenFoldout("General Controls", showGeneralControls);
-        if(showGeneralControls)
+        if (showGeneralControls)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
             matEditor.ShaderProperty(_GlobalIntensity, new GUIContent("Global Intensity", "Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity."));
             EditorGUI.indentLevel++;  
-            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intesnity slider actually affects the output. Good for temporarily disabling animations that use the Global Intesnity property."));
+            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intensity slider actually affects the output. Good for temporarily disabling animations that use the Global Intensity property."));
             EditorGUI.indentLevel--; 
             matEditor.ShaderProperty(_FinalIntensity, new GUIContent("Final Intensity", "Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI."));
             matEditor.ShaderProperty(_UniversalIntensity, new GUIContent("Universal Intensity", "Sets the maximum brightness value of both Final and GLobal Intensity. Good for personalized settings of the max brightness of the shader by other users via UI. Is non-instanced."));
@@ -681,16 +667,16 @@ public class VRSLInspector : ShaderGUI
         }
         
         showFixtureHousingControls = VRSLStyles.ShurikenFoldout("Fixture Housing Settings", showFixtureHousingControls);
-        if(showFixtureHousingControls)
+        if (showFixtureHousingControls)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
-            if(target.shader.name.Contains("Transparent") || target.shader.name.Contains("Cutout") )
+            if (target.shader.name.Contains("Transparent") || target.shader.name.Contains("Cutout") )
             {
                 matEditor.ShaderProperty(_EnableAlphaDMX, new GUIContent("Enable DMX Controlled Alpha", "Control Alpha channel with dmx (channel = +1 of last channel.)"));
                 matEditor.ShaderProperty(_AlphaIntensity, new GUIContent("Fixture Housing Alpha", "The main Alpha Channel for the fixture housing"));
             }
-            if(target.shader.name.Contains("Cutout"))
+            if (target.shader.name.Contains("Cutout"))
             {
                 matEditor.ShaderProperty(_Cutoff, new GUIContent("Alpha Cutoff", "Threshold to discard pixels for alpha cutoff shaders."));
             }
@@ -708,7 +694,7 @@ public class VRSLInspector : ShaderGUI
             matEditor.TexturePropertySingleLine(new GUIContent("Fixture Housing Metallic(R) / Smoothness(A) Map", "The main Metallic/Smoothness texture for the fixture housing."), _MetallicSmoothness);
             matEditor.TextureScaleOffsetProperty(_MetallicSmoothness);
             matEditor.ShaderProperty(_Metallic, new GUIContent("Fixture Housing Metallic Level", "The metallic level of the fixture housing."));
-            matEditor.ShaderProperty(_Glossiness, new GUIContent("Fixture Housing Glossiness Level", "The glossines of the fixture housing."));
+            matEditor.ShaderProperty(_Glossiness, new GUIContent("Fixture Housing Glossiness Level", "The glossiness of the fixture housing."));
             EditorGUI.indentLevel--;
             GUILayout.Space(5);
         }
@@ -719,10 +705,10 @@ public class VRSLInspector : ShaderGUI
         AudioLinkGUI(matEditor, props, target);
         
         //DMX CONTROLS
-        if(isDMXCompatible)
+        if (isDMXCompatible)
         {
             showDMXSettings = VRSLStyles.ShurikenFoldout("DMX Settings", showDMXSettings);
-            if(showDMXSettings && isDMXCompatible)
+            if (showDMXSettings && isDMXCompatible)
             {
                 GUILayout.Space(5);
                 EditorGUILayout.HelpBox("''Sector'' and ''Enable DMX'' are usually overridden by their corresponding Udon Script. \nAdjust these at your own risk.", MessageType.Info,true);
@@ -730,7 +716,7 @@ public class VRSLInspector : ShaderGUI
                 matEditor.ShaderProperty(_EnableDMX, new GUIContent("Enable DMX", "Enables or Disables reading from the DMX Render Textures"));
                 matEditor.ShaderProperty(_DMXChannel, new GUIContent("DMX Channel","Chooses the DMX Address to start this fixture at."));
                 matEditor.ShaderProperty(_ChannelMode, new GUIContent("Channel Mode", "Choose between 15 and 49 channel mode."));
-                if(target.GetInt("_ChannelMode") == 1)
+                if (target.GetInt("_ChannelMode") == 1)
                 {
                     target.EnableKeyword("_CHANNEL_MODE");
                 }
@@ -738,15 +724,11 @@ public class VRSLInspector : ShaderGUI
                 {
                     target.DisableKeyword("_CHANNEL_MODE");
                 }
-                //matEditor.ShaderProperty(_LegacyGoboRange, new GUIContent("Enable Legacy Gobo Range", "Use Only the first 6 gobos instead of all. This is for legacy content where only 6 gobos were originally supported and the channel range was different."));
                 EditorGUI.indentLevel--;   
                 VRSLStyles.PartingLine();
                 EditorGUILayout.HelpBox("These are the render texture grids used to read DMX signals from a video panel.", MessageType.None,true);
                 EditorGUI.indentLevel++;
-                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Seperate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid", "The DMX Render Texture to read from for color and intensity. Slightly smoothed."),_Udon_DMXGridRenderTexture);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid Smoothed", "DMX Render Texture smoothed out by a custom render texture."),_Udon_DMXGridRenderTextureMovement);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Strobe Timer", "DMX Grid with strobe timings embedded."),_Udon_DMXGridStrobeTimer);
+                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Separate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
                 EditorGUI.indentLevel--;
                 GUILayout.Space(5);
             }
@@ -754,13 +736,13 @@ public class VRSLInspector : ShaderGUI
         
         //GENERAL CONTROLS
         showGeneralControls = VRSLStyles.ShurikenFoldout("General Controls", showGeneralControls);
-        if(showGeneralControls)
+        if (showGeneralControls)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
             matEditor.ShaderProperty(_GlobalIntensity, new GUIContent("Global Intensity", "Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity."));
             EditorGUI.indentLevel++;  
-            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intesnity slider actually affects the output. Good for temporarily disabling animations that use the Global Intesnity property."));
+            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intensity slider actually affects the output. Good for temporarily disabling animations that use the Global Intensity property."));
             EditorGUI.indentLevel--; 
             matEditor.ShaderProperty(_FinalIntensity, new GUIContent("Final Intensity", "Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI."));
             matEditor.ShaderProperty(_UniversalIntensity, new GUIContent("Universal Intensity", "Sets the maximum brightness value of both Final and GLobal Intensity. Good for personalized settings of the max brightness of the shader by other users via UI. Is non-instanced."));
@@ -770,7 +752,7 @@ public class VRSLInspector : ShaderGUI
 
             //matEditor.ShaderProperty(_CurveMod, new GUIContent("Light Intensity Curve Modifier", "Curve modifier for light intensity."));
             matEditor.ShaderProperty(_FixtureMaxIntensity, new GUIContent("Lens Max Brightness", "General slider for adjusting the max brightness of the lens"));
-           // matEditor.ShaderProperty(_FixutreIntensityMultiplier, new GUIContent ("Intensity Multiplier", "Multiplier for the lens brightness. Good for adjusting to increase bloom"));
+            // matEditor.ShaderProperty(_FixutreIntensityMultiplier, new GUIContent ("Intensity Multiplier", "Multiplier for the lens brightness. Good for adjusting to increase bloom"));
             matEditor.EnableInstancingField();
             matEditor.RenderQueueField();
             EditorGUI.indentLevel--;
@@ -779,12 +761,12 @@ public class VRSLInspector : ShaderGUI
 
         //PROJECTION CONTROLS
         showProjectionControls = VRSLStyles.ShurikenFoldout("Projection Settings", showProjectionControls);
-        if(showProjectionControls)
+        if (showProjectionControls)
         {
-            // if(isDMXCompatible)
+            // if (isDMXCompatible)
             // {
                 matEditor.ShaderProperty(_MultiSampleDepth, new GUIContent("Depth Multi-Sampling", "Sample the depth texture multiple times to prevent artifacting on edges of the projection. This does incurr a slight cost."));
-                if(target.GetInt("_MultiSampleDepth") == 1)
+                if (target.GetInt("_MultiSampleDepth") == 1)
                 {
                     target.EnableKeyword("_MULTISAMPLEDEPTH");
                 }
@@ -793,7 +775,7 @@ public class VRSLInspector : ShaderGUI
                     target.DisableKeyword("_MULTISAMPLEDEPTH");
                 }
                 matEditor.ShaderProperty(_RenderMode, new GUIContent("Render Mode", "Choose between a fully transparent shader, or one that is opaque with a dithering technique."));
-                if(target.GetInt("_RenderMode") == 1) 
+                if (target.GetInt("_RenderMode") == 1) 
                 {
                     target.SetOverrideTag("RenderType", "Transparent");
                     target.DisableKeyword("_ALPHATEST_ON");  
@@ -807,7 +789,7 @@ public class VRSLInspector : ShaderGUI
                 else
                 {
                     matEditor.ShaderProperty(_ClippingThreshold, new GUIContent("Alpha Clip Threshold", "Adjust the clipping threshold of the dither effect."));
-                    matEditor.ShaderProperty(_AlphaProjectionIntensity, new GUIContent("Alpha Projection Intesnity", "Adjust the projection intensity for alphat2coverage mode."));
+                    matEditor.ShaderProperty(_AlphaProjectionIntensity, new GUIContent("Alpha Projection Intensity", "Adjust the projection intensity for Alpha2Coverage mode."));
                     target.SetOverrideTag("RenderType", "Opaque");
                     target.EnableKeyword("_ALPHATEST_ON");
                     //target.SetInt("_BlendSrc", 0);
@@ -832,10 +814,10 @@ public class VRSLInspector : ShaderGUI
             matEditor.ShaderProperty(_ProjectionDistanceFallOff, new GUIContent("Attenuation Constant", "How quickly the the projection loses strength the further away it is from the source."));
 
             matEditor.ShaderProperty(_ModX, new GUIContent("Projection UV X Stretch", "Stretches the projection texture in the X direction."));
-            matEditor.ShaderProperty(_ModY, new GUIContent("Projection UV Y Stretch", "Stretches the projection texture in the Y direciton."));
+            matEditor.ShaderProperty(_ModY, new GUIContent("Projection UV Y Stretch", "Stretches the projection texture in the Y direction."));
             matEditor.ShaderProperty(_XOffset, new GUIContent("Projection UV X Offset", "Offsets the projection texture in the X direction."));
-            matEditor.ShaderProperty(_YOffset, new GUIContent("Projection UV Y Offset", "Offsets the projection texture in the Y direciton."));
-            matEditor.ShaderProperty(_ProjectionRange, new GUIContent("Projection Range", "Changes the length of the projecction mesh itself. The longer it is, the further away the projection will reach before clipping, but also more pixels on the screen the projection will take up. \nIncrease this if you see the edges of the projection clipping too much from being too far away."));
+            matEditor.ShaderProperty(_YOffset, new GUIContent("Projection UV Y Offset", "Offsets the projection texture in the Y direction."));
+            matEditor.ShaderProperty(_ProjectionRange, new GUIContent("Projection Range", "Changes the length of the projection mesh itself. The longer it is, the further away the projection will reach before clipping, but also more pixels on the screen the projection will take up. \nIncrease this if you see the edges of the projection clipping too much from being too far away."));
             GUILayout.Space(5);
             VRSLStyles.PartingLine();
             GUILayout.Space(5);
@@ -864,10 +846,10 @@ public class VRSLInspector : ShaderGUI
         AudioLinkGUI(matEditor, props, target);
         
         //DMX CONTROLS
-        if(isDMXCompatible)
+        if (isDMXCompatible)
         {
             showDMXSettings = VRSLStyles.ShurikenFoldout("DMX Settings", showDMXSettings);
-            if(showDMXSettings && isDMXCompatible)
+            if (showDMXSettings && isDMXCompatible)
             {
                 GUILayout.Space(5);
                 EditorGUILayout.HelpBox("''Sector'' and ''Enable DMX'' are usually overridden by their corresponding Udon Script. \nAdjust these at your own risk.", MessageType.Info,true);
@@ -875,7 +857,7 @@ public class VRSLInspector : ShaderGUI
                 matEditor.ShaderProperty(_EnableDMX, new GUIContent("Enable DMX", "Enables or Disables reading from the DMX Render Textures"));
                 matEditor.ShaderProperty(_DMXChannel, new GUIContent("DMX Channel","Chooses the DMX Address to start this fixture at."));
                 matEditor.ShaderProperty(_ChannelMode, new GUIContent("Channel Mode", "Choose between 15 and 49 channel mode."));
-                if(target.GetInt("_ChannelMode") == 1)
+                if (target.GetInt("_ChannelMode") == 1)
                 {
                     target.EnableKeyword("_CHANNEL_MODE");
                 }
@@ -886,21 +868,16 @@ public class VRSLInspector : ShaderGUI
                 EditorGUI.indentLevel--;   
                 VRSLStyles.PartingLine();
                 EditorGUILayout.HelpBox("These are the render texture grids used to read DMX signals from a video panel.", MessageType.None,true);
-                EditorGUI.indentLevel++;
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid", "The DMX Render Texture to read from for color and intensity. Slightly smoothed."),_Udon_DMXGridRenderTexture);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid Smoothed", "DMX Render Texture smoothed out by a custom render texture."),_Udon_DMXGridRenderTextureMovement);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Strobe Timer", "DMX Grid with strobe timings embedded."),_Udon_DMXGridStrobeTimer);
-                EditorGUI.indentLevel--;
                 GUILayout.Space(5);
             }
             showGeneralControls = VRSLStyles.ShurikenFoldout("General Controls", showGeneralControls);
-            if(showGeneralControls)
+            if (showGeneralControls)
             {
                 GUILayout.Space(5);
                 EditorGUI.indentLevel++;
                 matEditor.ShaderProperty(_GlobalIntensity, new GUIContent("Global Intensity", "Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity."));
                 EditorGUI.indentLevel++;  
-                matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intesnity slider actually affects the output. Good for temporarily disabling animations that use the Global Intesnity property."));
+                matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intensity slider actually affects the output. Good for temporarily disabling animations that use the Global Intensity property."));
                 EditorGUI.indentLevel--; 
                 matEditor.ShaderProperty(_FinalIntensity, new GUIContent("Final Intensity", "Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI."));
                 matEditor.ShaderProperty(_UniversalIntensity, new GUIContent("Universal Intensity", "Sets the maximum brightness value of both Final and GLobal Intensity. Good for personalized settings of the max brightness of the shader by other users via UI. Is non-instanced."));
@@ -914,7 +891,7 @@ public class VRSLInspector : ShaderGUI
                 GUILayout.Space(5);
             }
             showFixtureHousingControls = VRSLStyles.ShurikenFoldout("Fixture Housing Settings", showFixtureHousingControls);
-            if(showFixtureHousingControls)
+            if (showFixtureHousingControls)
             {
                 GUILayout.Space(5);
                 EditorGUI.indentLevel++;
@@ -939,10 +916,10 @@ public class VRSLInspector : ShaderGUI
         AudioLinkGUI(matEditor, props, target);
         
         //DMX CONTROLS
-        if(isDMXCompatible)
+        if (isDMXCompatible)
         {
             showDMXSettings = VRSLStyles.ShurikenFoldout("DMX Settings", showDMXSettings);
-            if(showDMXSettings && isDMXCompatible)
+            if (showDMXSettings && isDMXCompatible)
             {
                 GUILayout.Space(5);
                 EditorGUILayout.HelpBox("''Sector'' and ''Enable DMX'' are usually overridden by their corresponding Udon Script. \nAdjust these at your own risk.", MessageType.Info,true);
@@ -950,7 +927,7 @@ public class VRSLInspector : ShaderGUI
                 matEditor.ShaderProperty(_EnableDMX, new GUIContent("Enable DMX", "Enables or Disables reading from the DMX Render Textures"));
                 matEditor.ShaderProperty(_DMXChannel, new GUIContent("DMX Channel","Chooses the DMX Address to start this fixture at."));
                 matEditor.ShaderProperty(_ChannelMode, new GUIContent("Channel Mode", "Choose between 15 and 49 channel mode."));
-                if(target.GetInt("_ChannelMode") == 1)
+                if (target.GetInt("_ChannelMode") == 1)
                 {
                     target.EnableKeyword("_CHANNEL_MODE");
                 }
@@ -962,10 +939,7 @@ public class VRSLInspector : ShaderGUI
                 VRSLStyles.PartingLine();
                 EditorGUILayout.HelpBox("These are the render texture grids used to read DMX signals from a video panel.", MessageType.None,true);
                 EditorGUI.indentLevel++;
-                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Seperate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid", "The DMX Render Texture to read from for color and intensity. Slightly smoothed."),_Udon_DMXGridRenderTexture);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid Smoothed", "DMX Render Texture smoothed out by a custom render texture."),_Udon_DMXGridRenderTextureMovement);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Strobe Timer", "DMX Grid with strobe timings embedded."),_Udon_DMXGridStrobeTimer);
+                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Separate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
                 EditorGUI.indentLevel--;
                 GUILayout.Space(5);
             }
@@ -973,13 +947,13 @@ public class VRSLInspector : ShaderGUI
         
         //GENERAL CONTROLS
         showGeneralControls = VRSLStyles.ShurikenFoldout("General Controls", showGeneralControls);
-        if(showGeneralControls)
+        if (showGeneralControls)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
             matEditor.ShaderProperty(_GlobalIntensity, new GUIContent("Global Intensity", "Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity."));
             EditorGUI.indentLevel++;  
-            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intesnity slider actually affects the output. Good for temporarily disabling animations that use the Global Intesnity property."));
+            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intensity slider actually affects the output. Good for temporarily disabling animations that use the Global Intensity property."));
             EditorGUI.indentLevel--; 
             matEditor.ShaderProperty(_FinalIntensity, new GUIContent("Final Intensity", "Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI."));
             matEditor.ShaderProperty(_UniversalIntensity, new GUIContent("Universal Intensity", "Sets the maximum brightness value of both Final and GLobal Intensity. Good for personalized settings of the max brightness of the shader by other users via UI. Is non-instanced."));
@@ -987,7 +961,7 @@ public class VRSLInspector : ShaderGUI
             ColorTextureSamplingGUI(matEditor, props, target);
             matEditor.ShaderProperty(_CurveMod, new GUIContent("Light Intensity Curve Modifier", "Curve modifier for light intensity."));
             matEditor.ShaderProperty(_FixtureMaxIntensity, new GUIContent("Lens Max Brightness", "General slider for adjusting the max brightness of the lens"));
-            matEditor.ShaderProperty(_FixutreIntensityMultiplier, new GUIContent ("Intensity Multiplier", "Multiplier for the lens brightness. Good for adjusting to increase bloom"));
+            matEditor.ShaderProperty(_FixutreIntensityMultiplier, new GUIContent("Intensity Multiplier", "Multiplier for the lens brightness. Good for adjusting to increase bloom"));
             matEditor.EnableInstancingField();
             matEditor.RenderQueueField();
             EditorGUI.indentLevel--;
@@ -996,7 +970,7 @@ public class VRSLInspector : ShaderGUI
 
         //FIXTURE HOUSING SETTINGS
         showFixtureHousingControls = VRSLStyles.ShurikenFoldout("Fixture Housing Settings", showFixtureHousingControls);
-        if(showFixtureHousingControls)
+        if (showFixtureHousingControls)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
@@ -1025,10 +999,10 @@ public class VRSLInspector : ShaderGUI
         AudioLinkGUI(matEditor, props, target);
         
          //DMX CONTROLS
-        if(isDMXCompatible)
+        if (isDMXCompatible)
         {
             showDMXSettings = VRSLStyles.ShurikenFoldout("DMX Settings", showDMXSettings);
-            if(showDMXSettings && isDMXCompatible)
+            if (showDMXSettings && isDMXCompatible)
             {
                 GUILayout.Space(5);
                 EditorGUILayout.HelpBox("''Sector'' and ''Enable DMX'' are usually overridden by their corresponding Udon Script. \nAdjust these at your own risk.", MessageType.Info,true);
@@ -1050,12 +1024,7 @@ public class VRSLInspector : ShaderGUI
                 VRSLStyles.PartingLine();
                 EditorGUILayout.HelpBox("These are the render texture grids used to read DMX signals from a video panel.", MessageType.None,true);
                 EditorGUI.indentLevel++;
-                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Seperate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
-                matEditor.ShaderProperty(_LegacyGoboRange, new GUIContent("Enable Legacy Gobo Range", "Use Only the first 6 gobos instead of all. This is for legacy content where only 6 gobos were originally supported and the channel range was different."));
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid", "The DMX Render Texture to read from for color and intensity. Slightly smoothed."),_Udon_DMXGridRenderTexture);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid Smoothed", "DMX Render Texture smoothed out heavily by a custom render texture. Used for movement."),_Udon_DMXGridRenderTextureMovement);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Strobe Timer", "DMX Grid with strobe timings embedded."),_Udon_DMXGridStrobeTimer);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Spin Timer", "DMX Grid with GOBO Spin timings embedded"),_Udon_DMXGridSpinTimer);
+                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Separate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
                 EditorGUI.indentLevel--;
                 GUILayout.Space(5);
             }
@@ -1063,13 +1032,13 @@ public class VRSLInspector : ShaderGUI
         
         //GENERAL CONTROLS
         showGeneralControls = VRSLStyles.ShurikenFoldout("General Controls", showGeneralControls);
-        if(showGeneralControls)
+        if (showGeneralControls)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
             matEditor.ShaderProperty(_GlobalIntensity, new GUIContent("Global Intensity", "Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity."));
             EditorGUI.indentLevel++;  
-            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intesnity slider actually affects the output. Good for temporarily disabling animations that use the Global Intesnity property."));
+            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intensity slider actually affects the output. Good for temporarily disabling animations that use the Global Intensity property."));
             EditorGUI.indentLevel--; 
             matEditor.ShaderProperty(_FinalIntensity, new GUIContent("Final Intensity", "Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI."));
             matEditor.ShaderProperty(_UniversalIntensity, new GUIContent("Universal Intensity", "Sets the maximum brightness value of both Final and GLobal Intensity. Good for personalized settings of the max brightness of the shader by other users via UI. Is non-instanced."));
@@ -1086,12 +1055,12 @@ public class VRSLInspector : ShaderGUI
         }
 
         showProjectionControls = VRSLStyles.ShurikenFoldout("Projection Controls", showProjectionControls);
-        if(showProjectionControls)
+        if (showProjectionControls)
         {
-            // if(isDMXCompatible)
+            // if (isDMXCompatible)
             // {
                 matEditor.ShaderProperty(_MultiSampleDepth, new GUIContent("Depth Multi-Sampling", "Sample the depth texture multiple times to prevent artifacting on edges of the projection. This does incurr a slight cost."));
-                if(target.GetInt("_MultiSampleDepth") == 1)
+                if (target.GetInt("_MultiSampleDepth") == 1)
                 {
                     target.EnableKeyword("_MULTISAMPLEDEPTH");
                 }
@@ -1100,7 +1069,7 @@ public class VRSLInspector : ShaderGUI
                     target.DisableKeyword("_MULTISAMPLEDEPTH");
                 }
                 matEditor.ShaderProperty(_RenderMode, new GUIContent("Render Mode", "Choose between a fully transparent shader, or one that is opaque with a dithering technique."));
-                if(target.GetInt("_RenderMode") == 1) 
+                if (target.GetInt("_RenderMode") == 1) 
                 {
                     target.SetOverrideTag("RenderType", "Transparent");
                     target.DisableKeyword("_ALPHATEST_ON");  
@@ -1133,10 +1102,10 @@ public class VRSLInspector : ShaderGUI
             matEditor.ShaderProperty(_ProjectionIntensity, new GUIContent("Projection Intensity", "Changes how bright the projection is"));
             matEditor.ShaderProperty(_ProjectionFade, new GUIContent("Projection Edge Fade", "Changes how much the edges of the projection are faded away."));
             matEditor.ShaderProperty(_ProjectionFadeCurve, new GUIContent("Projection Edge Fade Harshness", "Changes the rate at which the edges of the projection are faded."));
-            matEditor.ShaderProperty(_ProjectionDistanceFallOff, new GUIContent("Projection Distance Fallof Strength", "How quickly the the projection loses strength the further away it is from the source."));
-            matEditor.ShaderProperty(_ProjectionRange, new GUIContent("Projection Drawing Range", "Changes the length of the projecction mesh itself. The longer it is, the further away the projection will reach before clipping, but also more pixels on the screen the projection will take up. \nIncrease this if you see the edges of the projection clipping too much from the light being too far away."));
+            matEditor.ShaderProperty(_ProjectionDistanceFallOff, new GUIContent("Projection Distance Falloff Strength", "How quickly the the projection loses strength the further away it is from the source."));
+            matEditor.ShaderProperty(_ProjectionRange, new GUIContent("Projection Drawing Range", "Changes the length of the projection mesh itself. The longer it is, the further away the projection will reach before clipping, but also more pixels on the screen the projection will take up. \nIncrease this if you see the edges of the projection clipping too much from the light being too far away."));
             matEditor.ShaderProperty(_ProjectionRangeOrigin, new GUIContent("Projection Drawing Range Scale Origin", "The place where the projection mesh is being scaled from. Don't change this unless you know what you are doing. "));
-            // if(isDMXCompatible)
+            // if (isDMXCompatible)
             // {
                 matEditor.ShaderProperty(_ProjectionCutoff, new GUIContent("Projection Fixture Source Cutoff", "This is where the projector actually begins drawing the projection. Use this to prevent the projection from bleeding on to the fixture mesh."));
                 matEditor.ShaderProperty(_ProjectionOriginCutoff, new GUIContent("Projection Fixture Origin Cutoff", "This is the area between the origin of the fixture and where the projection mesh is. Use this to prevent the projection from bleeding on to the fixture mesh relative to the origin."));
@@ -1151,14 +1120,14 @@ public class VRSLInspector : ShaderGUI
             matEditor.ShaderProperty(_ConeWidth, new GUIContent("Cone Width", "Changes the radius of the cone to be larger or smaller."));
             matEditor.ShaderProperty(_ConeLength, new GUIContent("Cone Length", "Changes how long the volumetric cone via the texture coordinates."));
             //matEditor.ShaderProperty(_MaxConeLength, new GUIContent("Max Cone Length", "Changes how long the volumetric cone is via the mesh"));
-            matEditor.ShaderProperty(_ConeSync, new GUIContent("Cone Scale Sync", "Changes the rate at which the cone scales from source to the end of the cone. Highly recommened to use default settings if unsure."));
+            matEditor.ShaderProperty(_ConeSync, new GUIContent("Cone Scale Sync", "Changes the rate at which the cone scales from source to the end of the cone. Highly recommended to use default settings if unsure."));
             GUILayout.Space(5);
             EditorGUI.indentLevel--;
             GUILayout.Space(5);
         }
 
         showProjectionTextureSettings = VRSLStyles.ShurikenFoldout("Projection Texture Settings", showProjectionTextureSettings);
-        if(showProjectionTextureSettings)
+        if (showProjectionTextureSettings)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
@@ -1193,11 +1162,11 @@ public class VRSLInspector : ShaderGUI
             GUILayout.Space(5);
         }
 
-        //MOVER CONTROLS
-        if(isStaticLight == false && isAudioLink == false)
+        // MOVER CONTROLS
+        if (!isStaticLight && !isAudioLink)
         {
             showMoverControls = VRSLStyles.ShurikenFoldout("Movement Settings", showMoverControls);
-            if(showMoverControls)
+            if (showMoverControls)
             {
                 GUILayout.Space(5);
                 EditorGUI.indentLevel++;
@@ -1219,17 +1188,17 @@ public class VRSLInspector : ShaderGUI
         AudioLinkGUI(matEditor, props, target);
         
         //DMX CONTROLS
-        if(isDMXCompatible)
+        if (isDMXCompatible)
         {
             showDMXSettings = VRSLStyles.ShurikenFoldout("DMX Settings", showDMXSettings);
-            if(showDMXSettings && isDMXCompatible)
+            if (showDMXSettings && isDMXCompatible)
             {
                 GUILayout.Space(5);
                 EditorGUILayout.HelpBox("''Sector'' and ''Enable DMX'' are usually overridden by their corresponding Udon Script. \nAdjust these at your own risk.", MessageType.Info,true);
                 EditorGUI.indentLevel++;
                 matEditor.ShaderProperty(_EnableDMX, new GUIContent("Enable DMX", "Enables or Disables reading from the DMX Render Textures"));
                 matEditor.ShaderProperty(_DMXChannel, new GUIContent("DMX Channel","Chooses the DMX Address to start this fixture at."));
-                matEditor.ShaderProperty(_EnableExtraChannels, new GUIContent("Enable Cone Length DMX Controls","Enable this if you want to be able to extend the lenghth of the cone on Channel 2!"));
+                matEditor.ShaderProperty(_EnableExtraChannels, new GUIContent("Enable Cone Length DMX Controls","Enable this if you want to be able to extend the length of the cone on Channel 2!"));
                 
                 try
                 {
@@ -1245,11 +1214,7 @@ public class VRSLInspector : ShaderGUI
                 VRSLStyles.PartingLine();
                 EditorGUILayout.HelpBox("These are the render texture grids used to read DMX signals from a video panel.", MessageType.None,true);
                 EditorGUI.indentLevel++;
-                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Seperate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid", "The DMX Render Texture to read from for color and intensity. Slightly smoothed."),_Udon_DMXGridRenderTexture);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid Smoothed", "DMX Render Texture smoothed out heavily by a custom render texture. Used for movement."),_Udon_DMXGridRenderTextureMovement);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Strobe Timer", "DMX Grid with strobe timings embedded."),_Udon_DMXGridStrobeTimer);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Spin Timer", "DMX Grid with GOBO Spin timings embedded"),_Udon_DMXGridSpinTimer);
+                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Separate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
                 EditorGUI.indentLevel--;
                 GUILayout.Space(5);
             }
@@ -1257,13 +1222,13 @@ public class VRSLInspector : ShaderGUI
 
         //GENERAL CONTROLS
         showGeneralControls = VRSLStyles.ShurikenFoldout("General Controls", showGeneralControls);
-        if(showGeneralControls)
+        if (showGeneralControls)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
             matEditor.ShaderProperty(_GlobalIntensity, new GUIContent("Global Intensity", "Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity."));
             EditorGUI.indentLevel++;  
-            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intesnity slider actually affects the output. Good for temporarily disabling animations that use the Global Intesnity property."));
+            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intensity slider actually affects the output. Good for temporarily disabling animations that use the Global Intensity property."));
             EditorGUI.indentLevel--; 
             matEditor.ShaderProperty(_FinalIntensity, new GUIContent("Final Intensity", "Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI."));
             matEditor.ShaderProperty(_UniversalIntensity, new GUIContent("Universal Intensity", "Sets the maximum brightness value of both Final and GLobal Intensity. Good for personalized settings of the max brightness of the shader by other users via UI. Is non-instanced."));
@@ -1280,14 +1245,14 @@ public class VRSLInspector : ShaderGUI
         }
         //VOLUMETRIC TEXTURE SETTINGS
         showVolumetricTextureSettings = VRSLStyles.ShurikenFoldout("Cone Texture/Render Settings", showVolumetricTextureSettings);
-        if(showVolumetricTextureSettings)
+        if (showVolumetricTextureSettings)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
             GUILayout.Space(5);
             //matEditor.TextureScaleOffsetProperty(_LightMainTex);
             matEditor.ShaderProperty(_RenderMode, new GUIContent("Render Mode", "Choose between a fully transparent shader, or one that is opaque with a dithering technique."));
-            if(target.GetInt("_RenderMode") == 0)
+            if (target.GetInt("_RenderMode") == 0)
             {
                 target.SetOverrideTag("RenderType", "Transparent");
                 target.DisableKeyword("_ALPHATEST_ON");  
@@ -1298,7 +1263,7 @@ public class VRSLInspector : ShaderGUI
                 target.SetInt("_HQMode", 1);
                 target.renderQueue = 3002;
             }
-            else if(target.GetInt("_RenderMode") == 1) 
+            else if (target.GetInt("_RenderMode") == 1) 
             {
                 target.SetOverrideTag("RenderType", "Transparent");
                 target.DisableKeyword("_ALPHATEST_ON");  
@@ -1327,10 +1292,10 @@ public class VRSLInspector : ShaderGUI
             matEditor.ShaderProperty(_GradientModGOBO, new GUIContent("Gradient Modifier With GOBO", "Controls the general gradient of the cone when using a GOBO."));
             GUILayout.Space(5);
             matEditor.ShaderProperty(_2D_NOISE_ON, new GUIContent("Enable 2D Noise", "Enable first layer of world space, 2D Noise"));
-            if(Mathf.FloorToInt(target.GetInt("_2D_NOISE_ON")) == 1)
+            if (target.GetInt("_2D_NOISE_ON") == 1)
             {
                 EditorGUI.indentLevel++;  
-                if(target.GetInt("_RenderMode") == 0)
+                if (target.GetInt("_RenderMode") == 0)
                 {
                     matEditor.TexturePropertySingleLine(new GUIContent("Noise Texture HQ", "Alpha Noise Texture used for adding variation to the cone."), _NoiseTexHigh);
                     matEditor.TextureScaleOffsetProperty(_NoiseTexHigh);
@@ -1347,31 +1312,31 @@ public class VRSLInspector : ShaderGUI
             // matEditor.ShaderProperty(_NoiseSeed, new GUIContent("Noise Randomization", "Adds randomness to the noise for more variation")); 
             GUILayout.Space(5);
             
-            //if(!isDMXCompatible)
+            //if (!isDMXCompatible)
             //{
                 string magicNoiseString = "_MAGIC_NOISE_ON_MED";
                 MaterialProperty magicNoiseProp = _MAGIC_NOISE_ON_MED;
                 string magicNoiseSuffix = "Transparent";
-                if(target.GetInt("_RenderMode") == 0)
+                if (target.GetInt("_RenderMode") == 0)
                 {
                     magicNoiseString = "_MAGIC_NOISE_ON_HIGH";
                     magicNoiseProp = _MAGIC_NOISE_ON_HIGH;
                     magicNoiseSuffix = "HQTransparent";
                 }
 
-                if(Mathf.FloorToInt(target.GetInt(magicNoiseString)) == 1 && target.GetInt("_RenderMode") != 2)
+                if (target.GetInt(magicNoiseString) == 1 && target.GetInt("_RenderMode") != 2)
                 {  
                     matEditor.ShaderProperty(magicNoiseProp, new GUIContent("Enable Magic 3D Noise For:  " + magicNoiseSuffix, "Enable Second layer of world space, faux 3D Noise"));
                     EditorGUILayout.LabelField("Potato Mode is unavailable. Disable Magic 3D Noise to enable Potato Mode.");
                      
                     matEditor.TexturePropertySingleLine(new GUIContent("Magic 3D Noise Texture", "A magical texture for generating 3D Perlin Noise at runtime! Code and texture based on https://www.shadertoy.com/view/4sfGzS by iq!"), _LightMainTex);
                     EditorGUI.indentLevel++;   
-                    // if((Mathf.FloorToInt(target.GetInt("_PotatoMode"))) == 1)
+                    // if (target.GetInt("_PotatoMode") == 1)
                     // {
                     //     EditorGUILayout.LabelField("HQ Mode is unavailable. Disable Potato Mode to enable Potato HQ.");
                     //     matEditor.ShaderProperty(_PotatoMode, new GUIContent("Potato Mode", "Reduces the overhead on the fragment shader by removing both noise components to extra texture sampling."));
                     // }
-                    // else if((Mathf.FloorToInt(target.GetInt("_HQMode"))) == 1) 
+                    // else if (target.GetInt("_HQMode") == 1) 
                     // {
                     //     matEditor.ShaderProperty(_HQMode, new GUIContent("HQ Mode", "A higher quality volumetric mode (Experimental)."));
                     //     EditorGUILayout.LabelField("Potato Mode is unavailable. Disable HQ Mode to enable Potato Mode.");
@@ -1401,7 +1366,7 @@ public class VRSLInspector : ShaderGUI
                     //         break;  
                     // }
                     
-                    // if((Mathf.FloorToInt(target.GetInt("_PotatoMode"))) == 1)
+                    // if ((target.GetInt("_PotatoMode")) == 1)
                     // {
                     //     matEditor.ShaderProperty(_Noise2StretchPotato, new GUIContent("Outside Magic Noise Scale", "Second Layer of Noise Scale"));
                     //     matEditor.ShaderProperty(_Noise2StretchInsidePotato, new GUIContent("Inside Magic Noise Scale", "Second Layer of Noise Scale"));
@@ -1410,7 +1375,7 @@ public class VRSLInspector : ShaderGUI
                     //     matEditor.ShaderProperty(_Noise2ZPotato, new GUIContent("Magic Noise Z Scroll", "Second Layer of Noise Scroll Y Axis"));
                     //     matEditor.ShaderProperty(_Noise2PowerPotato, new GUIContent("Magic Noise Strength", "Controls how much the second layer of noise affects the cone"));
                     // }
-                    if(Mathf.FloorToInt(target.GetInt("_HQMode")) == 1)
+                    if (target.GetInt("_HQMode") == 1)
                     {
                         matEditor.ShaderProperty(_Noise2Stretch, new GUIContent("HQ Outside Magic Noise Scale", "Second Layer of Noise Scale"));
                         matEditor.ShaderProperty(_Noise2StretchInside, new GUIContent("HQ Inside Magic Noise Scale", "Second Layer of Noise Scale"));
@@ -1430,28 +1395,28 @@ public class VRSLInspector : ShaderGUI
                     }
                     EditorGUI.indentLevel--;
                 }
-                else if((Mathf.FloorToInt(target.GetInt("_PotatoMode"))) == 1 && target.GetInt("_RenderMode") != 2)
+                else if (target.GetInt("_PotatoMode") == 1 && target.GetInt("_RenderMode") != 2)
                 {
                     EditorGUILayout.LabelField("Magic 3D Noise is unavailable. Disable Potato Mode to enable Magic 3D Noise.");
                     matEditor.ShaderProperty(_PotatoMode, new GUIContent("Potato Mode", "Reduces the overhead on the fragment shader by removing both noise components to extra texture sampling."));
                 }
-                else if(target.GetInt("_RenderMode") ==2)
+                else if (target.GetInt("_RenderMode") == 2)
                 {
                     EditorGUILayout.LabelField("Magic 3D Noise is unavailable. Use Transparent or HQTransparent Render Mode to enable Magic 3D Noise.");
                 }
                 else
                 {
-                    matEditor.ShaderProperty(magicNoiseProp, new GUIContent("Enable Magic 3D Noise For:  " + magicNoiseSuffix, "Enable Second layer of world space, faux 3D Noise"));
+                    matEditor.ShaderProperty(magicNoiseProp, new GUIContent($"Enable Magic 3D Noise For: {magicNoiseSuffix}", "Enable Second layer of world space, faux 3D Noise"));
                     matEditor.ShaderProperty(_PotatoMode, new GUIContent("Potato Mode", "Reduces the overhead on the fragment shader by removing both noise components to extra texture sampling."));
                 }
                 
-                SetKeyword(target, "_MAGIC_NOISE_ON_HIGH", (Mathf.FloorToInt(target.GetInt("_MAGIC_NOISE_ON_HIGH"))) == 1 ? true : false);
-                SetKeyword(target, "_MAGIC_NOISE_ON_MED", (Mathf.FloorToInt(target.GetInt("_MAGIC_NOISE_ON_MED"))) == 1 ? true : false);
+                SetKeyword(target, "_MAGIC_NOISE_ON_HIGH", target.GetInt("_MAGIC_NOISE_ON_HIGH") == 1);
+                SetKeyword(target, "_MAGIC_NOISE_ON_MED", target.GetInt("_MAGIC_NOISE_ON_MED") == 1);
 
-                SetKeyword(target, "_USE_DEPTH_LIGHT", (Mathf.FloorToInt(target.GetInt("_UseDepthLight"))) == 1 ? true : false);
-                SetKeyword(target, "_POTATO_MODE_ON", (Mathf.FloorToInt(target.GetInt("_PotatoMode"))) == 1 ? true : false);
-                SetKeyword(target, "_HQ_MODE", (Mathf.FloorToInt(target.GetInt("_HQMode"))) == 1 ? true : false);
-                SetKeyword(target, "_2D_NOISE_ON", (Mathf.FloorToInt(target.GetInt("_2D_NOISE_ON"))) == 1 ? true : false);
+                SetKeyword(target, "_USE_DEPTH_LIGHT", target.GetInt("_UseDepthLight") == 1);
+                SetKeyword(target, "_POTATO_MODE_ON", target.GetInt("_PotatoMode") == 1);
+                SetKeyword(target, "_HQ_MODE", target.GetInt("_HQMode") == 1);
+                SetKeyword(target, "_2D_NOISE_ON", target.GetInt("_2D_NOISE_ON") == 1);
             //}
             GUILayout.Space(5);
             //matEditor.ShaderProperty(_BlendSrc, new GUIContent("Volumetric Blend Source", "Volumetric Transparency Blend Options (Soruce)"));
@@ -1467,7 +1432,7 @@ public class VRSLInspector : ShaderGUI
         
         //VOLUMETRIC CONE SETTINGS
         showVolumetricControls = VRSLStyles.ShurikenFoldout("Volumetric Settings", showVolumetricControls);
-        if(showVolumetricControls)
+        if (showVolumetricControls)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
@@ -1488,7 +1453,7 @@ public class VRSLInspector : ShaderGUI
             matEditor.ShaderProperty(_StripeSplit, new GUIContent("Stripe Count GOBO 2", "Number of alpha stripes to appear in the cone."));
             matEditor.ShaderProperty(_StripeSplitStrength, new GUIContent("Stripe Split Strength GOBO 2", "How strong the stripes appear in the cone."));
             
-            // if(!isDMXCompatible)
+            // if (!isDMXCompatible)
             // {
                 matEditor.ShaderProperty(_StripeSplit2, new GUIContent("Stripe Count GOBO 3", "Number of alpha stripes to appear in the cone."));
                 matEditor.ShaderProperty(_StripeSplitStrength2, new GUIContent("Stripe Split Strength GOBO 3", "How strong the stripes appear in the cone."));
@@ -1519,10 +1484,10 @@ public class VRSLInspector : ShaderGUI
         }
         
         //MOVER CONTROLS
-        if(isStaticLight == false && isAudioLink == false)
+        if (isStaticLight == false && isAudioLink == false)
         {
             showMoverControls = VRSLStyles.ShurikenFoldout("Movement Settings", showMoverControls);
-            if(showMoverControls)
+            if (showMoverControls)
             {
                 GUILayout.Space(5);
                 EditorGUI.indentLevel++;
@@ -1544,10 +1509,10 @@ public class VRSLInspector : ShaderGUI
         AudioLinkGUI(matEditor, props, target);
         
         //DMX CONTROLS
-        if(isDMXCompatible)
+        if (isDMXCompatible)
         {
             showDMXSettings = VRSLStyles.ShurikenFoldout("DMX Settings", showDMXSettings);
-            if(showDMXSettings && isDMXCompatible)
+            if (showDMXSettings && isDMXCompatible)
             {
                 GUILayout.Space(5);
                 EditorGUILayout.HelpBox("''Sector'' and ''Enable DMX'' are usually overridden by their corresponding Udon Script. \nAdjust these at your own risk.", MessageType.Info,true);
@@ -1571,10 +1536,7 @@ public class VRSLInspector : ShaderGUI
                 VRSLStyles.PartingLine();
                 EditorGUILayout.HelpBox("These are the render texture grids used to read DMX signals from a video panel.", MessageType.None,true);
                 EditorGUI.indentLevel++;
-                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Seperate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid", "The DMX Render Texture to read from for color and intensity. Slightly smoothed."),_Udon_DMXGridRenderTexture);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid Smoothed", "DMX Render Texture smoothed out by a custom render texture."),_Udon_DMXGridRenderTextureMovement);
-                // matEditor.TexturePropertySingleLine(new GUIContent("DMX Strobe Timer", "DMX Grid with strobe timings embedded."),_Udon_DMXGridStrobeTimer);
+                matEditor.ShaderProperty(_UseRawGrid, new GUIContent("Use Separate Grid for Light Intensity and Color", "Use this to switch to the normal grid for light/color if smooothed is too slow"));
                 EditorGUI.indentLevel--;
                 GUILayout.Space(5);
             }
@@ -1582,13 +1544,13 @@ public class VRSLInspector : ShaderGUI
         
         //GENERAL CONTROLS
         showGeneralControls = VRSLStyles.ShurikenFoldout("General Controls", showGeneralControls);
-        if(showGeneralControls)
+        if (showGeneralControls)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
             matEditor.ShaderProperty(_GlobalIntensity, new GUIContent("Global Intensity", "Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity."));
             EditorGUI.indentLevel++;  
-            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intesnity slider actually affects the output. Good for temporarily disabling animations that use the Global Intesnity property."));
+            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intensity slider actually affects the output. Good for temporarily disabling animations that use the Global Intensity property."));
             EditorGUI.indentLevel--; 
             matEditor.ShaderProperty(_FinalIntensity, new GUIContent("Final Intensity", "Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI."));
             matEditor.ShaderProperty(_UniversalIntensity, new GUIContent("Universal Intensity", "Sets the maximum brightness value of both Final and GLobal Intensity. Good for personalized settings of the max brightness of the shader by other users via UI. Is non-instanced."));
@@ -1606,10 +1568,10 @@ public class VRSLInspector : ShaderGUI
         }
 
         //MOVER CONTROLS
-        if(isStaticLight == false && isAudioLink == false)
+        if (!isStaticLight && !isAudioLink)
         {
             showMoverControls = VRSLStyles.ShurikenFoldout("Movement Settings", showMoverControls);
-            if(showMoverControls)
+            if (showMoverControls)
             {
                 GUILayout.Space(5);
                 EditorGUI.indentLevel++;
@@ -1623,12 +1585,12 @@ public class VRSLInspector : ShaderGUI
 
         //FIXTURE HOUSING SETTINGS
         showFixtureHousingControls = VRSLStyles.ShurikenFoldout("Fixture Housing Settings", showFixtureHousingControls);
-        if(showFixtureHousingControls)
+        if (showFixtureHousingControls)
         {
             GUILayout.Space(5);
             EditorGUI.indentLevel++;
-            matEditor.ShaderProperty(_LightingModel, new GUIContent("Lighting Model", "Choose the type of lighting this fixture mesh recieves when interacting with the world."));
-            SetKeyword(target, "_LIGHTING_MODEL", (Mathf.FloorToInt(target.GetInt("_LightingModel"))) == 1 ? true : false);
+            matEditor.ShaderProperty(_LightingModel, new GUIContent("Lighting Model", "Choose the type of lighting this fixture mesh receives when interacting with the world."));
+            SetKeyword(target, "_LIGHTING_MODEL", target.GetInt("_LightingModel") == 1);
             matEditor.ShaderProperty(_LightProbeMethod, new GUIContent("Light Probe Sampling Method", "Choose the light probe sampling method for the fixture housing."));
             matEditor.ShaderProperty(_Color, new GUIContent("Fixture Housing Color Tint", "The main diffuse color for the fixture housing"));
             matEditor.TexturePropertySingleLine(new GUIContent("Fixture Housing Diffuse Map", "The main diffuse texture for the fixture housing."), _MainTex);
@@ -1641,20 +1603,20 @@ public class VRSLInspector : ShaderGUI
             matEditor.TexturePropertySingleLine(new GUIContent("Fixture Housing Metallic/Gloss Map", "The Metallic/Gloss map for the fixture housing."), _MetallicGlossMap);
             matEditor.TextureScaleOffsetProperty(_MetallicGlossMap);
             matEditor.ShaderProperty(_Metallic, new GUIContent("Fixture Housing Metallic Level", "The metallic level of the fixture housing."));
-            matEditor.ShaderProperty(_Glossiness, new GUIContent("Fixture Housing Glossiness Level", "The glossines of the fixture housing."));
+            matEditor.ShaderProperty(_Glossiness, new GUIContent("Fixture Housing Glossiness Level", "The glossiness of the fixture housing."));
             matEditor.TexturePropertySingleLine(new GUIContent("Decorative Emissive Map", "Decorative Emissive Map for the housing"), _DecorativeEmissiveMap);
             matEditor.TextureScaleOffsetProperty(_DecorativeEmissiveMap);
             matEditor.ShaderProperty(_DecorativeEmissiveMapStrength, new GUIContent("Decorative Emissive Map Strength", "The strength of the decorative emissive map."));
-            if((Mathf.FloorToInt(target.GetInt("_LightingModel"))) == 1)
+            if (target.GetInt("_LightingModel") == 1)
             {
-                matEditor.TexturePropertySingleLine(new GUIContent("Fixture Housing Occlusion Map", "The Occlussion Map for the fixture housing."), _OcclusionMap);
+                matEditor.TexturePropertySingleLine(new GUIContent("Fixture Housing Occlusion Map", "The Occlusion Map for the fixture housing."), _OcclusionMap);
                 matEditor.ShaderProperty(_OcclusionStrength, new GUIContent("Fixture Housing Occlusion Strength", "The strength of the Occlusion Map for the fixture housing."));
             }
             GUILayout.Space(5);
             // if (Shader.Find("AreaLit/Standard") != null)
             // {
             //     matEditor.ShaderProperty(_AreaLitToggle, new GUIContent("Enable AreaLit", "Enable Area Lit"));
-            //     if(target.GetInt("_AreaLitToggle") == 1)
+            //     if (target.GetInt("_AreaLitToggle") == 1)
             //     {
             //         EditorGUI.indentLevel++;
             //         matEditor.ShaderProperty(_AreaLitStrength, new GUIContent("Strength", "Area Lit Strength"));
@@ -1667,7 +1629,7 @@ public class VRSLInspector : ShaderGUI
             //         matEditor.TexturePropertySingleLine(new GUIContent("Light Tex 3+", "Area Lit Texture 3"), _LightTex3);
             //         matEditor.TexturePropertySingleLine(new GUIContent("Mask", "Area Lit Mask"), _AreaLitMask);
             //         matEditor.TexturePropertySingleLine(new GUIContent("Occlusion", "Area Lit Occlusion Texture"), _AreaLitOcclusion);
-            //         if(_AreaLitOcclusion.textureValue){
+            //         if (_AreaLitOcclusion.textureValue){
             //             matEditor.ShaderProperty(_OcclusionUVSet, new GUIContent("Occlussion UV Set", "Area Lit Occlussion UV Set"));
             //         }
             //         EditorGUILayout.HelpBox("Note that the AreaLit package files MUST be inside a folder named AreaLit (case sensitive) directly in the Assets folder (Assets/AreaLit)", MessageType.Info);
@@ -1679,7 +1641,7 @@ public class VRSLInspector : ShaderGUI
             //     _AreaLitToggle.floatValue = 0f;
 			// 	target.SetInt("_AreaLitToggle", 0);
             // }
-            // SetKeyword(target, "_AREALIT_ON", (Mathf.FloorToInt(target.GetInt("_AreaLitToggle"))) == 1 ? true : false);
+            // SetKeyword(target, "_AREALIT_ON", target.GetInt("_AreaLitToggle") == 1);
             EditorGUI.indentLevel--;
 
 
@@ -1692,14 +1654,14 @@ public class VRSLInspector : ShaderGUI
 
     public void ColorTextureSamplingGUI(MaterialEditor matEditor, MaterialProperty[] props, Material target)
     {
-        if(isDMXCompatible || isRTShader || isDiscoBall) return;
-        matEditor.ShaderProperty(_EnableColorTextureSample, new GUIContent("Enable Color Texture Sampling", "Check this box if you wish to sample seperate texture for the color. The color will be influenced by the intensity of the original emission color!"));
+        if (isDMXCompatible || isRTShader || isDiscoBall) return;
+        matEditor.ShaderProperty(_EnableColorTextureSample, new GUIContent("Enable Color Texture Sampling", "Check this box if you wish to sample Separate texture for the color. The color will be influenced by the intensity of the original emission color!"));
         EditorGUI.indentLevel++;
         matEditor.TexturePropertySingleLine(new GUIContent("Color Sampling Texture", "The texture to sample the color from when ''Enable Color Texture Sampling'' is enabled"),_SamplingTexture);
         matEditor.ShaderProperty(_TextureColorSampleX, new GUIContent("X UV Coordinate", "The x uv coordinate for where on the texture to sample from (0 to 1)."));
         matEditor.ShaderProperty(_TextureColorSampleY, new GUIContent("Y UV Coordinate", "The y uv coordinate for where on the texture to sample from (0 to 1)."));
         matEditor.ShaderProperty(_RenderTextureMultiplier, new GUIContent("Render Texture Multiplier", "Increase the strength of the render texture color"));
-        if(_RenderTextureMultiplier.floatValue > 0f)
+        if (_RenderTextureMultiplier.floatValue > 0f)
         {
             matEditor.ShaderProperty(_UseTraditionalSampling, new GUIContent("Use Traditional Texture Sampling", "Disable Black to white conversion in texture sampling"));
         }
@@ -1712,11 +1674,11 @@ public class VRSLInspector : ShaderGUI
         AudioLinkGUI(matEditor, props, target);
         
         //DMX CONTROLS
-        if(isDMXCompatible)
+        if (isDMXCompatible)
         {
-            // if(props[1].floatValue > 0)
+            // if (props[1].floatValue > 0)
             showDMXSettings = VRSLStyles.ShurikenFoldout("DMX Settings", showDMXSettings);
-            if(showDMXSettings && isDMXCompatible)
+            if (showDMXSettings && isDMXCompatible)
             {
                 GUILayout.Space(5);
                 EditorGUILayout.HelpBox("''Sector'' and ''Enable DMX'' are usually overridden by their corresponding Udon Script. \nAdjust these at your own risk.", MessageType.Info,true);
@@ -1733,12 +1695,12 @@ public class VRSLInspector : ShaderGUI
         
         //GENERAL CONTROLS
         showGeneralControls = VRSLStyles.ShurikenFoldout("General Controls", showGeneralControls);
-        if(showGeneralControls)
+        if (showGeneralControls)
         {
-            // if(isDMXCompatible)
+            // if (isDMXCompatible)
             // {
                 matEditor.ShaderProperty(_RenderMode, new GUIContent("Render Mode", "Choose between a fully transparent shader, or one that is opaque with a dithering technique."));
-                if(target.GetInt("_RenderMode") == 1) 
+                if (target.GetInt("_RenderMode") == 1) 
                 {
                     target.SetOverrideTag("RenderType", "Transparent");
                     target.DisableKeyword("_ALPHATEST_ON");  
@@ -1766,7 +1728,7 @@ public class VRSLInspector : ShaderGUI
             EditorGUI.indentLevel++;
             matEditor.ShaderProperty(_GlobalIntensity, new GUIContent("Global Intensity", "Sets the overall intensity of the shader. Good for animating or scripting effects related to intensity. Its max value is controlled by Final Intensity."));
             EditorGUI.indentLevel++;  
-            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intesnity slider actually affects the output. Good for temporarily disabling animations that use the Global Intesnity property."));
+            matEditor.ShaderProperty(_GlobalIntensityBlend, new GUIContent("Global Intensity Blend", "Sets the overall intensity of the shader. Controls how much the Global Intensity slider actually affects the output. Good for temporarily disabling animations that use the Global Intensity property."));
             EditorGUI.indentLevel--; 
             matEditor.ShaderProperty(_FinalIntensity, new GUIContent("Final Intensity", "Sets the maximum brightness value of Global Intensity. Good for personalized settings of the max brightness of the shader by other users via UI."));
             matEditor.ShaderProperty(_UniversalIntensity, new GUIContent("Universal Intensity", "Sets the maximum brightness value of both Final and GLobal Intensity. Good for personalized settings of the max brightness of the shader by other users via UI. Is non-instanced."));
@@ -1799,12 +1761,12 @@ public class VRSLInspector : ShaderGUI
         matEditor.ShaderProperty(_EnableDMX, new GUIContent("Enable DMX", "Enables or Disables reading from the DMX Render Textures"));
         matEditor.ShaderProperty(_DMXChannel, new GUIContent("Sector","for legacy global movement speed"));
         matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid Raw", "The raw DMX Render texture from the camera."),_DMXTexture);
-        matEditor.ShaderProperty(_SmoothValue, new GUIContent("Smoothness Level", "Changes how much interpolated smoothing is applied to the texture. The closer to 0, the more smoothing applied, the closer to 1, the less smoothing applied. \nThis value is usually controlled by a seperate DMX signal to control the movement speed of the movers. "));
+        matEditor.ShaderProperty(_SmoothValue, new GUIContent("Smoothness Level", "Changes how much interpolated smoothing is applied to the texture. The closer to 0, the more smoothing applied, the closer to 1, the less smoothing applied. \nThis value is usually controlled by a Separate DMX signal to control the movement speed of the movers. "));
         matEditor.ShaderProperty(_MinimumSmoothnessDMX, new GUIContent("Minimum Smoothness Value", "Sets the minimum amount of smoothing applied to the texture by default."));
         matEditor.ShaderProperty(_MaximumSmoothnessDMX, new GUIContent("Maximum Smoothness Value", "Sets the maximum amount of smoothing applied to the texture by default."));
         GUILayout.Space(5);
         matEditor.ShaderProperty(_SignalDetectionSystem, new GUIContent("Enable Signal Detection System", "Enables the auto signal detection system. If certain pixels in the grid node (that aren't DMX Channels) aren't black, this texture will output black. This prevents unwanted pixel data coming in and disrupting a show."));
-        matEditor.ShaderProperty(_SignalDetectionSensativity, new GUIContent("Signal Detection System Sensativity", "How close to black does the signal need to be before it activates."));
+        matEditor.ShaderProperty(_SignalDetectionSensativity, new GUIContent("Signal Detection System Sensitivity", "How close to black does the signal need to be before it activates."));
         matEditor.RenderQueueField();
         EditorGUI.indentLevel--;
         GUILayout.Space(5);
@@ -1817,7 +1779,7 @@ public class VRSLInspector : ShaderGUI
         matEditor.TexturePropertySingleLine(new GUIContent("DMX Grid Raw", "The raw DMX Render texture from the camera."),_DMXTexture);
         matEditor.ShaderProperty(_StrobeType, new GUIContent("Strobe Mode", "Choose between a smooth dynamic strobe rate or static pre set rates. Static rates are frame rate independent."));
         SetKeyword(target, "_VRSL_STATICFREQUENCIES",target.GetInt("_StrobeType") == 1);
-        if(target.GetInt("_StrobeType") == 1)
+        if (target.GetInt("_StrobeType") == 1)
         {
             EditorGUI.indentLevel++;
             matEditor.ShaderProperty(_LowFrequency, new GUIContent("Low Frequency"));
@@ -1851,25 +1813,25 @@ public class VRSLInspector : ShaderGUI
         string lightType = "";
         string shaderType = "";
         string dmx = "";
-        if(isMoverLight)
+        if (isMoverLight)
         {
             lightType = "Mover";
         }
-        if(isStaticLight)
+        if (isStaticLight)
         {
             lightType = "Static";
-            if(isFlasher)
+            if (isFlasher)
             {
                 lightType = lightType + " Flasher";
             }
         }
-        if(isLensFlare)
+        if (isLensFlare)
         {
             lightType = "Lens Flare";
         }
-        if(isSurfaceStatic)
+        if (isSurfaceStatic)
         {
-            if(isMultiChannelBar)
+            if (isMultiChannelBar)
             {
                 lightType = "Multi-Channel Bar";
             }
@@ -1879,24 +1841,24 @@ public class VRSLInspector : ShaderGUI
                 shaderType = "Fixture";
             }
         }
-        if(isProjection)
+        if (isProjection)
         {
             shaderType = "Projection";
         }
-        if(isVolumetric)
+        if (isVolumetric)
         {
             shaderType = "Volumetric";
         }
-        if(isFixture)
+        if (isFixture)
         {
             shaderType = "Fixture";
         }
-        // if(isStaticLight)
+        // if (isStaticLight)
         // {
         //     shaderType = "Static";
         // }
 
-        if(isDMXCompatible && !isAudioLink)
+        if (isDMXCompatible && !isAudioLink)
         {
             dmx = "DMX";
         }
@@ -1908,9 +1870,9 @@ public class VRSLInspector : ShaderGUI
         {
             dmx = "Non-DMX";
         }
-        if(isDiscoBall)
+        if (isDiscoBall)
         {
-            if(!isAudioLink)
+            if (!isAudioLink)
             {
                 lightType = "Discoball";
                 shaderType = "Projection";
@@ -1925,20 +1887,20 @@ public class VRSLInspector : ShaderGUI
             }
 
         }
-        if(isRTShader && isRTStrobe && !isRTSpin)
+        if (isRTShader && isRTStrobe && !isRTSpin)
         {
             dmx = "DMX";
             lightType = "CRT";
             shaderType = "Strobe Timer";
         }
-        if(isRTShader && !isRTStrobe && isRTSpin)
+        if (isRTShader && !isRTStrobe && isRTSpin)
         {
             dmx = "DMX";
             lightType = "CRT";
             shaderType = "Spin Timer";
         }
 
-        if(isRTShader && !isRTStrobe && !isRTSpin)
+        if (isRTShader && !isRTStrobe && !isRTSpin)
         {
             dmx = "DMX";
             lightType = "CRT";

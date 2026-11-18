@@ -1431,7 +1431,6 @@ namespace VRSL.EditorScripts
             copyTofixture.P_invertPan = copyFromfixture.P_invertPan;
             copyTofixture.P_invertTilt = copyFromfixture.P_invertTilt;
             copyTofixture.P_isUpsideDown = copyFromfixture.P_isUpsideDown;
-            copyTofixture.P_legacyGoboRange = copyFromfixture.P_legacyGoboRange;
             copyTofixture.P_lightColorTint = copyFromfixture.P_lightColorTint;
             copyTofixture.P_maxConeLength = copyFromfixture.P_maxConeLength;
             copyTofixture.P_maxMinPan = copyFromfixture.P_maxMinPan;
@@ -3174,7 +3173,6 @@ namespace VRSL.EditorScripts
                                     fixture.P_fixtureID = EditorGUILayout.IntField("Fixture ID", fixture.P_fixtureID, GUILayout.MaxWidth(sectionWidth - 10));
                                     fixture.P_dmxChannel = EditorGUILayout.IntSlider("DMX Channel",fixture.P_dmxChannel, 1, 512, GUILayout.MaxWidth(sectionWidth - 10));
                                     fixture.P_dmxUniverse = EditorGUILayout.IntSlider("Universe",fixture.P_dmxUniverse, 1, 3, GUILayout.MaxWidth(sectionWidth - 10));
-                                    fixture.P_legacyGoboRange = EditorGUILayout.Toggle("Legacy Gobo Range",fixture.P_legacyGoboRange);
                                     GUILayout.Space(4.0f);
 
                                     GUILayout.Space(4.0f);

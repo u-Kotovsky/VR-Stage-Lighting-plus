@@ -19,7 +19,6 @@ namespace VRSL.EditorScripts
             enableDMXChannels = fixture.enableDMXChannels;
             fixtureID = fixture.fixtureID;
             Channel = fixture.Channel;
-            legacyGoboRange = fixture.legacyGoboRange;
             globalIntensity = fixture.globalIntensity;
             finalIntensity = fixture.finalIntensity;
             lightColorTint = fixture.lightColorTint;
@@ -57,7 +56,6 @@ namespace VRSL.EditorScripts
         public int dmxUniverse;
         public int fixtureDefintion;
         public int Channel;
-        public bool legacyGoboRange;
         public float globalIntensity;
         public float finalIntensity;
         public Color lightColorTint;
